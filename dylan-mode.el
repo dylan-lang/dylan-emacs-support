@@ -131,6 +131,7 @@
 ;;;   adjusted 12/6/96 by David N. Gray to set dylan-no-highlights-in-header
 ;;;     only for Emacs 19.31 or later
 ;;;   Modified 7/19/98 by David N. Gray to indent bodies of "with-..." macros.
+;;;   Modified 16 Jan 99 by Eric M. Kidd for C-FFI macros.
 
 ;;; Known limitations:
 ;;;   Limited support for block (i.e. "/*") comments
@@ -157,16 +158,18 @@
   "Words which introduce unnamed definitions like 'define interface'.")
 
 (defvar dyl-named-definition-words
-  '("module" "library" "macro")
+  '("module" "library" "macro" "C-struct" "C-union" "C-function"
+    "C-callable-wrapper")
   "Words which introduce simple named definitions like 'define library'.")
 
 (defvar dyl-parameterized-definition-words
-  '("method" "class" "function")
+  '("method" "class" "function" "C-subtype" "C-mapped-subtype"
+    "C-variable" "C-address")
   "Words which introduce trickier definitions like 'define method'.  These
 require special definitions to be added to 'dyl-start-expressions'.")
 
 (defvar dyl-simple-definition-words
-  '("constant" "variable" "generic")
+  '("constant" "variable" "generic" "C-pointer-type")
   "Words which introduce simple definitions (without implicit bodies).");
 
 (defvar dyl-statement-words
@@ -989,7 +992,7 @@ and closing punctuation are needed."
 		      ((looking-at "\\[") "]")
 		      ((looking-at "(") ")")
 		      ((looking-at "{") "}")
-		      ((or (looking-at "\\(method\\|function\\|class\\)\\([ \t]+\\w+\\)?")
+		      ((or (looking-at "\\(method\\|function\\|class\\|C-subtype\\|C-mapped-subtype\\)\\([ \t]+\\w+\\)?")
 			   (looking-at "\\(library\\|module\\)[ \t]+\\w+")
 			   (looking-at "\\w+"))
 		       (concat " end "
