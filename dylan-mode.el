@@ -33,7 +33,7 @@
 (defvar dylan-highlight-defsites t
   "* Should font-lock mode try to distinguish all variable bindings?")
 
-;;; Version 1.12
+;;; Version 1.14
 ;;; History:
 ;;;   version 0.1: Quick one day hack -- appears to be useful
 ;;;   version 0.2: Added font lock support
@@ -108,6 +108,11 @@
 ;;;     Fixed dylan-insert-block-end to handle "define function" properly.
 ;;;     (Hopefully) fixed bug in indenting function result declarations,
 ;;;     which was introduced by the previous round of fixes.
+;;;   version 1.14:
+;;;     Modified to use font-lock-syntax-table if it is defined.  This
+;;;     eliminates the need to use unportable constructs to modify the
+;;;     behavior of font-lock mode -- thus, fontification should now be
+;;;     reliable on modern EMACSen.
 
 ;;; Known limitations:
 ;;;   Limited support for block (i.e. "/*") comments
@@ -125,7 +130,9 @@
 
 (defun add-dylan-keyword (variable keyword)
   (add-to-list variable keyword)
-  (set-dylan-patterns))
+  (set-dylan-patterns)
+  (if (fboundp 'font-lock-mode)
+      (setq font-lock-keywords dylan-font-lock-keywords)))
 
 (defvar dyl-unnamed-definition-words
   '("interface")
@@ -388,8 +395,7 @@ parens will be matched between each list element.")
 		      1 font-lock-function-name-face)
 		    '("let[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
 		    '("let[ \t\n]+(\\([^)]+\\)"
-		      1 font-lock-function-name-face)))))
-	(setq font-lock-keywords dylan-font-lock-keywords))))
+		      1 font-lock-function-name-face))))))))
 
 (defun look-back (regexp)
   "Attempts to find a match for \"regexp\" immediately preceding the current
@@ -1014,6 +1020,12 @@ Returns t unless search stops due to end of buffer."
 
 (defun dylan-mode-variables ()
   ;; Use value appropriate for font-lock-mode now.  Reset after running hooks.
+  (if (fboundp 'font-lock-mode)
+      (setq font-lock-keywords dylan-font-lock-keywords))
+  (if (not (boundp 'font-lock-syntax-table))
+      (set-syntax-table dylan-indent-syntax-table)
+    (make-variable-buffer-local 'font-lock-syntax-table)
+    (setq font-lock-syntax-table dylan-indent-syntax-table))
   (set-syntax-table dylan-indent-syntax-table)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'dylan-indent-line)
@@ -1068,11 +1080,15 @@ declarations.  This special feature may be turned off by setting
 
 (set-dylan-patterns)
 
-(if (fboundp 'font-lock-mode)
+;; We must use the "indentation" syntax table when doing font-lock
+;; processing.  In modern EMACSen (xemacs 19.14, FSF 19.30), the
+;; font-lock-syntax-table variable handles this for us.  In older
+;; EMACSen, we need some pretty ugly hacks -- the only thing to be said
+;; in their favor is that they often work.
+(if (and (fboundp 'font-lock-mode)
+	 (require 'font-lock)		; force load to test version
+	 (not (boundp 'font-lock-syntax-table)))
     (progn
-      ;; We must use the "indentation" syntax table when doing font-lock
-      ;; processing.  This ugly hack should do the right thing, even if
-      ;; font-lock mode complains if you try to turn it off later.
       (defvar old-after-change-function nil
 	"Used to modify the behavior of font-lock-mode.")
       (defun dm-after-change-function (&rest args)
@@ -1083,7 +1099,6 @@ declarations.  This special feature may be turned off by setting
 		(apply old-after-change-function args))
 	    (set-syntax-table old-syntax-table))))
       ;; More hacks to magically switch syntax tables as necessary
-      (require 'font-lock) ; force load to test version
       (if (boundp 'font-lock-after-fontify-buffer-hook)
 	  (progn ; new way (in XEmacs 19.13)
 	    (add-hook
