@@ -32,8 +32,11 @@
   "* Should font-lock mode try to distinguish all normal function calls?")
 (defvar dylan-highlight-defsites t
   "* Should font-lock mode try to distinguish all variable bindings?")
+(defvar dylan-no-highlights-in-header t
+  "* Should font-lock ignore keywords in the header.  (Experimental -- may
+  not work on all EMACSen.")
 
-;;; Version 1.15
+;;; Version 1.16
 ;;; History:
 ;;;   version 0.1: Quick one day hack -- appears to be useful
 ;;;   version 0.2: Added font lock support
@@ -119,6 +122,11 @@
 ;;;     Optimized "beyond-dylan-header".  
 ;;;     Removed new-lines from various font-lock regexps so that
 ;;;     adjacent declarations aren't glommed together.
+;;;   version 1.16
+;;;     Made symbols properly fontify as strings.
+;;;     Added the dylan-no-highlights-in-header variable (enabled by
+;;;     default) which keeps keywords in headers from being treated
+;;;     specially.
 
 ;;; Known limitations:
 ;;;   Limited support for block (i.e. "/*") comments
@@ -376,6 +384,7 @@ parens will be matched between each list element.")
 		    dyl-keyword-pattern
 		    separator-word-pattern
 		    "[-_a-zA-Z?!*@<>$%]+:"
+		    (list "#\"[^\"]*\"?" 0 'font-lock-string-face t)
 		    "#rest\\|#key\\|#all-keys\\|#next"
 		    dyl-other-pattern
 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
@@ -392,6 +401,10 @@ parens will be matched between each list element.")
 		    '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
 		    '("\\bend[ \t]+\\w*\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)" 1
 		      font-lock-function-name-face)))
+	(if dylan-no-highlights-in-header
+	    (setq dylan-font-lock-keywords
+		  (append dylan-font-lock-keywords
+			  (list (list 'fontify-dylan-header 0 nil t)))))
 	(if dylan-highlight-function-calls
 	    (setq dylan-font-lock-keywords
 		  (cons 
@@ -427,15 +440,29 @@ including parenthesized expressions.")
 (defvar dylan-beginning-of-form-pattern nil
   "Like 'find-keyword-pattern' but matches statement terminators as well.")
 
-(defun beyond-dylan-header ()
+;(defun fontify-dylan-header (limit)
+;  (if (>= (point) (- limit 1))
+;      nil
+;    (if (= limit (point-max))
+;	(re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\\([-a-zA-Z]+:.*\\|[ \t]+.*\\)" limit t)
+;      (goto-char 1)
+;      (let ((result (re-search-forward
+;		     "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\\([-a-zA-Z]+:.*\\|[ \t]+.*\\)"
+;		     limit t)))
+;	(and result (= result (- limit 1)) result)))))
+
+(defun fontify-dylan-header (limit)
+  (let ((end (dylan-header-end)))
+    (and (> end (point))
+	 (re-search-forward ".+" end t))))
+
+(defun dylan-header-end ()
   (save-excursion
-    (let ((dot (point))
-	  (header-end nil))
-      (goto-char 1)
-      (setq header-end
-	    (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n+"
-			       nil t))
-      (and header-end (>= dot header-end)))))
+    (goto-char 1)
+    (or
+     (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n+"
+			nil t)
+     0)))
 
 ;; The next two routines are organized bletcherously because gnu-emacs
 ;; does no tail call optimization.  We used to recursively call
@@ -500,7 +527,7 @@ nil otherwise."
 		 (t t))
 	 (goto-char (point-min))
 	 nil)))
-    (and result (beyond-dylan-header))))
+    (and result (>= (point) (dylan-header-end)))))
 
 (defun dylan-find-end (&optional match-statement-end in-case no-commas)
   "Moves the point forward to the end of the innermost enclosing
