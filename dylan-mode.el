@@ -38,8 +38,8 @@
 					   (> emacs-minor-version 30))
   "* Should font-lock ignore keywords in the header.  (Experimental -- may
   not work on all EMACSen.")
-(defvar dylan-fix-for-gnu-21 t
-  "* Fixes syntax highlighting in GNU Emacs 21.  (Experimental -- but should not disturb anyone).")
+(defvar dylan-mode-for-emacs-21-and-later (not (string-lessp emacs-version "20"))
+  "* Perform syntax highlighting in a way that requires GNU Emacs 21 or later.")
 
 ;;; Version 1.16
 ;;; History:
@@ -239,36 +239,43 @@ no equivalent to '\b' for identifiers.")
 
 (defun dylan-set-up-syntax-tables ()
   (if (not dylan-mode-syntax-table)
-	  (progn
-		(setq dylan-mode-syntax-table (make-syntax-table))
-		(modify-syntax-entry ?_ "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?- "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?< "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?> "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?? "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?! "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?= "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?: "_" dylan-mode-syntax-table)
-		(modify-syntax-entry ?' "\"" dylan-mode-syntax-table)
-		(modify-syntax-entry ?\f " " dylan-mode-syntax-table)
-		(setq dylan-indent-syntax-table
-			  (copy-syntax-table dylan-mode-syntax-table))
-		(modify-syntax-entry ?_ "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?- "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?< "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?> "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?? "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?! "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?= "w" dylan-indent-syntax-table)
-		(modify-syntax-entry ?: "w" dylan-indent-syntax-table)
-		; different emacs version handle comments differently
-		(cond ((or (and (boundp 'running-lemacs) running-lemacs)
-				   (string-match "XEmacs" emacs-version))
-			   (modify-syntax-entry ?\n "> b" dylan-indent-syntax-table)
-			   (modify-syntax-entry ?/ "w 1456" dylan-indent-syntax-table)
-			   (modify-syntax-entry ?\* "w 23" dylan-indent-syntax-table)
-			   (modify-syntax-entry ?\n "> b" dylan-mode-syntax-table)
-			   (modify-syntax-entry ?/ "_ 1456" dylan-mode-syntax-table))))))
+      (progn
+	(setq dylan-mode-syntax-table (make-syntax-table))
+	(modify-syntax-entry ?_ "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?- "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?< "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?> "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?? "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?! "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?= "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?: "_" dylan-mode-syntax-table)
+	(modify-syntax-entry ?' "\"" dylan-mode-syntax-table)
+	(modify-syntax-entry ?\f " " dylan-mode-syntax-table)
+	(setq dylan-indent-syntax-table
+	      (copy-syntax-table dylan-mode-syntax-table))
+	(modify-syntax-entry ?_ "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?- "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?< "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?> "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?? "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?! "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?= "w" dylan-indent-syntax-table)
+	(modify-syntax-entry ?: "w" dylan-indent-syntax-table)
+	;; different emacs version handle comments differently
+	(cond ((or (and (boundp 'running-lemacs) running-lemacs)
+		   (string-match "XEmacs" emacs-version))
+	       (modify-syntax-entry ?\n "> b" dylan-indent-syntax-table)
+	       (modify-syntax-entry ?/ "w 1456" dylan-indent-syntax-table)
+	       (modify-syntax-entry ?\* "w 23" dylan-indent-syntax-table)
+	       (modify-syntax-entry ?\n "> b" dylan-mode-syntax-table)
+	       (modify-syntax-entry ?/ "_ 1456" dylan-mode-syntax-table))
+	      (t
+	       (modify-syntax-entry ?\n "> b" dylan-mode-syntax-table)
+	       (modify-syntax-entry ?/ "_ 124b" dylan-mode-syntax-table)
+	       (modify-syntax-entry ?\* "_ 23n" dylan-mode-syntax-table)
+	       (modify-syntax-entry ?\n "> b" dylan-indent-syntax-table)
+	       (modify-syntax-entry ?/ "w 124b" dylan-indent-syntax-table)
+	       (modify-syntax-entry ?\* "w 23n" dylan-indent-syntax-table))))))
 
 (dylan-set-up-syntax-tables)
 
@@ -1081,7 +1088,7 @@ Returns t unless search stops due to end of buffer."
       (setq font-lock-keywords dylan-font-lock-keywords))
   (if (not (boundp 'font-lock-syntax-table))
       (set-syntax-table dylan-indent-syntax-table)
-    (make-variable-buffer-local 'font-lock-syntax-table)
+    (make-local-variable 'font-lock-syntax-table)
     (setq font-lock-syntax-table dylan-indent-syntax-table))
   (set-syntax-table dylan-indent-syntax-table)
   (make-local-variable 'indent-line-function)
@@ -1093,7 +1100,7 @@ Returns t unless search stops due to end of buffer."
   (make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
   (setq local-abbrev-table dylan-mode-abbrev-table)
-  (if (not dylan-fix-for-gnu-21)
+  (if (not dylan-mode-for-emacs-21-and-later)
      (progn
        (make-local-variable 'after-change-function)
        (setq after-change-function nil))
@@ -1104,23 +1111,17 @@ Returns t unless search stops due to end of buffer."
   (make-local-variable 'after-change-function)
   (setq after-change-function nil)
   (setq indent-tabs-mode nil)
+  (if dylan-mode-for-emacs-21-and-later
+      (progn
+	(set-syntax-table dylan-indent-syntax-table)
+	(dylan-set-up-syntax-tables)
+	(make-local-variable 'font-lock-defaults)
+	(setq font-lock-defaults
+	      '(dylan-font-lock-keywords nil nil nil))))
   (run-hooks 'dylan-mode-hook)
   ;; This is the table the user should always see, even though the indent and
   ;; font lock code both reset it temporarily.
   (set-syntax-table dylan-mode-syntax-table))
-
-(defun dylan-install-font-lock-defaults ()
-  "Fix things for GNU emacs 21 by properly setting up font-lock-defaults."
-  (interactive)
-  (if dylan-fix-for-gnu-21
-     (progn
-       (set-syntax-table dylan-indent-syntax-table)
-       (dylan-set-up-syntax-tables)
-       (setq font-lock-defaults 
-             (list dylan-font-lock-keywords nil nil nil))
-       (make-variable-buffer-local 'font-lock-defaults)
-       (font-lock-fontify-buffer)
-       (font-lock-mode t))))
 
 (defun dylan-mode ()
   "Major mode for editing dylan programs.
@@ -1150,10 +1151,11 @@ declarations.  This special feature may be turned off by setting
 'dylan-outdent-arrows' to nil.
 \\{dylan-mode-map}"
   (interactive)
+  (kill-all-local-variables)
   (abbrev-mode 1)
   (use-local-map dylan-mode-map)
   (setq major-mode 'dylan-mode)
-  (setq mode-name "dylan")
+  (setq mode-name "Dylan")
   (setq local-abbrev-table dylan-mode-abbrev-table)
   (dylan-mode-variables))
 
@@ -1187,19 +1189,19 @@ declarations.  This special feature may be turned off by setting
 		    nil
 		  (setq font-lock-keywords dylan-font-lock-keywords)
 		  ;; This is to handle fontification updates while editing:
-          (if (not dylan-fix-for-gnu-21)
+          (if (not dylan-mode-for-emacs-21-and-later)
               (progn
-                (make-variable-buffer-local 'old-after-change-function)
+                (make-local-variable 'old-after-change-function)
                 (setq old-after-change-function
                       'font-lock-after-change-function)
-                (make-variable-buffer-local 'after-change-function)
+                (make-local-variable 'after-change-function)
                 (setq after-change-function 'dm-after-change-function))
               (setq after-change-functions 
                     (cons 'dm-after-change-function after-change-functions)))
-		  (make-variable-buffer-local 'old-after-change-function)
+		  (make-local-variable 'old-after-change-function)
 		  (setq old-after-change-function
 			'font-lock-after-change-function)
-		  (make-variable-buffer-local 'after-change-function)
+		  (make-local-variable 'after-change-function)
 		  (setq after-change-function 'dm-after-change-function)
 		  ;; And this is for the initial processing of the file:
 		  (set-syntax-table dylan-indent-syntax-table)
@@ -1218,9 +1220,9 @@ declarations.  This special feature may be turned off by setting
 	;;    (if (not (eq major-mode 'dylan-mode))
 	;;	nil
 	;;      (setq font-lock-keywords dylan-font-lock-keywords)
-	;;      (make-variable-buffer-local 'old-after-change-function)
+	;;      (make-local-variable 'old-after-change-function)
 	;;      (setq old-after-change-function 'font-lock-after-change-function)
-	;;      (make-variable-buffer-local 'after-change-function)
+	;;      (make-local-variable 'after-change-function)
 	;;      (setq after-change-function 'dm-after-change-function)))))))
 
 (provide 'dylan-mode)
