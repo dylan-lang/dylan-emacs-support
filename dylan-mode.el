@@ -1182,6 +1182,18 @@ Returns t unless search stops due to end of buffer."
     (make-local-variable 'font-lock-syntax-table)
     (setq font-lock-syntax-table dylan-indent-syntax-table))
   (set-syntax-table dylan-indent-syntax-table)
+  
+  ;; font-lock-dont-widen is a feature in the post-21.3 version of emacs, so
+  ;; make sure it exists before attempting to use it. As I am writing this,
+  ;; 21.3 is the current version and this variable only exists in development
+  ;; builds. Unfortunately, if it doesn't exist, we don't get proper
+  ;; suppression of interchange file header fontification, but defining our
+  ;; own at least makes dylan-font-lock-fontify-region silently overlook this
+  ;; rather than fail with an "undefined variable" error.
+  (unless (boundp 'font-lock-dont-widen)
+    (make-local-variable 'font-lock-dont-widen)
+    (setq font-lock-dont-widen nil))
+  
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'dylan-indent-line)
   (make-local-variable 'comment-start)
