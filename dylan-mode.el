@@ -384,7 +384,7 @@ parens will be matched between each list element.")
 		    dyl-keyword-pattern
 		    separator-word-pattern
 		    "[-_a-zA-Z?!*@<>$%]+:"
-		    (list "#\"[^\"]*\"?" 0 'font-lock-string-face t)
+		    (list "#?\"[^\n\"]*\"?" 0 'font-lock-string-face t)
 		    "#rest\\|#key\\|#all-keys\\|#next"
 		    dyl-other-pattern
 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
