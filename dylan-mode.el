@@ -1105,6 +1105,7 @@ Returns t unless search stops due to end of buffer."
   (setq local-abbrev-table dylan-mode-abbrev-table)
   (make-local-variable 'after-change-function)
   (setq after-change-function nil)
+  (setq indent-tabs-mode nil)
   (run-hooks 'dylan-mode-hook)
   ;; This is the table the user should always see, even though the indent and
   ;; font lock code both reset it temporarily.
