@@ -169,12 +169,12 @@
 require special definitions to be added to 'dyl-start-expressions'.")
 
 (defvar dyl-simple-definition-words
-  '("constant" "variable" "generic" "C-pointer-type")
+  '("constant" "variable" "generic" "C-pointer-type" "table")
   "Words which introduce simple definitions (without implicit bodies).");
 
 (defvar dyl-statement-words
   '("if" "block" "begin" "method" "case" "for" "select" "when" "unless"
-    "until" "while")
+    "until" "while" "iterate" "profiling")
   "Words which begin statements with implicit bodies.")
 
 ;; Names beginning "with-" are commonly used as statement macros.
@@ -372,6 +372,8 @@ parens will be matched between each list element.")
 	      '("unless[ \t\n]*" "")
 	      '("until[ \t\n]*" "")
 	      '("while[ \t\n]*" "")
+	      '("iterate[ \t\n]+\\w+[ \t\n]*" "")
+	      '("profiling[ \t\n]*" "")	      
 	      ;; special patterns for "define method" which is funky
 	      '("\\(define\\([ \t]+\\w+\\)*[ \t]+\\)?\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*" "[ \t\n]*=>[^;)]+;?")
 	      '("\\(define\\([ \t]+\\w+\\)*[ \t]+\\)?\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*" "[ \t\n]*;")
