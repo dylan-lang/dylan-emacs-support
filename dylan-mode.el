@@ -1,7 +1,7 @@
 ;;; dylan-mode.el Implements indentation and basic support for Dylan (tm)
 ;;; programs.
 
-;;; Copyright (C) 1994, 1995  Carnegie Mellon University
+;;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
 ;;;
 ;;; Bug reports, questions, comments, and suggestions should be sent by
 ;;; E-mail to the Internet address "gwydion-bugs@cs.cmu.edu".
@@ -32,7 +32,8 @@
   "* Should font-lock mode try to distinguish all normal function calls?")
 (defvar dylan-highlight-defsites t
   "* Should font-lock mode try to distinguish all variable bindings?")
-(defvar dylan-no-highlights-in-header t
+(defvar dylan-no-highlights-in-header (and (boundp 'emacs-minor-version)
+					   (> emacs-minor-version 30))
   "* Should font-lock ignore keywords in the header.  (Experimental -- may
   not work on all EMACSen.")
 
@@ -127,6 +128,9 @@
 ;;;     Added the dylan-no-highlights-in-header variable (enabled by
 ;;;     default) which keeps keywords in headers from being treated
 ;;;     specially.
+;;;   adjusted 12/6/96 by David N. Gray to set dylan-no-highlights-in-header
+;;;     only for Emacs 19.31 or later
+;;;   Modified 7/19/98 by David N. Gray to indent bodies of "with-..." macros.
 
 ;;; Known limitations:
 ;;;   Limited support for block (i.e. "/*") comments
@@ -166,9 +170,12 @@ require special definitions to be added to 'dyl-start-expressions'.")
   "Words which introduce simple definitions (without implicit bodies).");
 
 (defvar dyl-statement-words
-  '("if" "block" "begin" "method" "case" "for" "select" "unless" "until"
-    "while")
+  '("if" "block" "begin" "method" "case" "for" "select" "when" "unless"
+    "until" "while")
   "Words which begin statements with implicit bodies.")
+
+;; Names beginning "with-" are commonly used as statement macros.
+(defvar dyl-statement-prefixes "\\|\\bwith-[-_a-zA-Z?!*@<>$%]+")
 
 (defvar dyl-separator-keywords
   '("finally" "exception" "cleanup" "else" "elseif")
@@ -330,10 +337,12 @@ parens will be matched between each list element.")
 	;; we disallow newlines in "define foo" patterns because it
 	;; allows the actual keword to be confused for a qualifier if
 	;; another definition follows closely.
-	(apply 'make-pattern
+	(concat
+	 (apply 'make-pattern
 	       (concat "define\\([ \t]+\\w+\\)*[ \t]+"
 		       dyl-definition-pattern)
-	       dyl-statement-words))
+	       dyl-statement-words)
+	 dyl-statement-prefixes))
   (setq dyl-end-keyword-pattern
 	; we intentionally disallow newlines in "end foo" constructs,
 	; because doing so makes it very difficult to deal with the
@@ -341,6 +350,7 @@ parens will be matched between each list element.")
 	(concat "\\bend\\b[ \t]*\\("	
 		(apply 'make-pattern
 		       (append dyl-definition-words dyl-statement-words))
+		dyl-statement-prefixes
 		"\\)?"))
   (setq separator-word-pattern (apply 'make-pattern dyl-separator-keywords))
   (setq dyl-simple-definition-pattern
@@ -355,6 +365,7 @@ parens will be matched between each list element.")
 	      '("block[ \t\n]*" "")
 	      '("for[ \t\n]*" "")
 	      '("select[ \t\n]*" "")
+	      '("when[ \t\n]*" "")
 	      '("unless[ \t\n]*" "")
 	      '("until[ \t\n]*" "")
 	      '("while[ \t\n]*" "")
@@ -368,7 +379,12 @@ parens will be matched between each list element.")
 			    dyl-parameterized-definition-pattern
 			    "[ \t\n]+[^\( ]*[ \t\n]*")
 		    "")
-	      "begin" "case" "[[({]"))
+	      "begin" "case"
+	      ;; Since we don't know the syntax of all the "with-" macros,
+	      ;; just assume that the user has already split the line at
+	      ;; the end of the header.
+	      "with-[^\n]*"
+	      "[[({]"))
   (setq find-keyword-pattern (concat "[][)(}{\"']\\|\\bdefine\\b\\|"
 				     dyl-end-keyword-pattern 
 				     "\\|" dyl-keyword-pattern))
@@ -384,7 +400,7 @@ parens will be matched between each list element.")
 		    dyl-keyword-pattern
 		    separator-word-pattern
 		    "[-_a-zA-Z?!*@<>$%]+:"
-		    (list "#?\"[^\n\"]*\"?" 0 'font-lock-string-face t)
+		    (list "#\"[^\"]*\"?" 0 'font-lock-string-face t)
 		    "#rest\\|#key\\|#all-keys\\|#next"
 		    dyl-other-pattern
 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
@@ -460,8 +476,10 @@ including parenthesized expressions.")
   (save-excursion
     (goto-char 1)
     (or
-     (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n+"
-			nil t)
+     (and (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n+"
+			     nil t)
+	  ;; in Emacs 18, the search just returns `t', not the point.
+	  (point))
      0)))
 
 ;; The next two routines are organized bletcherously because gnu-emacs
@@ -1024,12 +1042,15 @@ Returns t unless search stops due to end of buffer."
     (dylan-skip-whitespace-forward)
     (end-of-line)
     (let ((next-begin
-	   (re-search-forward dylan-defun-regexp nil 'move 1)))
+	   (and (re-search-forward dylan-defun-regexp nil 'move 1)
+		;; in Emacs 18, the search just returns `t', not the point.
+		(point))))
       (if next-begin
 	  (progn
 	    (beginning-of-line)
 	    (let ((last-end
-		   (re-search-backward dylan-defun-end-regexp nil 'move 1)))
+		   (and (re-search-backward dylan-defun-end-regexp nil 'move 1)
+			(point))))
 	      (if (and last-end
 		       (< last-end next-begin)
 		       (> last-end old))
@@ -1177,3 +1198,7 @@ declarations.  This special feature may be turned off by setting
 	      (setq after-change-function 'dm-after-change-function)))))))
 
 (provide 'dylan-mode)
+------------------------------8<------------------------------
+
+
+
