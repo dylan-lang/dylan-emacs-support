@@ -1198,7 +1198,3 @@ declarations.  This special feature may be turned off by setting
 	      (setq after-change-function 'dm-after-change-function)))))))
 
 (provide 'dylan-mode)
-------------------------------8<------------------------------
-
-
-
