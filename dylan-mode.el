@@ -172,8 +172,22 @@
   "Words which introduce trickier definitions like 'define method'.  These
 require special definitions to be added to 'dyl-start-expressions'.")
 
+(defvar dyl-constant-definition-words
+  '("constant")
+  "Words which introduce module constant definitions.");
+
+(defvar dyl-variable-definition-words
+  '("variable")
+  "Words which introduce module variable definitions.");
+
+(defvar dyl-other-simple-definition-words
+  '("generic" "domain" "C-pointer-type" "table")
+  "Other words which introduce simple definitions (without implicit bodies).");
+
 (defvar dyl-simple-definition-words
-  '("constant" "variable" "generic" "C-pointer-type" "table")
+  (append dyl-constant-definition-words
+ 	  dyl-variable-definition-words
+ 	  dyl-other-simple-definition-words)
   "Words which introduce simple definitions (without implicit bodies).");
 
 (defvar dyl-statement-words
@@ -312,6 +326,9 @@ parens will be matched between each list element.")
 (defvar dyl-parameterized-definition-pattern nil)
 (defvar dyl-end-keyword-pattern nil)
 (defvar separator-word-pattern nil)
+(defvar dyl-constant-definition-pattern nil)
+(defvar dyl-variable-definition-pattern nil)
+(defvar dyl-other-simple-definition-pattern nil)
 (defvar dyl-simple-definition-pattern nil)
 (defvar dyl-other-pattern nil)
 (defvar dyl-keyword-pattern nil)
@@ -354,6 +371,12 @@ parens will be matched between each list element.")
 		dyl-statement-prefixes
 		"\\)?"))
   (setq separator-word-pattern (apply 'make-pattern dyl-separator-keywords))
+  (setq dyl-constant-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-constant-definition-words) "\\)"))
+  (setq dyl-variable-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-variable-definition-words) "\\)"))
+  (setq dyl-other-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-other-simple-definition-words) "\\)"))
   (setq dyl-simple-definition-pattern
 	(concat "\\(" (apply 'make-pattern dyl-simple-definition-words) "\\)"))
   (setq dyl-other-pattern
@@ -406,14 +429,18 @@ parens will be matched between each list element.")
 		    (list "#\"[^\"]*\"?" 0 'font-lock-string-face t)
 		    "#rest\\|#key\\|#all-keys\\|#next"
 		    dyl-other-pattern
-		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
-				  dyl-simple-definition-pattern
-				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			  4 'font-lock-function-name-face)
+ 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
+ 				  "\\(" dyl-constant-definition-pattern "\\|"
+ 				  dyl-variable-definition-pattern "\\|"
+ 				  dyl-other-simple-definition-pattern "\\)"
+ 				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+ 			  '(7 (cond ((match-beginning 4) 'font-lock-constant-face)
+				    ((match-beginning 5) 'font-lock-variable-name-face)
+				    (t 'font-lock-function-name-face))))
 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-definition-pattern "\\)")
 			  1 'font-lock-keyword-face t)
-	    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
+		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-definition-pattern
 				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
 			  4 'font-lock-function-name-face)
