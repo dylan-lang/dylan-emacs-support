@@ -33,7 +33,7 @@
 (defvar dylan-highlight-defsites t
   "* Should font-lock mode try to distinguish all variable bindings?")
 
-;;; Version 1.14
+;;; Version 1.15
 ;;; History:
 ;;;   version 0.1: Quick one day hack -- appears to be useful
 ;;;   version 0.2: Added font lock support
@@ -113,6 +113,12 @@
 ;;;     eliminates the need to use unportable constructs to modify the
 ;;;     behavior of font-lock mode -- thus, fontification should now be
 ;;;     reliable on modern EMACSen.
+;;;   version 1.15
+;;;     Fixed syntax table bugs which primarily affected gnu-emacs
+;;;     19.[23] users.  
+;;;     Optimized "beyond-dylan-header".  
+;;;     Removed new-lines from various font-lock regexps so that
+;;;     adjacent declarations aren't glommed together.
 
 ;;; Known limitations:
 ;;;   Limited support for block (i.e. "/*") comments
@@ -223,9 +229,22 @@ no equivalent to '\b' for identifiers.")
       (modify-syntax-entry ?: "_" dylan-mode-syntax-table)
       (modify-syntax-entry ?' "\"" dylan-mode-syntax-table)
       (modify-syntax-entry ?\f " " dylan-mode-syntax-table)
+      (setq dylan-indent-syntax-table
+	    (copy-syntax-table dylan-mode-syntax-table))
+      (modify-syntax-entry ?_ "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?- "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?< "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?> "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?? "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?! "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?= "w" dylan-indent-syntax-table)
+      (modify-syntax-entry ?: "w" dylan-indent-syntax-table)
       ; different emacs version handle comments differently
       (cond ((or (and (boundp 'running-lemacs) running-lemacs)
 		 (string-match "XEmacs" emacs-version))
+	     (modify-syntax-entry ?\n "> b" dylan-indent-syntax-table)
+	     (modify-syntax-entry ?/ "w 1456" dylan-indent-syntax-table)
+	     (modify-syntax-entry ?\* "w 23" dylan-indent-syntax-table)
 	     (modify-syntax-entry ?\n "> b" dylan-mode-syntax-table)
 	     (modify-syntax-entry ?/ "_ 1456" dylan-mode-syntax-table)
 	     (modify-syntax-entry ?\* "_ 23" dylan-mode-syntax-table))
@@ -233,23 +252,16 @@ no equivalent to '\b' for identifiers.")
 	     ; emacs 18 doesn't have sufficient support to grok "//" comments
 	     ; so we must (regretfully) leave them out
 	     (modify-syntax-entry ?/ "_ 14" dylan-mode-syntax-table)
-	     (modify-syntax-entry ?\* "_ 23" dylan-mode-syntax-table))
+	     (modify-syntax-entry ?\* "_ 23" dylan-mode-syntax-table)
+	     (modify-syntax-entry ?/ "w 14" dylan-indent-syntax-table)
+	     (modify-syntax-entry ?\* "w 23" dylan-indent-syntax-table))
 	    (t
-	     (modify-syntax-entry ?\n "> b" dylan-mode-syntax-table)
-	     (modify-syntax-entry ?/ "_ 1456b2" dylan-mode-syntax-table)
-	     (modify-syntax-entry ?\* "_ 23" dylan-mode-syntax-table)))
-      (setq dylan-indent-syntax-table
-	    (copy-syntax-table dylan-mode-syntax-table))
-      (modify-syntax-entry ?_ "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?- "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?/ "w 1456" dylan-mode-syntax-table)
-      (modify-syntax-entry ?\* "w 23" dylan-mode-syntax-table)
-      (modify-syntax-entry ?< "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?> "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?? "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?! "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?= "w" dylan-indent-syntax-table)
-      (modify-syntax-entry ?: "w" dylan-indent-syntax-table)))
+	     (modify-syntax-entry ?\n ">" dylan-mode-syntax-table)
+	     (modify-syntax-entry ?/ "_ 124" dylan-mode-syntax-table)
+	     (modify-syntax-entry ?\* "_ 23b" dylan-mode-syntax-table)
+	     (modify-syntax-entry ?\n ">" dylan-indent-syntax-table)
+	     (modify-syntax-entry ?/ "w 124" dylan-indent-syntax-table)
+	     (modify-syntax-entry ?\* "w 23b" dylan-indent-syntax-table)))))
 
 ;;; Ugly code which you don't want to look at.
 (defvar dylan-comment-pattern "//.*$"
@@ -366,14 +378,14 @@ parens will be matched between each list element.")
 		    "[-_a-zA-Z?!*@<>$%]+:"
 		    "#rest\\|#key\\|#all-keys\\|#next"
 		    dyl-other-pattern
-		    (list (concat "\\b\\(define\\([ \t\n]+\\w+\\)*[ \t]+"
+		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-simple-definition-pattern
 				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
 			  4 'font-lock-function-name-face)
-		    (list (concat "\\b\\(define\\([ \t\n]+\\w+\\)*[ \t]+"
+		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-definition-pattern "\\)")
 			  1 'font-lock-keyword-face t)
-		    (list (concat "\\b\\(define\\([ \t\n]+\\w+\\)*[ \t]+"
+		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-definition-pattern
 				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
 			  4 'font-lock-function-name-face)
@@ -417,12 +429,13 @@ including parenthesized expressions.")
 
 (defun beyond-dylan-header ()
   (save-excursion
-    (save-restriction
-      (beginning-of-line 2)
-      (narrow-to-region 1 (point))
+    (let ((dot (point))
+	  (header-end nil))
       (goto-char 1)
-      (not (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n*\\'"
-			      nil t)))))
+      (setq header-end
+	    (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n+"
+			       nil t))
+      (and header-end (>= dot header-end)))))
 
 ;; The next two routines are organized bletcherously because gnu-emacs
 ;; does no tail call optimization.  We used to recursively call
