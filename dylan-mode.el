@@ -34,8 +34,7 @@
   "* Should font-lock mode try to distinguish all normal function calls?")
 (defvar dylan-highlight-defsites t
   "* Should font-lock mode try to distinguish all variable bindings?")
-(defvar dylan-no-highlights-in-header (and (boundp 'emacs-minor-version)
-					   (> emacs-minor-version 30))
+(defvar dylan-no-highlights-in-header (not (string-lessp emacs-version "19.31"))
   "* Should font-lock ignore keywords in the header.  (Experimental -- may
   not work on all EMACSen.")
 (defvar dylan-mode-for-emacs-21-and-later (not (string-lessp emacs-version "20"))
@@ -166,29 +165,30 @@
     "C-callable-wrapper")
   "Words which introduce simple named definitions like 'define library'.")
 
-(defvar dyl-parameterized-definition-words
-  '("method" "class" "function" "C-subtype" "C-mapped-subtype"
-    "C-variable" "C-address")
+(defvar dyl-type-parameterized-definition-words
+  '("class" "C-subtype" "C-mapped-subtype")
+  "Words which introduce type definitions like 'define class'. These are
+also 'parameterized' like 'define method' and are appended to 
+`dyl-other-parameterized-definition-words'.")
+
+(defvar dyl-other-parameterized-definition-words
+  '("method" "function" "C-variable" "C-address")
   "Words which introduce trickier definitions like 'define method'.  These
-require special definitions to be added to 'dyl-start-expressions'.")
+require special definitions to be added to `dyl-start-expressions'.")
 
-(defvar dyl-constant-definition-words
+(defvar dyl-constant-simple-definition-words
   '("constant")
-  "Words which introduce module constant definitions.");
+  "Words which introduce module constant definitions. These must also be
+simple definitions and are appended to `dyl-other-simple-definition-words'.")
 
-(defvar dyl-variable-definition-words
+(defvar dyl-variable-simple-definition-words
   '("variable")
-  "Words which introduce module variable definitions.");
+  "Words which introduce module variable definitions. These must also be
+simple definitions and are appended to `dyl-other-simple-definition-words'.")
 
 (defvar dyl-other-simple-definition-words
   '("generic" "domain" "C-pointer-type" "table")
-  "Other words which introduce simple definitions (without implicit bodies).");
-
-(defvar dyl-simple-definition-words
-  (append dyl-constant-definition-words
- 	  dyl-variable-definition-words
- 	  dyl-other-simple-definition-words)
-  "Words which introduce simple definitions (without implicit bodies).");
+  "Other words which introduce simple definitions (without implicit bodies).")
 
 (defvar dyl-statement-words
   '("if" "block" "begin" "method" "case" "for" "select" "when" "unless"
@@ -319,15 +319,19 @@ parens will be matched between each list element.")
 (defvar dylan-font-lock-keywords nil
   "Value to which font-lock-keywords should be set when in dylan-mode")
 
+(defvar dyl-other-definition-words nil)
 (defvar dyl-definition-words nil)
+(defvar dyl-type-definition-pattern nil)
+(defvar dyl-other-definition-pattern nil)
 (defvar dyl-definition-pattern nil)
 (defvar dyl-named-definition-pattern nil)
 (defvar dyl-unnamed-definition-pattern nil)
+(defvar dyl-type-parameterized-definition-pattern nil)
 (defvar dyl-parameterized-definition-pattern nil)
 (defvar dyl-end-keyword-pattern nil)
 (defvar separator-word-pattern nil)
-(defvar dyl-constant-definition-pattern nil)
-(defvar dyl-variable-definition-pattern nil)
+(defvar dyl-constant-simple-definition-pattern nil)
+(defvar dyl-variable-simple-definition-pattern nil)
 (defvar dyl-other-simple-definition-pattern nil)
 (defvar dyl-simple-definition-pattern nil)
 (defvar dyl-other-pattern nil)
@@ -336,20 +340,29 @@ parens will be matched between each list element.")
 (defvar dylan-beginning-of-form-pattern nil)
 
 (defun set-dylan-patterns ()
+  (setq dyl-other-definition-words 
+	(append dyl-unnamed-definition-words
+		dyl-named-definition-words
+		dyl-other-parameterized-definition-words))
   (setq dyl-definition-words 
-	(append dyl-unnamed-definition-words dyl-named-definition-words
-		dyl-parameterized-definition-words))
+	(append dyl-type-parameterized-definition-words
+		dyl-other-definition-words))
+  (setq dyl-type-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-type-parameterized-definition-words) "\\)"))
+  (setq dyl-other-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-other-definition-words) "\\)"))
   (setq dyl-definition-pattern
 	(concat "\\(" (apply 'make-pattern dyl-definition-words) "\\)"))
   (setq dyl-named-definition-pattern
 	(concat "\\(" (apply 'make-pattern dyl-named-definition-words) "\\)"))
   (setq dyl-unnamed-definition-pattern
-	(concat "\\("
-		(apply 'make-pattern dyl-unnamed-definition-words)
-		"\\)"))
+	(concat "\\(" (apply 'make-pattern dyl-unnamed-definition-words) "\\)"))
+  (setq dyl-type-parameterized-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-type-parameterized-definition-words) "\\)"))
   (setq dyl-parameterized-definition-pattern
 	(concat "\\("
-		(apply 'make-pattern dyl-parameterized-definition-words)
+		(apply 'make-pattern (append dyl-type-parameterized-definition-words
+					     dyl-other-parameterized-definition-words))
 		"\\)"))
   (setq dyl-keyword-pattern
 	;; we disallow newlines in "define foo" patterns because it
@@ -365,20 +378,23 @@ parens will be matched between each list element.")
 	; we intentionally disallow newlines in "end foo" constructs,
 	; because doing so makes it very difficult to deal with the
 	; keyword "end" in comments.
-	(concat "\\bend\\b[ \t]*\\("	
+	(concat "\\bend\\b[ \t]*\\("
 		(apply 'make-pattern
 		       (append dyl-definition-words dyl-statement-words))
 		dyl-statement-prefixes
 		"\\)?"))
   (setq separator-word-pattern (apply 'make-pattern dyl-separator-keywords))
-  (setq dyl-constant-definition-pattern
-	(concat "\\(" (apply 'make-pattern dyl-constant-definition-words) "\\)"))
-  (setq dyl-variable-definition-pattern
-	(concat "\\(" (apply 'make-pattern dyl-variable-definition-words) "\\)"))
+  (setq dyl-constant-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-constant-simple-definition-words) "\\)"))
+  (setq dyl-variable-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-variable-simple-definition-words) "\\)"))
   (setq dyl-other-simple-definition-pattern
 	(concat "\\(" (apply 'make-pattern dyl-other-simple-definition-words) "\\)"))
   (setq dyl-simple-definition-pattern
-	(concat "\\(" (apply 'make-pattern dyl-simple-definition-words) "\\)"))
+	(concat "\\(" (apply 'make-pattern
+			     (append dyl-constant-simple-definition-words
+				     dyl-variable-simple-definition-words
+				     dyl-other-simple-definition-words)) "\\)"))
   (setq dyl-other-pattern
 	(apply 'make-pattern
 	       (concat "define\\([ \t\n]+\\w+\\)*[ \t\n]+"
@@ -430,8 +446,8 @@ parens will be matched between each list element.")
 		    "#rest\\|#key\\|#all-keys\\|#next"
 		    dyl-other-pattern
  		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
- 				  "\\(" dyl-constant-definition-pattern "\\|"
- 				  dyl-variable-definition-pattern "\\|"
+ 				  "\\(" dyl-constant-simple-definition-pattern "\\|"
+ 				  dyl-variable-simple-definition-pattern "\\|"
  				  dyl-other-simple-definition-pattern "\\)"
  				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
  			  '(7 (cond ((match-beginning 4) 'font-lock-constant-face)
@@ -441,12 +457,17 @@ parens will be matched between each list element.")
 				  dyl-definition-pattern "\\)")
 			  1 'font-lock-keyword-face t)
 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
-				  dyl-definition-pattern
+				  "\\(" dyl-type-definition-pattern "\\|"
+				  dyl-other-definition-pattern "\\)"
 				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			  4 'font-lock-function-name-face)
+			  '(6 (cond ((match-beginning 4) 'font-lock-type-face)
+				    (t 'font-lock-function-name-face))))
 		    '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
-		    '("\\bend[ \t]+\\w*\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)" 1
-		      font-lock-function-name-face)))
+		    (list (concat "\\bend[ \t]+\\("
+				  dyl-type-definition-pattern
+				  "\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			  '(3 (cond ((match-beginning 2) 'font-lock-type-face)
+				    (t 'font-lock-function-name-face))))))
 	(if dylan-no-highlights-in-header
 	    (setq dylan-font-lock-keywords
 		  (append dylan-font-lock-keywords
@@ -1109,6 +1130,49 @@ Returns t unless search stops due to end of buffer."
   (dylan-beginning-of-defun)
   )
 
+
+;; Dylan mode region fontification. Skips fontification of interchange
+;; file headers and calls the default function to fontify the
+;; body. This is particularly important since headers can contain
+;; apostrophes, for example, that would otherwise confuse the
+;; first-pass, character syntax-based fontification and cause it to
+;; treat code in the file body as the interior of a character literal.
+;;
+;; All fontification is funneled through here, e.g.,
+;; font-lock-fontify-buffer calls this with beg/end set to the
+;; start/end of the buffer.
+;;
+;; Suppressing fontification of the header is accomplished by
+;; narrowing the buffer so the default fontification code doesn't see
+;; the header at all.
+;;
+;; To Do: Consider adding code to fontify the header using more
+;; appropriate rules than the body fontification. That would probably
+;; involve establishing a different syntax table to avoid the default
+;; fontification of character and string literals, and comments.
+(defun dylan-font-lock-fontify-region (beg end loudly)
+  (let ((header-end (dylan-header-end)))
+    ;; If the region overlaps the header, "fontify" the header by
+    ;; removing fontification; without this, leftover face information
+    ;; can be left behind. Consider replacing this with some kind of
+    ;; appropriate header fontification function.
+    (when (< beg header-end)
+      ;;(message "Unfontifying header %d - %d..." beg header-end);debugging
+      (font-lock-unfontify-region beg header-end))
+    ;; If the region extends beyond the header, then fontify the part
+    ;; that overlaps the body as code.
+    (when (> end header-end)
+      (let ((beg (max beg header-end))
+	    (save-font-lock-dont-widen font-lock-dont-widen))
+	(save-restriction
+	  ;;(message "Fontifying %d - %d (header end = %d)..." beg end header-end);debugging
+	  (narrow-to-region beg (point-max))
+	  (setq font-lock-dont-widen t)
+	  (unwind-protect
+	      (font-lock-default-fontify-region beg end loudly)
+	    (setq font-lock-dont-widen save-font-lock-dont-widen)))))))
+
+
 (defun dylan-mode-variables ()
   ;; Use value appropriate for font-lock-mode now.  Reset after running hooks.
   (if (fboundp 'font-lock-mode)
@@ -1144,7 +1208,10 @@ Returns t unless search stops due to end of buffer."
 	(dylan-set-up-syntax-tables)
 	(make-local-variable 'font-lock-defaults)
 	(setq font-lock-defaults
-	      '(dylan-font-lock-keywords nil nil nil))))
+	      '(dylan-font-lock-keywords
+		nil nil nil nil
+		(font-lock-fontify-region-function
+		 . dylan-font-lock-fontify-region)))))
   (run-hooks 'dylan-mode-hook)
   ;; This is the table the user should always see, even though the indent and
   ;; font lock code both reset it temporarily.
@@ -1155,7 +1222,7 @@ Returns t unless search stops due to end of buffer."
 
 Tab and newline do dylan specific indentation.
 '//' comments are handled completely and '/*' comments marginally.
-Supports font-lock-mode under emacs 19 and lucid emacs.
+Supports font-lock-mode under emacs 19 and later, and lucid emacs.
 
 The following bindings are available traversing and editing dylan code:
   \\[dylan-beginning-of-form]
