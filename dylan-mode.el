@@ -3,8 +3,9 @@
 
 ;;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
 ;;;
-;;; Bug reports, questions, comments, and suggestions should be sent by
-;;; E-mail to the Internet address "gwydion-bugs@cs.cmu.edu".
+;;; Bug reports should be sent to <gd-bugs@gwydiondylan.org>; questions,
+;;; comments and suggestions are welcome at <gd-hackers@gwydiondylan.org>.
+;;; Also, see http://www.gwydiondylan.org/ for updates and documentation. 
 ;;;
 ;;; Author: Robert Stockton (rgs@cs.cmu.edu)
 ;;;
