@@ -182,7 +182,7 @@ require special definitions to be added to 'dyl-start-expressions'.")
 (defvar dyl-statement-prefixes "\\|\\bwith-[-_a-zA-Z?!*@<>$%]+")
 
 (defvar dyl-separator-keywords
-  '("finally" "exception" "cleanup" "else" "elseif")
+  '("finally" "exception" "cleanup" "else" "elseif" "afterwards")
   "Patterns act as separators in compound statements.  This may include any
 general pattern which must be indented specially.")
 
@@ -416,7 +416,7 @@ parens will be matched between each list element.")
 		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-definition-pattern "\\)")
 			  1 'font-lock-keyword-face t)
-		    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
+	    (list (concat "\\b\\(define\\([ \t]+\\w+\\)*[ \t]+"
 				  dyl-definition-pattern
 				  "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
 			  4 'font-lock-function-name-face)
