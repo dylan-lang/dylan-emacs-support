@@ -1,0 +1,9 @@
+Dylan-mode elisp files
+----------------------
+
+To enable auto-loading of dylan-mode upon loading a .dylan file, add these
+lines to your .emacs file:
+
+(setq load-path (cons "/usr/lib/dylan/elisp" load-path))
+(autoload 'dylan-mode "dylan-mode" "Dylan-mode" t)
+(setq auto-mode-alist (cons '("\\.dylan\\'" . dylan-mode) auto-mode-alist))
