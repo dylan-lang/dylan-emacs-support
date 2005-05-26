@@ -195,8 +195,9 @@ simple definitions and are appended to `dyl-other-simple-definition-words'.")
     "until" "while" "iterate" "profiling")
   "Words which begin statements with implicit bodies.")
 
-;; Names beginning "with-" are commonly used as statement macros.
-(defvar dyl-statement-prefixes "\\|\\bwith-[-_a-zA-Z?!*@<>$%]+")
+;; Names beginning "with-" and "without-" are commonly used as statement macros.
+(defvar dyl-with-statement-prefix "with\\(out\\)\\{0,1\\}-")
+(defvar dyl-statement-prefixes (concat "\\|\\b" dyl-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
 
 (defvar dyl-separator-keywords
   '("finally" "exception" "cleanup" "else" "elseif" "afterwards")
@@ -422,10 +423,10 @@ parens will be matched between each list element.")
 			    "[ \t\n]+[^\( ]*[ \t\n]*")
 		    "")
 	      "begin" "case"
-	      ;; Since we don't know the syntax of all the "with-" macros,
+	      ;; Since we don't know the syntax of all the "with(out)-" macros,
 	      ;; just assume that the user has already split the line at
 	      ;; the end of the header.
-	      "with-[^\n]*"
+	      (concat dyl-with-statement-prefix "[^\n]*")
 	      "[[({]"))
   (setq find-keyword-pattern (concat "[][)(}{\"']\\|\\bdefine\\b\\|"
 				     dyl-end-keyword-pattern 
@@ -883,7 +884,8 @@ at the current point."
 	(delete-horizontal-space)
 	(let* ((body-start)		; beginning of "body" of enclosing
 					; compound statement
-	       (was-paren)		; t if in parenthesized expr.
+	       (in-paren)		; t if in parenthesized expr.
+	       (paren-indent 0)		; indentation of first non-space after open paren.
 	       (in-case)		; t if in "case" or "select" stmt
 	       (block-indent		; indentation of enclosing comp. stmt
 		(save-excursion
@@ -892,7 +894,13 @@ at the current point."
 		    (and (looking-at "method")
 			 (look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
 			 (goto-char (match-beginning 0)))
-		    (and (looking-at "[[({]") (setq was-paren t))
+		    (and (looking-at "[[({]")
+			 (setq in-paren t)
+			 (save-excursion
+			   (let ((dot (point)))
+			     (forward-char)
+			     (re-search-forward "[^ \t]")
+			     (setq paren-indent (- (point) dot 1)))))
 		    (and (looking-at "select\\|case") (setq in-case t))
 		    (setq body-start (find-body-start dyl-start-expressions))
 		    (+ (current-column) extra-indent))))
@@ -905,15 +913,15 @@ at the current point."
 		      ((looking-at dyl-end-keyword-pattern) block-indent)
 		      ;; parenthesized expressions (separated by commas)
 		      (in-case
-		       ; if the line is blank, we pick an arbitrary
-		       ; indentation for now.  We judge the "proper"
-		       ; indentation by how the statement is punctuated once
-		       ; it is finished
+		       ;; if the line is blank, we pick an arbitrary
+		       ;; indentation for now.  We judge the "proper"
+		       ;; indentation by how the statement is punctuated once
+		       ;; it is finished
 		       (cond ((looking-at "^$")
 			      (if (save-excursion
-				    ; Look for end of prev statement.  This
-				    ; is hairier than it should be because
-				    ; we may be at the end of the buffer
+				    ;; Look for end of prev statement.  This
+				    ;; is hairier than it should be because
+				    ;; we may be at the end of the buffer
 				    (let ((dot (point)))
 				      (forward-dylan-statement t)
 				      (dylan-skip-whitespace-backward)
@@ -935,9 +943,9 @@ at the current point."
 			     (t (+ block-indent dylan-indent dylan-indent
 				   (indent-if-continuation "," (point)
 							   body-start t)))))
-		      (was-paren (+ block-indent 1
-				    (indent-if-continuation "," (point)
-							    body-start)))
+		      (in-paren (+ block-indent paren-indent
+				   (indent-if-continuation "," (point)
+							   body-start)))
 		      ;; statements (separated by semi-colons)
 		      (t (+ block-indent dylan-indent
 			    (indent-if-continuation ";" (point)
