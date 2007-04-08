@@ -255,7 +255,7 @@ general pattern which must be indented specially.")
 
 (defvar dyl-other-words
   '("above" "below" "by" "from"
-    "handler" "in" "instance" "let" "local" "otherwise"
+    "handler" "in" "instance" "keyed-by" "let" "local" "otherwise"
     "slot" "subclass" "then" "to" "virtual")
   "Keywords which do not require special indentation handling, but which
 should be highlighted if this capability exists.")
