@@ -513,10 +513,12 @@ parens will be matched between each list element.")
 		'("iterate[ \t\n]+\\w+[ \t\n]*" "")
 		'("profiling[ \t\n]*" "")	      
 		;; special patterns for "define method" which is funky
-		(concat "\\(" define-pattern "\\)?"
-			"\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*" "[ \t\n]*=>[^;)]+;?")
-		(concat "\\(" define-pattern "\\)?"
-			"\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*" "[ \t\n]*;")
+		(list (concat "\\(" define-pattern "\\)?"
+			      "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+		      "[ \t\n]*=>[^;)]+;?")
+		(list (concat "\\(" define-pattern "\\)?"
+			      "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+		      "[ \t\n]*;")
 		(concat "define[ \t]+" dyl-named-definition-pattern
 			"[ \t\n]+[^ \t\n]+")
 		(concat "define[ \t]+" dyl-unnamed-definition-pattern)
