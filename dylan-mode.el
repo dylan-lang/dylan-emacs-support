@@ -943,6 +943,12 @@ at the current point."
 		 (+ dylan-indent dylan-indent (if arrow -3 0)))
 		(t dylan-indent)))))))
 
+(defun dylan-indent-to-column (column)
+  "Add or remove whitespace to indent the current line to column COLUMN."
+  (unless (eq column (current-indentation))
+    (delete-horizontal-space)
+    (indent-to-column column)))
+
 (defun dylan-indent-line (&optional ignore-case extra-indent)
   "Indents a line of dylan code according to its nesting."
   ;; The "ignore-case" and "extra-indent" vars are used for recursive
@@ -956,7 +962,6 @@ at the current point."
 	;; install a new syntax table and restore the old one when done
 	(set-syntax-table dylan-indent-syntax-table)
 	(beginning-of-line)
-	(delete-horizontal-space)
 	(let* ((body-start)		; beginning of "body" of enclosing
 					; compound statement
 	       (in-paren)		; t if in parenthesized expr.
@@ -1025,9 +1030,11 @@ at the current point."
 		      (t (+ block-indent dylan-indent
 			    (indent-if-continuation ";" (point)
 						    body-start))))))
-	  (indent-to-column indent)))
+	  (dylan-indent-to-column indent)))
     ;; put the cursor where the user is likely to want it.
-    (and (= (current-column) 0) (skip-chars-forward " \t"))
+    (let ((col (current-indentation)))
+      (when (< (current-column) col)
+	(move-to-column col)))
     (set-syntax-table dylan-mode-syntax-table)))
 
 (defun in-case ()
