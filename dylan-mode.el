@@ -964,8 +964,10 @@ at the current point."
 (defun dylan-indent-to-column (column)
   "Add or remove whitespace to indent the current line to column COLUMN."
   (unless (eq column (current-indentation))
-    (delete-horizontal-space)
-    (indent-to-column column)))
+    (save-excursion
+      (beginning-of-line)
+      (delete-horizontal-space)
+      (indent-to-column column))))
 
 (defun dylan-indent-line (&optional ignore-case extra-indent)
   "Indents a line of dylan code according to its nesting."
@@ -979,7 +981,10 @@ at the current point."
 	;; Because "\b" doesn't work with "symbol-chars" we temporarily
 	;; install a new syntax table and restore the old one when done
 	(set-syntax-table dylan-indent-syntax-table)
-	(beginning-of-line)
+	;; Move point to the end of the current indentation. This allows us to
+	;; use looking-at to examine the start of the current line of code
+	;; without having to put whitespace at the start of all the patterns.
+	(back-to-indentation)
 	(let* ((body-start)		; beginning of "body" of enclosing
 					; compound statement
 	       (in-paren)		; t if in parenthesized expr.
