@@ -614,19 +614,29 @@ including parenthesized expressions.")
   "Like `find-keyword-pattern' but matches statement terminators as well.")
 
 (defun fontify-dylan-header (limit)
-  (let ((end (dylan-header-end)))
-    (and (> end (point))
-	 (re-search-forward ".+" end t))))
+  ;; This is called by font-lock mode to fontify the interchange file header. Go
+  ;; to the end of the header, so font-lock will apply one face to it all.
+  (let ((header-end (dylan-header-end)))
+    (when (< (point) header-end)
+      (re-search-forward ".+" header-end t))))
 
 (defun dylan-header-end ()
+  ;; Get the position of the end of the interchange file header. Dylan
+  ;; interchange file headers end at the first empty line in the buffer
+  ;; (containing no whitespace). Note that a well-formed header would match
+  ;; 
+  ;;   "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n"
+  ;;   
+  ;; but this function is only meant to partition the file into header and body
+  ;; so we can handle them separately.
   (save-excursion
-    (goto-char 1)
-    (or
-     (and (re-search-forward "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n+"
-			     nil t)
-	  ;; in Emacs 18, the search just returns `t', not the point.
-	  (point))
-     0)))
+    (save-restriction
+      (widen)
+      (goto-char 1)
+      (or (and (re-search-forward "\n\n" nil t)
+	       ;; in Emacs 18, the search just returns `t', not the point.
+	       (point))
+	  0))))
 
 ;; The next two routines are organized bletcherously because gnu-emacs
 ;; does no tail call optimization.  We used to recursively call
@@ -639,15 +649,31 @@ including parenthesized expressions.")
   "Moves the point backward to the beginning of the innermost enclosing
 'compound statement' or set of parentheses.  Returns t on success and
 nil otherwise."
-  (let ((result 'not-found))
-    (while (eq result 'not-found)
+  ;; don't go back into the interchange file header
+  (let ((header-end (dylan-header-end))
+	(result 'not-found))
+    (while (and (>= (point) header-end) (eq result 'not-found))
+      ;; cpage 2007-04-14: This could handle block comments better. The
+      ;; re-search-backward pattern doesn't skip over them, and
+      ;; dylan-skip-whitespace-backward can't skip over a block comment if point
+      ;; is inside it.
       (setq
        result
        (if (re-search-backward (if match-statement-end
 				   dylan-beginning-of-form-pattern
-				 find-keyword-pattern) nil t)
+				 find-keyword-pattern) header-end t)
 	   (cond ((look-back dylan-comment-pattern)
 		  (goto-char (match-beginning 0))
+		  'not-found)
+		 ;; If point is inside a block comment, keep searching. Since
+		 ;; we've just tested (above) for an eol comment, if the text
+		 ;; has the comment face applied it must be the interior of a
+		 ;; block comment. This isn't a complete solution for handling
+		 ;; block comments, but it provides much better behavior than
+		 ;; not performing this test at all -- in which case, the
+		 ;; interior of block comments are treated like code.
+		 ((equal (get-text-property (point) 'face)
+			 font-lock-comment-face)
 		  'not-found)
 		 ((looking-at "[])}'\"]")
 		  (condition-case nil
@@ -656,7 +682,7 @@ nil otherwise."
 			(backward-sexp 1)
 			'not-found)
 		    (error nil)))
-		 ((and (looking-at "define")	; non-nesting top level form
+		 ((and (looking-at "define") ; non-nesting top level form
 		       (not (looking-at dyl-keyword-pattern)))
 		  nil)
 		 ((or (looking-at "end")
@@ -667,7 +693,7 @@ nil otherwise."
 			  (looking-at "define"))
 		      nil
 		    'not-found))
-	; hack for overloaded uses of "while" and "until" reserved words
+		 ;; hack for overloaded uses of "while" and "until" reserved words
 		 ((or (looking-at "until") (looking-at "while"))
 		  (if (save-excursion
 			(condition-case nil
@@ -691,7 +717,8 @@ nil otherwise."
 		 (t t))
 	 (goto-char (point-min))
 	 nil)))
-    (and result (>= (point) (dylan-header-end)))))
+    (and (equal t result)
+	 (>= (point) header-end))))
 
 (defun dylan-find-end (&optional match-statement-end in-case no-commas)
   "Moves the point forward to the end of the innermost enclosing
@@ -791,20 +818,23 @@ because old version of emacs don't have `skip-syntax-backward'.")
 
 (defun dylan-skip-whitespace-backward ()
   "Skips over both varieties of comments and other whitespace characters."
-  ;; skip syntactic whitespace
-  (if (re-search-backward non-whitespace-string nil t)
-      (forward-char)
-    (goto-char 0))
-  ;; skip comments
-  (while (cond ((look-back dylan-comment-pattern)
-		(goto-char (match-beginning 0)))
-	       ((look-back "\\*/$")
-		(goto-char (match-beginning 0))
-		(dylan-skip-star-comment-backward))
-	       (t nil))
-    (if (re-search-backward non-whitespace-string nil t)
-	(forward-char)
-      (goto-char 0))))
+  ;; don't go back into the interchange file header
+  (let ((header-end (dylan-header-end)))
+    (unless (< (point) header-end)
+      ;; skip syntactic whitespace
+      (if (re-search-backward non-whitespace-string header-end t)
+	  (forward-char)
+	(goto-char header-end))
+      ;; skip comments
+      (while (cond ((look-back dylan-comment-pattern)
+		    (goto-char (match-beginning 0)))
+		   ((look-back "\\*/$")
+		    (goto-char (match-beginning 0))
+		    (dylan-skip-star-comment-backward))
+		   (t nil))
+	(if (re-search-backward non-whitespace-string header-end t)
+	    (forward-char)
+	  (goto-char header-end))))))
 
 (defun dylan-skip-whitespace-forward ()
   "Skips over both varieties of comments and other whitespace characters."
@@ -847,16 +877,18 @@ current point."
   "Moves the cursor to some undefined point between the previous 'statement'
 and the current one.  If we are already between statements, move back one 
 more."
-  (unwind-protect
-      ;; Because "\b" doesn't work with "symbol-chars" we temporarily
-      ;; install a new syntax table and restore the old one when done
-      (progn
-	(set-syntax-table dylan-indent-syntax-table)
+  ;; don't go back into the interchange file header
+  (let ((header-end (dylan-header-end)))
+    (unless (< (point) header-end)
+      (unwind-protect
+	  ;; Because "\b" doesn't work with "symbol-chars" we temporarily
+	  ;; install a new syntax table and restore the old one when done
+	  (set-syntax-table dylan-indent-syntax-table)
 	(dylan-skip-whitespace-backward)
 	(let* ((dot (point)))
 	  ;; skip over "separator words"
 	  (if (save-excursion
-		(and (re-search-backward separator-word-pattern nil t)
+		(and (re-search-backward separator-word-pattern header-end t)
 		     (if (not (looking-at "exception\\|elseif"))
 			 (forward-word 1)
 		       (goto-char (match-end 0))
@@ -864,12 +896,12 @@ more."
 			 (error nil))
 		       t)
 		     (>= (point) dot)))
-	      (progn (re-search-backward separator-word-pattern nil t)
+	      (progn (re-search-backward separator-word-pattern header-end t)
 		     (dylan-skip-whitespace-backward)))
 	  (if (look-back "[,;]$\\|=>$")
 	      (backward-char))
 	  (cond ((not (dylan-find-keyword t in-case no-commas))
-		 (if (look-back "\\(define\\|local\\)[ \t]+")	; hack
+		 (if (look-back "\\(define\\|local\\)[ \t]+") ; hack
 		     (goto-char (match-beginning 0))))
 		((looking-at separator-word-pattern)
 		 (let ((start (point)))
@@ -889,9 +921,9 @@ more."
 		 (let ((first (find-body-start dyl-start-expressions)))
 		   (if (< first dot)
 		       (goto-char first)
-		     (if (look-back "\\(define\\|local\\)[ \t]+")	; hack
-			 (goto-char (match-beginning 0)))))))))
-    (set-syntax-table dylan-mode-syntax-table)))
+		     (if (look-back "\\(define\\|local\\)[ \t]+") ; hack
+			 (goto-char (match-beginning 0))))))))
+	(set-syntax-table dylan-mode-syntax-table)))))
 
 (defun dylan-beginning-of-form ()
   "Finds the beginning of the innermost 'statement' which contains or
@@ -942,7 +974,8 @@ at the current point."
 	  0				; because "for" can have empty bodies
 	(let ((real-start (point)))
 	  (backward-dylan-statement in-case)
-	  (dylan-skip-whitespace-forward)
+	  (unless (= (point) real-start) ; make sure we actually went back a statement
+	    (dylan-skip-whitespace-forward))
 	  (cond ((and (= block-start 0) (not (looking-at "define")))
 		 0)			; special case for beginning of file
 		((= real-start block-start) 0)
@@ -953,11 +986,10 @@ at the current point."
 					       (equal term-char ";"))
 		      (point)) line-start)
 		 0)
-		;; Give continuations of generic functions extra
-		;; indentation to match what happens with method
-		;; declarations.  This is an odd special case, but some
-		;; folks like it.  If you don't, comment out the next 3
-		;; lines.
+		;; Give continuations of generic functions extra indentation to
+		;; match what happens with method declarations.  This is an odd
+		;; special case, but some folks like it.  If you don't, comment
+		;; out the next 3 lines.
 		((looking-at
 		  "define\\([ \t\n]+\\w+\\)*[ \t]+generic")
 		 (+ dylan-indent dylan-indent (if arrow -3 0)))
@@ -965,7 +997,7 @@ at the current point."
 
 (defun dylan-indent-to-column (column)
   "Add or remove whitespace to indent the current line to column COLUMN."
-  (unless (eq column (current-indentation))
+  (unless (= column (current-indentation))
     (save-excursion
       (beginning-of-line)
       (delete-horizontal-space)
@@ -979,83 +1011,91 @@ at the current point."
   (interactive)
   (setq extra-indent (or extra-indent 0))
   (unwind-protect
-      (save-excursion
-	;; Because "\b" doesn't work with "symbol-chars" we temporarily
-	;; install a new syntax table and restore the old one when done
-	(set-syntax-table dylan-indent-syntax-table)
-	;; Move point to the end of the current indentation. This allows us to
-	;; use looking-at to examine the start of the current line of code
-	;; without having to put whitespace at the start of all the patterns.
-	(back-to-indentation)
-	(let* ((body-start)		; beginning of "body" of enclosing
+      ;; If we're inside the interchange file header, let the user indent as
+      ;; they please. If we're indenting a region (i.e., if this function wasn't
+      ;; called interactively), leave the header indenting as-is.
+      (if (< (point) (dylan-header-end))
+	  (when (interactive-p)
+	    (when (<= (current-column) (current-indentation))
+	      (back-to-indentation))
+	    (insert-char ?\s dylan-indent))
+	(save-excursion
+	  ;; Because "\b" doesn't work with "symbol-chars" we temporarily
+	  ;; install a new syntax table and restore the old one when done
+	  (set-syntax-table dylan-indent-syntax-table)
+	  ;; Move point to the end of the current indentation. This allows us to
+	  ;; use looking-at to examine the start of the current line of code
+	  ;; without having to put whitespace at the start of all the patterns.
+	  (back-to-indentation)
+	  (let* ((body-start)		; beginning of "body" of enclosing
 					; compound statement
-	       (in-paren)		; t if in parenthesized expr.
-	       (paren-indent 0)		; indentation of first non-space after open paren.
-	       (in-case)		; t if in "case" or "select" stmt
-	       (block-indent		; indentation of enclosing comp. stmt
-		(save-excursion
-		  (if (not (dylan-find-keyword))
-		      nil
-		    (and (looking-at "method")
-			 (look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
-			 (goto-char (match-beginning 0)))
-		    (and (looking-at "[[({]")
-			 (setq in-paren t)
-			 (save-excursion
-			   (let ((dot (point)))
-			     (forward-char)
-			     (re-search-forward "[^ \t]")
-			     (setq paren-indent (- (point) dot 1)))))
-		    (and (looking-at "select\\|case") (setq in-case t))
-		    (setq body-start (find-body-start dyl-start-expressions))
-		    (+ (current-column) extra-indent))))
-	       (indent			; correct indentation for this line
-		(cond ((not block-indent)
-		       (indent-if-continuation ";" (point) 0))
-		      ;; some keywords line up with start of comp. stmt 
-		      ((looking-at separator-word-pattern) block-indent)
-		      ;; end keywords line up with start of comp. stmt 
-		      ((looking-at dyl-end-keyword-pattern) block-indent)
-		      ;; parenthesized expressions (separated by commas)
-		      (in-case
-		       ;; if the line is blank, we pick an arbitrary
-		       ;; indentation for now.  We judge the "proper"
-		       ;; indentation by how the statement is punctuated once
-		       ;; it is finished
-		       (cond ((looking-at "^$")
-			      (if (save-excursion
-				    ;; Look for end of prev statement.  This
-				    ;; is hairier than it should be because
-				    ;; we may be at the end of the buffer
-				    (let ((dot (point)))
-				      (forward-dylan-statement t)
-				      (dylan-skip-whitespace-backward)
-				      (if (> (point) dot)
-					  (backward-dylan-statement t))
-				      (look-back ";$\\|=>$")))
-				  (+ block-indent dylan-indent dylan-indent
+		 (in-paren)		; t if in parenthesized expr.
+		 (paren-indent 0)       ; indentation of first non-space after open paren.
+		 (in-case)		; t if in "case" or "select" stmt
+		 (block-indent		; indentation of enclosing comp. stmt
+		  (save-excursion
+		    (if (not (dylan-find-keyword))
+			nil
+		      (and (looking-at "method")
+			   (look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
+			   (goto-char (match-beginning 0)))
+		      (and (looking-at "[[({]")
+			   (setq in-paren t)
+			   (save-excursion
+			     (let ((dot (point)))
+			       (forward-char)
+			       (re-search-forward "[^ \t]")
+			       (setq paren-indent (- (point) dot 1)))))
+		      (and (looking-at "select\\|case") (setq in-case t))
+		      (setq body-start (find-body-start dyl-start-expressions))
+		      (+ (current-column) extra-indent))))
+		 (indent		; correct indentation for this line
+		  (cond ((not block-indent)
+			 (indent-if-continuation ";" (point) 0))
+			;; some keywords line up with start of comp. stmt 
+			((looking-at separator-word-pattern) block-indent)
+			;; end keywords line up with start of comp. stmt 
+			((looking-at dyl-end-keyword-pattern) block-indent)
+			;; parenthesized expressions (separated by commas)
+			(in-case
+			 ;; if the line is blank, we pick an arbitrary
+			 ;; indentation for now.  We judge the "proper"
+			 ;; indentation by how the statement is punctuated once
+			 ;; it is finished
+			 (cond ((looking-at "^$")
+				(if (save-excursion
+				      ;; Look for end of prev statement.  This
+				      ;; is hairier than it should be because
+				      ;; we may be at the end of the buffer
+				      (let ((dot (point)))
+					(forward-dylan-statement t)
+					(dylan-skip-whitespace-backward)
+					(if (> (point) dot)
+					    (backward-dylan-statement t))
+					(look-back ";$\\|=>$")))
+				    (+ block-indent dylan-indent dylan-indent
+				       (indent-if-continuation "," (point)
+							       body-start t))
+				  (+ block-indent dylan-indent 
 				     (indent-if-continuation "," (point)
-							     body-start t))
+							     body-start t))))
+			       ((save-excursion
+				  (forward-dylan-statement t)
+				  (look-back ",$\\|=>$"))
 				(+ block-indent dylan-indent 
 				   (indent-if-continuation "," (point)
-							   body-start t))))
-			     ((save-excursion
-				(forward-dylan-statement t)
-				(look-back ",$\\|=>$"))
-			      (+ block-indent dylan-indent 
-				 (indent-if-continuation "," (point)
-							 body-start t)))
-			     (t (+ block-indent dylan-indent dylan-indent
-				   (indent-if-continuation "," (point)
-							   body-start t)))))
-		      (in-paren (+ block-indent paren-indent
-				   (indent-if-continuation "," (point)
-							   body-start)))
-		      ;; statements (separated by semi-colons)
-		      (t (+ block-indent dylan-indent
-			    (indent-if-continuation ";" (point)
-						    body-start))))))
-	  (dylan-indent-to-column indent)))
+							   body-start t)))
+			       (t (+ block-indent dylan-indent dylan-indent
+				     (indent-if-continuation "," (point)
+							     body-start t)))))
+			(in-paren (+ block-indent paren-indent
+				     (indent-if-continuation "," (point)
+							     body-start)))
+			;; statements (separated by semi-colons)
+			(t (+ block-indent dylan-indent
+			      (indent-if-continuation ";" (point)
+						      body-start))))))
+	    (dylan-indent-to-column indent))))
     ;; put the cursor where the user is likely to want it.
     (let ((col (current-indentation)))
       (when (< (current-column) col)
@@ -1194,13 +1234,16 @@ and closing punctuation are needed."
 With argument, do this that many times.
 Returns t unless search stops due to end of buffer."
   (interactive "p")
-  (and arg (< arg 0) (forward-char 1))
-  (and (or (re-search-backward dylan-defun-regexp nil t (or arg 1))
-	   ;(re-search-backward
-	   ;  "^\\(type\\|const\\|var\\|%include\\)\\s-"
-	   ;  nil 'move (or arg 1))
-	   )
-       (progn (beginning-of-line) t)))
+  ;; don't go back into the interchange file header
+  (let ((header-end (dylan-header-end)))
+    (unless (< (point) header-end)
+      (and arg (< arg 0) (forward-char 1))
+      (and (or (re-search-backward dylan-defun-regexp header-end t (or arg 1))
+	       ;;(re-search-backward
+	       ;;  "^\\(type\\|const\\|var\\|%include\\)\\s-"
+	       ;;  nil 'move (or arg 1))
+	       )
+	   (progn (beginning-of-line) t)))))
 
 (defun dylan-end-of-defun (&optional arg)
   "Move forward to next end of function."
@@ -1248,33 +1291,26 @@ Returns t unless search stops due to end of buffer."
 
 
 (defun dylan-font-lock-fontify-region (beg end loudly)
-  ;; Dylan mode fontification. Specially handles fontification of interchange
-  ;; file headers, then calls the default function to fontify the body. This is
-  ;; particularly important since headers can contain apostrophes, for example,
-  ;; that would otherwise confuse the first-pass, character syntax-based
-  ;; fontification and cause it to treat code in the file body as the interior
-  ;; of a character literal.
-  ;;
-  ;; Suppressing fontification of the header is accomplished by narrowing the
-  ;; buffer so the default fontification code doesn't see the header at all.
-  ;;
-  ;; To Do: Consider adding code to fontify the header using more appropriate
-  ;; rules than the body fontification. That would probably involve establishing
-  ;; a different syntax table to avoid the default fontification of character
-  ;; and string literals, and comments.
+  "Dylan mode fontification. Specially handles fontification of
+interchange file headers, then calls the default function to
+fontify the body. This is particularly important since headers
+can contain apostrophes, for example, that would otherwise
+confuse the first-pass, character syntax-based fontification and
+cause it to treat code in the file body as the interior of a
+character literal."
   (let ((header-end (dylan-header-end)))
     ;; If the region overlaps the header, "fontify" the header by removing
-    ;; fontification.
+    ;; fontification. Our font-lock pattern skips over the header, but that
+    ;; leaves any existing attributes in place, so we need to remove them here.
     (when (< beg header-end)
-      ;;(message "Unfontifying header %d - %d..." beg header-end);debugging
       (font-lock-unfontify-region beg header-end))
-    ;; If the region extends beyond the header, then fontify the part that
-    ;; overlaps the body as code.
+    ;; Fontify the rest. We narrow the buffer to exclude the header from
+    ;; character syntactic fontification. Alternatively, perhaps we could
+    ;; establish a separate syntax table for the header.
     (when (> end header-end)
       (let ((beg (max beg header-end))
 	    (save-font-lock-dont-widen font-lock-dont-widen))
 	(save-restriction
-	  ;;(message "Fontifying %d - %d (header end = %d)..." beg end header-end);debugging
 	  (narrow-to-region beg (point-max))
 	  (setq font-lock-dont-widen t)
 	  (unwind-protect
@@ -1359,11 +1395,11 @@ during initialization.
 \\{dylan-mode-map}"
   (interactive)
   (kill-all-local-variables)
-  (abbrev-mode 1)
   (use-local-map dylan-mode-map)
-  (setq major-mode 'dylan-mode)
-  (setq mode-name "Dylan")
-  (setq local-abbrev-table dylan-mode-abbrev-table)
+  (setq major-mode 'dylan-mode
+	mode-name "Dylan"
+	local-abbrev-table dylan-mode-abbrev-table
+	abbrev-mode t)
   (set-dylan-patterns)
   (dylan-mode-variables))
 
