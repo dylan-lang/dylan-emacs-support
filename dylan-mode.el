@@ -5,7 +5,7 @@
 
 ;; Author: Robert Stockton (rgs@cs.cmu.edu), others, then Chris Page
 ;; Maintainer: Chris Page <cpage@opendylan.org>
-;; Version: 1.18
+;; Version: 1.19
 
 ;; This file is *NOT* part of GNU Emacs.
 
@@ -146,10 +146,13 @@
 ;;     Changed some user-modifiable variables to Customization
 ;;     variables and defined a Dylan customization group. Other
 ;;     miscellaneous fixes and changes.
+;;   version 1.19
+;;     Added fontification of the Dylan interchange file header.
+;;     Other miscellaneous fixes and cleanups.
 
 ;;; Code:
 
-(defconst dylan-version "1.18"
+(defconst dylan-version "1.19"
   "Dylan Mode version number.")
 
 (defun dylan-version ()
@@ -170,7 +173,7 @@ When called interactively, displays the version."
   :group 'dylan)
 
 (defcustom dylan-outdent-arrows t
-  "*Whether to outdent '=>' in function signatures."
+  "*Whether to outdent \"=>\" in function signatures."
   :type  'boolean
   :group 'dylan)
 
@@ -192,19 +195,65 @@ local variables at their definitions."
 
 (defcustom dylan-mode-hook nil
   "*Hook called by `dylan-mode'."
+  ;; To Do: Add support for imenu, then enable this option.
+  ;; :options '(imenu-add-menubar-index)
   :type  'hook
   :group 'dylan)
 
+(defface dylan-header-background
+  '((((class color)
+      (background light))
+     (:background "Lavender"))
+    (((class color)
+      (background dark))
+     (:background "Navy Blue"))
+    (((class grayscale)
+      (background light))
+     (:background "grey95"))
+    (((class grayscale)
+      (background dark))
+     (:background "grey5")))
+  "Background face for Dylan interchange file headers.
 
-;; Older variables originally documented as "user modifiable", but these should
-;; rarely (if ever) be modified.
+This is designed to apply background attributes to the entire
+header, with other faces applied on top."
+  :group 'dylan)
 
-(defvar dylan-no-highlights-in-header (not (string-lessp emacs-version "19.31"))
-  "*Should font-lock ignore keywords in the header.  (Experimental -- may
-not work on all EMACSen.)")
+(defface dylan-header-separator
+  '((t nil))
+  "Face for the last line of Dylan interchange file headers."
+  :group 'dylan)
+
+(defface dylan-header-keyword
+  '((t :inherit font-lock-keyword-face))
+  "Face for Dylan interchange file header keywords."
+  :group 'dylan)
+
+(defface dylan-header-value
+  '((t nil))
+  "Face for Dylan interchange file header values."
+  :group 'dylan)
+
+(defface dylan-header-module-name
+  '((t :inherit font-lock-function-name-face))
+  "Face for the `module:' name in Dylan interchange file headers."
+  :group 'dylan)
+
+(defface dylan-header-error
+  '((t :inherit font-lock-warning-face))
+  "Face for invalid lines in Dylan interchange file headers.
+
+Valid lines begin with a keyword or a value continuation
+whitespace prefix."
+  :group 'dylan)
+
+
+;; Older variable originally documented as "user modifiable", but this should
+;; rarely (if ever) be modified by users.
 
 (defvar dylan-mode-for-emacs-21-and-later (not (string-lessp emacs-version "20"))
-  "*Perform syntax highlighting in a way that requires GNU Emacs 21 or later.")
+  "*Perform syntax highlighting in a way that requires GNU Emacs
+21 or later.")
 
 
 ;; Private definitions.  Extensible by using dylan-add-keyword in your
@@ -224,57 +273,58 @@ This is designed to be called from your `dylan-mode-hook'."
 
 (defvar dyl-unnamed-definition-words
   '("interface")
-  "Words which introduce unnamed definitions like 'define interface'.")
+  "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dyl-named-definition-words
   '("module" "library" "macro" "C-struct" "C-union" "C-function"
     "C-callable-wrapper")
-  "Words which introduce simple named definitions like 'define library'.")
+  "Words that introduce simple named definitions like \"define library\".")
 
 (defvar dyl-type-parameterized-definition-words
   '("class" "C-subtype" "C-mapped-subtype")
-  "Words which introduce type definitions like 'define class'. These are
-also 'parameterized' like 'define method' and are appended to 
+  "Words that introduce type definitions like \"define class\". These are
+also parameterized like \"define method\" and are appended to 
 `dyl-other-parameterized-definition-words'.")
 
 (defvar dyl-other-parameterized-definition-words
   '("method" "function" "C-variable" "C-address")
-  "Words which introduce trickier definitions like 'define method'.  These
+  "Words that introduce trickier definitions like \"define method\".  These
 require special definitions to be added to `dyl-start-expressions'.")
 
 (defvar dyl-constant-simple-definition-words
   '("constant")
-  "Words which introduce module constant definitions. These must also be
+  "Words that introduce module constant definitions. These must also be
 simple definitions and are appended to `dyl-other-simple-definition-words'.")
 
 (defvar dyl-variable-simple-definition-words
   '("variable")
-  "Words which introduce module variable definitions. These must also be
+  "Words that introduce module variable definitions. These must also be
 simple definitions and are appended to `dyl-other-simple-definition-words'.")
 
 (defvar dyl-other-simple-definition-words
   '("generic" "domain" "C-pointer-type" "table")
-  "Other words which introduce simple definitions (without implicit bodies).")
+  "Other words that introduce simple definitions (without implicit bodies).")
 
 (defvar dyl-statement-words
   '("if" "block" "begin" "method" "case" "for" "select" "when" "unless"
     "until" "while" "iterate" "profiling")
-  "Words which begin statements with implicit bodies.")
+  "Words that begin statements with implicit bodies.")
 
 ;; Names beginning "with-" and "without-" are commonly used as statement macros.
 (defvar dyl-with-statement-prefix "with\\(out\\)\\{0,1\\}-")
-(defvar dyl-statement-prefixes (concat "\\|\\b" dyl-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
+(defvar dyl-statement-prefixes
+  (concat "\\|\\b" dyl-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
 
 (defvar dyl-separator-words
   '("finally" "exception" "cleanup" "else" "elseif" "afterwards")
-  "Patterns act as separators in compound statements.  This may include any
-general pattern which must be indented specially.")
+  "Patterns that act as separators in compound statements.  This may
+include any general pattern that must be indented specially.")
 
 (defvar dyl-other-words
   '("above" "below" "by" "from"
     "handler" "in" "instance" "keyed-by" "let" "local" "otherwise"
     "slot" "subclass" "then" "to" "virtual")
-  "Keywords which do not require special indentation handling, but which
+  "Keywords that do not require special indentation handling, but which
 should be highlighted if this capability exists.")
 
 
@@ -307,8 +357,8 @@ should be highlighted if this capability exists.")
 ;; Set up the abbrev table
 
 (defun dyl-define-abbrev (table name expansion hook)
-  ;; Compatibility wrapper for `define-abbrev' which passes a non-nil
-  ;; sixth argument for SYSTEM-FLAG in emacsen that support it
+  ;; Compatibility wrapper for `define-abbrev' that passes a non-nil
+  ;; sixth argument for SYSTEM-FLAG in Emacsen that support it
   ;; (currently only Emacs >= 21.2).
   (condition-case nil
       (define-abbrev table name expansion hook 0 t)
@@ -316,8 +366,8 @@ should be highlighted if this capability exists.")
      (define-abbrev table name expansion hook 0))))
 
 (defvar dylan-mode-abbrev-table nil
-  "Abbrev table in use in dylan-mode buffers.  Provides 'hooked' 
-abbreviations to reindent lines containing 'separator' keywords.")
+  "Abbrev table in use in Dylan Mode buffers.  Provides \"hooked\" 
+abbreviations to reindent lines containing separator keywords.")
 (if (not dylan-mode-abbrev-table)
     (progn
       (define-abbrev-table 'dylan-mode-abbrev-table ())
@@ -332,69 +382,69 @@ abbreviations to reindent lines containing 'separator' keywords.")
 ;; Set up syntax tables
 
 (defvar dylan-mode-syntax-table nil
-  "User level syntax table.  Provides support for forward-word, etc.")
+  "User-level syntax table.  Provides support for forward-word, etc.")
 (defvar dylan-indent-syntax-table nil
-  "Special syntax table which is used by the indent and font-lock code 
-for finding keywords and the like.  This is necessary because there is
-no equivalent to '\b' for identifiers.")
+  "Special syntax table used by the indent and font lock code for
+finding keywords and the like.  This is necessary because there
+is no equivalent to \"\b\" for identifiers.")
 
 (defun dylan-set-up-syntax-tables ()
-  (if (not dylan-mode-syntax-table)
-      (progn
+  (unless dylan-mode-syntax-table
 	
-	;; Set up the user syntax table.
-	(setq dylan-mode-syntax-table (make-syntax-table))
-	(modify-syntax-entry ?_  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?-  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?<  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?>  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ??  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?!  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?=  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?:  "_"  dylan-mode-syntax-table)
-	(modify-syntax-entry ?'  "\"" dylan-mode-syntax-table)
-	(modify-syntax-entry ?\f " "  dylan-mode-syntax-table)
+    ;; Set up the user syntax table.
+    (setq dylan-mode-syntax-table (make-syntax-table))
+    (modify-syntax-entry ?_  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?-  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?<  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?>  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ??  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?!  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?=  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?:  "_"  dylan-mode-syntax-table)
+    (modify-syntax-entry ?'  "\"" dylan-mode-syntax-table)
+    (modify-syntax-entry ?\f " "  dylan-mode-syntax-table)
+    (modify-syntax-entry ?#  "'"  dylan-mode-syntax-table)
+    
+    ;; Set up the indent table; derived from the user table, we change the
+    ;; syntax of various Dylan identifier characters to word constituents.
+    (setq dylan-indent-syntax-table
+	  (copy-syntax-table dylan-mode-syntax-table))
+    (modify-syntax-entry ?_ "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?- "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?< "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?> "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?? "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?! "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?= "w" dylan-indent-syntax-table)
+    (modify-syntax-entry ?: "w" dylan-indent-syntax-table)
 	
-	;; Set up the indent table; derived from the user table, we change the
-	;; syntax of various Dylan identifier characters to word constituents.
-	(setq dylan-indent-syntax-table
-	      (copy-syntax-table dylan-mode-syntax-table))
-	(modify-syntax-entry ?_ "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?- "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?< "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?> "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?? "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?! "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?= "w" dylan-indent-syntax-table)
-	(modify-syntax-entry ?: "w" dylan-indent-syntax-table)
-	
-	;; Set up comment syntax (for both tables). Different emacsen handle
-	;; comments differently.
-	(cond ((or (and (boundp 'running-lemacs) running-lemacs)
-		   (string-match "XEmacs" emacs-version))
-	       (modify-syntax-entry ?\n "> b"    dylan-indent-syntax-table)
-	       (modify-syntax-entry ?/  "w 1456" dylan-indent-syntax-table)
-	       (modify-syntax-entry ?\* "w 23"   dylan-indent-syntax-table)
-	       (modify-syntax-entry ?\n "> b"    dylan-mode-syntax-table)
-	       (modify-syntax-entry ?/  "_ 1456" dylan-mode-syntax-table))
-	      (t
-	       (modify-syntax-entry ?\n "> b"    dylan-mode-syntax-table)
-	       (modify-syntax-entry ?/  "_ 124b" dylan-mode-syntax-table)
-	       (modify-syntax-entry ?\* "_ 23n"  dylan-mode-syntax-table)
-	       (modify-syntax-entry ?\n "> b"    dylan-indent-syntax-table)
-	       (modify-syntax-entry ?/  "w 124b" dylan-indent-syntax-table)
-	       (modify-syntax-entry ?\* "w 23n"  dylan-indent-syntax-table))))))
+    ;; Set up comment syntax (for both tables). Different Emacsen handle
+    ;; comments differently.
+    (cond ((or (and (boundp 'running-lemacs) running-lemacs)
+	       (string-match "XEmacs" emacs-version))
+	   (modify-syntax-entry ?\n "> b"    dylan-indent-syntax-table)
+	   (modify-syntax-entry ?/  "w 1456" dylan-indent-syntax-table)
+	   (modify-syntax-entry ?\* "w 23"   dylan-indent-syntax-table)
+	   (modify-syntax-entry ?\n "> b"    dylan-mode-syntax-table)
+	   (modify-syntax-entry ?/  "_ 1456" dylan-mode-syntax-table))
+	  (t
+	   (modify-syntax-entry ?\n "> b"    dylan-mode-syntax-table)
+	   (modify-syntax-entry ?/  "_ 124b" dylan-mode-syntax-table)
+	   (modify-syntax-entry ?\* "_ 23n"  dylan-mode-syntax-table)
+	   (modify-syntax-entry ?\n "> b"    dylan-indent-syntax-table)
+	   (modify-syntax-entry ?/  "w 124b" dylan-indent-syntax-table)
+	   (modify-syntax-entry ?\* "w 23n"  dylan-indent-syntax-table)))))
 
 (dylan-set-up-syntax-tables)
 
 
-;; Ugly code which you don't want to look at.
+;; Ugly code, which you don't want to look at.
 (defvar dylan-comment-pattern "//.*$"
-  "Internal pattern for finding comments in dylan code.  Currently only
+  "Internal pattern for finding comments in Dylan code.  Currently only
 handles end-of-line comments.")
 
 (defun make-pattern (start &rest list)
-  "Builds a search pattern that matches any of the patterns passed to it.
+  "Build a search pattern that matches any of the patterns passed to it.
 Makes sure that it doesn't match partial words."
   (let ((str (concat "\\b" start "\\b")))
     (while list
@@ -403,16 +453,101 @@ Makes sure that it doesn't match partial words."
     str))
 
 (defvar dyl-start-expressions '()
-  "Patterns which match that portion of a 'compound statement' which precedes
-the 'body'.  This is used to determine where the first statement 
-begins for indentation purposes.  
+  "Patterns that match that portion of a compound statement that
+precedes the body.  This is used to determine where the first
+statement begins for indentation purposes.
 
-Contains a list of patterns, each of which is either a regular 
-expression or a list of regular expressions.  A set of balanced 
+Contains a list of patterns, each of which is either a regular
+expression or a list of regular expressions.  A set of balanced
 parens will be matched between each list element.")
 
+(defvar dylan-font-lock-header-keywords
+  ;; Many of these regexp patterns are order-dependent, assuming the preceding
+  ;; patterns have already been matched and fontified as appropriate, preventing
+  ;; following patterns from being used to fontify the same text.
+  ;; 
+  ;; Most of these patterns match up to the end of buffer, so that highlighting
+  ;; occurs while entering header text in a new Dylan file. Notably, the pattern
+  ;; for invalid header lines does not, so that it doesn't mark incomplete lines
+  ;; as invalid while the user is still entering them. (It does mark even
+  ;; temporarily invalid lines that aren't at the end of buffer, though.)
+  `(
+    ;; The "module:" header line. Highlight the module name.
+    (,(concat "^"
+	      "module:"			; keyword
+	      "[ \t]*"			; space
+	      "\\(\\("
+	      "[-_a-zA-Z?!*@<>$%]+"	; module name...
+	      "\\)\\|"
+	      "[^ \t\n][^\n]*?"		; ...or invalid value
+	      "\\)"
+	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+     (1 (if (match-beginning 2)
+	    'dylan-header-module-name
+	  'dylan-header-error)))
+    
+    ;; The "language:" header line. Highlight the language name. This is a bit
+    ;; of pedantry on my part -- this header is rarely used, except perhaps in
+    ;; very old files -- so I'm just using the same face as for the module name,
+    ;; rather than defining a separate face (or renaming the module name face to
+    ;; be more generic). "infix-dylan" is the only portable value, so let's warn
+    ;; about other values.
+    (,(concat "^"
+	      "language:"		; keyword
+	      "[ \t]*"			; space
+	      "\\(\\("
+	      "infix-dylan"		; language name...
+	      "\\)\\|"
+	      "[^ \t\n][^\n]*?"		; ...or invalid value
+	      "\\)"
+	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+     (1 (if (match-beginning 2)
+	    'dylan-header-module-name
+	  'dylan-header-error)))
+    
+    ;; Header lines with keywords, and lines with value continuations.
+    (,(concat "^"
+	      "\\(?:\\("
+	      "[a-zA-Z][-a-zA-Z0-9]*:"	; keyword...
+	      "\\)\\|"
+	      "[ \t]"			; ...or continuation prefix
+	      "\\)"
+	      "[ \t]*"			; space
+	      "\\("
+	      "[^ \t\n][^\n]*?"		; value
+	      "\\)"
+	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+     (1 'dylan-header-keyword nil t)
+     (2 'dylan-header-value))
+    
+    ;; Invalid header lines. This pattern assumes we've already tried the
+    ;; pattern for header lines with keywords and it didn't match.
+    ;; 
+    ;; Note: Ideally, we'd mark any subsequent continuation lines invalid,
+    ;; too. Look into a way to do that.
+    (,(concat "^"
+	      "[^ \t\n]"		; any invalid prefix character
+	      "[^\n]*\n")		; rest of line
+     . 'dylan-header-error)
+    
+    ;; Mark all lines in the header with the header background face (except for
+    ;; the final, blank line).
+    (,(concat "^"
+	      "[ \t]*"			; possible continuation prefix
+	      "[^ \t\n]+"		; any non-whitespace in line
+	      "[^\n]*\n")		; rest of line
+     (0 'dylan-header-background append))
+    
+    ;; Mark the final, blank line with the header separator face.
+    (,(concat "^"
+	      "[ \t]*\n")		; tail space
+     . 'dylan-header-separator))
+ "Value to which `font-lock-keywords' should be set when
+fontifying Dylan interchange file headers in Dylan Mode.")
+
 (defvar dylan-font-lock-keywords nil
-  "Value to which font-lock-keywords should be set when in dylan-mode")
+  "Value to which `font-lock-keywords' should be set when in
+Dylan Mode.")
 
 (defvar dyl-other-definition-words nil)
 (defvar dyl-definition-words nil)
@@ -465,18 +600,18 @@ parens will be matched between each list element.")
 					       dyl-other-parameterized-definition-words))
 		  "\\)"))
     (setq dyl-keyword-pattern
-	  ;; we disallow newlines in "define foo" patterns because it
-	  ;; allows the actual keword to be confused for a qualifier if
-	  ;; another definition follows closely.
+	  ;; We disallow newlines in "define foo" patterns because it allows the
+	  ;; actual keyword to be confused for a qualifier if another definition
+	  ;; follows closely.
 	  (concat
 	   (apply 'make-pattern
 		  (concat define-pattern dyl-definition-pattern)
 		  dyl-statement-words)
 	   dyl-statement-prefixes))
     (setq dyl-end-keyword-pattern
-	  ;; we intentionally disallow newlines in "end foo" constructs,
-	  ;; because doing so makes it very difficult to deal with the
-	  ;; keyword "end" in comments.
+	  ;; We intentionally disallow newlines in "end foo" constructs, because
+	  ;; doing so makes it very difficult to deal with the keyword "end" in
+	  ;; comments.
 	  (concat "\\bend\\b[ \t]*\\("
 		  (apply 'make-pattern
 			 (append dyl-definition-words dyl-statement-words))
@@ -512,7 +647,7 @@ parens will be matched between each list element.")
 		'("while[ \t\n]*" "")
 		'("iterate[ \t\n]+\\w+[ \t\n]*" "")
 		'("profiling[ \t\n]*" "")	      
-		;; special patterns for "define method" which is funky
+		;; special patterns for "define method", which is funky
 		(list (concat "\\(" define-pattern "\\)?"
 			      "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
 		      "[ \t\n]*=>[^;)]+;?")
@@ -540,65 +675,67 @@ parens will be matched between each list element.")
 						  find-keyword-pattern
 						  "\\|" separator-word-pattern))
     
-    (if (fboundp 'font-lock-mode)
-	(progn
-	  ;; See font-lock-mode for details.  It's ugly, but it works.
+    (when (fboundp 'font-lock-mode)
+      (setq dylan-font-lock-keywords
+	    (list dyl-end-keyword-pattern
+		  dyl-keyword-pattern
+		  separator-word-pattern
+		  "[-_a-zA-Z?!*@<>$%]+:"
+		  ;; Is there a better way to fontify symbols? Using the
+		  ;; character syntax table, perhaps? Or font-lock syntactic
+		  ;; keywords?
+		  '("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
+		  "#rest\\|#key\\|#all-keys\\|#next"
+		  dyl-other-pattern
+		  (list (concat "\\b\\(" define-pattern
+				"\\(" dyl-constant-simple-definition-pattern "\\|"
+				dyl-variable-simple-definition-pattern "\\|"
+				dyl-other-simple-definition-pattern "\\)"
+				"\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			'(7 (cond ((match-beginning 4) 'font-lock-constant-face)
+				  ((match-beginning 5) 'font-lock-variable-name-face)
+				  (t 'font-lock-function-name-face))))
+		  (list (concat "\\b\\(" define-pattern
+				dyl-definition-pattern "\\)")
+			1 'font-lock-keyword-face)
+		  (list (concat "\\b\\(" define-pattern
+				"\\(" dyl-type-definition-pattern "\\|"
+				dyl-other-definition-pattern "\\)"
+				"\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			'(6 (cond ((match-beginning 4) 'font-lock-type-face)
+				  (t 'font-lock-function-name-face))))
+		  '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
+		  (list (concat "\\bend[ \t]+\\("
+				dyl-type-definition-pattern
+				"\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			'(3 (cond ((match-beginning 2) 'font-lock-type-face)
+				  (t 'font-lock-function-name-face))))))
+      (if dylan-highlight-function-calls
 	  (setq dylan-font-lock-keywords
-		(list dyl-end-keyword-pattern
-		      dyl-keyword-pattern
-		      separator-word-pattern
-		      "[-_a-zA-Z?!*@<>$%]+:"
-		      (list "#\"[^\"]*\"?" 0 'font-lock-string-face t)
-		      "#rest\\|#key\\|#all-keys\\|#next"
-		      dyl-other-pattern
-		      (list (concat "\\b\\(" define-pattern
-				    "\\(" dyl-constant-simple-definition-pattern "\\|"
-				    dyl-variable-simple-definition-pattern "\\|"
-				    dyl-other-simple-definition-pattern "\\)"
-				    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			    '(7 (cond ((match-beginning 4) 'font-lock-constant-face)
-				      ((match-beginning 5) 'font-lock-variable-name-face)
-				      (t 'font-lock-function-name-face))))
-		      (list (concat "\\b\\(" define-pattern
-				    dyl-definition-pattern "\\)")
-			    1 'font-lock-keyword-face t)
-		      (list (concat "\\b\\(" define-pattern
-				    "\\(" dyl-type-definition-pattern "\\|"
-				    dyl-other-definition-pattern "\\)"
-				    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			    '(6 (cond ((match-beginning 4) 'font-lock-type-face)
-				      (t 'font-lock-function-name-face))))
-		      '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
-		      (list (concat "\\bend[ \t]+\\("
-				    dyl-type-definition-pattern
-				    "\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			    '(3 (cond ((match-beginning 2) 'font-lock-type-face)
-				      (t 'font-lock-function-name-face))))))
-	  (if dylan-no-highlights-in-header
-	      (setq dylan-font-lock-keywords
-		    (append dylan-font-lock-keywords
-			    (list (list 'fontify-dylan-header 0 nil t)))))
-	  (if dylan-highlight-function-calls
-	      (setq dylan-font-lock-keywords
-		    (cons 
-		     '("\\b\\(\\(\\s_\\|\\w\\)+\\)(" 1 font-lock-function-name-face)
-		     dylan-font-lock-keywords)))
-	  (if dylan-highlight-defsites
-	      (setq dylan-font-lock-keywords
-		    (append
-		     dylan-font-lock-keywords
-		     (list
-		      '("slot[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
-		      '("block[ \t\n]+(\\([^)]+\\)"
-			1 font-lock-function-name-face)
-		      '("let[ \t\n]+\\(\\w+\\)" 1 font-lock-variable-name-face)
-		      '("let[ \t\n]+(\\([^)]+\\)"
-			1 font-lock-variable-name-face)))))))))
+		(cons 
+		 '("\\b\\(\\(\\s_\\|\\w\\)+\\)(" 1 font-lock-function-name-face)
+		 dylan-font-lock-keywords)))
+      (if dylan-highlight-defsites
+	  (setq dylan-font-lock-keywords
+		(append
+		 dylan-font-lock-keywords
+		 (list
+		  '("slot[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
+		  '("block[ \t\n]+(\\([^)]+\\)"
+		    1 font-lock-function-name-face)
+		  '("let[ \t\n]+\\(\\w+\\)" 1 font-lock-variable-name-face)
+		  ;; This highlights commas and whitespace separating the
+		  ;; variable names. Try to find a way to highlight only the
+		  ;; variable names.
+		  '("let[ \t\n]+(\\([^)]+\\)"
+		    1 font-lock-variable-name-face))))))))
 
 (defun look-back (regexp)
-  "Attempts to find a match for \"regexp\" immediately preceding the current
-point.  In order for this to work properly, the search string must end with
-'$'.  Also note that this will only work within the current line."
+  "Attempt to find a match for REGEXP immediately preceding the
+current point.  Returns t if a match was found, nil otherwise.
+In order for this to work properly, the search string must end
+with \"$\".  Also note that this will only work within the
+current line."
   (save-excursion
     (save-restriction
       (let ((dot (point)))
@@ -607,36 +744,29 @@ point.  In order for this to work properly, the search string must end with
 	(re-search-forward regexp nil t)))))
 
 (defvar find-keyword-pattern nil
-  "A pattern which matches the beginnings and ends of various 'blocks',
+  "A pattern that matches the beginnings and ends of various \"blocks\",
 including parenthesized expressions.")
 
 (defvar dylan-beginning-of-form-pattern nil
-  "Like `find-keyword-pattern' but matches statement terminators as well.")
-
-(defun fontify-dylan-header (limit)
-  ;; This is called by font-lock mode to fontify the interchange file header. Go
-  ;; to the end of the header, so font-lock will apply one face to it all.
-  (let ((header-end (dylan-header-end)))
-    (when (< (point) header-end)
-      (re-search-forward ".+" header-end t))))
+  "Like `find-keyword-pattern', but matches statement terminators as well.")
 
 (defun dylan-header-end ()
   ;; Get the position of the end of the interchange file header. Dylan
   ;; interchange file headers end at the first empty line in the buffer
   ;; (containing no whitespace). Note that a well-formed header would match
   ;; 
-  ;;   "\\`\\([-a-zA-Z]+:.*\n\\([ \t]+.*\n\\)*\\)*\n"
+  ;;   "\\`\\([a-zA-Z][-a-zA-Z0-9]*:.*\n\\([ \t]+.+\n\\)*\\)*\n"
   ;;   
   ;; but this function is only meant to partition the file into header and body
-  ;; so we can handle them separately.
+  ;; so we can handle them separately, whether they are well-formed or not.
   (save-excursion
     (save-restriction
       (widen)
       (goto-char 1)
-      (or (and (re-search-forward "\n\n" nil t)
+      (or (and (re-search-forward "^[ \t]*\\(\n\\|\\'\\)" nil t)
 	       ;; in Emacs 18, the search just returns `t', not the point.
 	       (point))
-	  0))))
+	  (point-max)))))
 
 ;; The next two routines are organized bletcherously because gnu-emacs
 ;; does no tail call optimization.  We used to recursively call
@@ -646,9 +776,9 @@ including parenthesized expressions.")
 ;;
 (defun dylan-find-keyword (&optional match-statement-end in-case no-commas
 				     start)
-  "Moves the point backward to the beginning of the innermost enclosing
-'compound statement' or set of parentheses.  Returns t on success and
-nil otherwise."
+  "Move the point backward to the beginning of the innermost
+enclosing compound statement or set of parentheses.  Return t on
+success and nil otherwise."
   ;; don't go back into the interchange file header
   (let ((header-end (dylan-header-end))
 	(result 'not-found))
@@ -721,9 +851,9 @@ nil otherwise."
 	 (>= (point) header-end))))
 
 (defun dylan-find-end (&optional match-statement-end in-case no-commas)
-  "Moves the point forward to the end of the innermost enclosing
-'compound statement' or set of parentheses.  Returns t on success and
-nil otherwise."
+  "Move the point forward to the end of the innermost enclosing
+compound statement or set of parentheses.  Returns t on success
+and nil otherwise."
   (let ((result 'not-found))
     (while (eq result 'not-found)
       (setq
@@ -788,8 +918,9 @@ nil otherwise."
     result))
 
 (defun dylan-skip-star-comment-backward ()
-  "Utility function for `dylan-skip-whitespace-backward'.  Finds beginning
-of enclosing '/*' comment.  Deals properly with nested '/*' and with '//'."
+  "Utility function for `dylan-skip-whitespace-backward'.  Find
+beginning of enclosing \"/*\" comment.  Deals properly with
+nested \"/*\" and with \"//\"."
   (re-search-backward "/\\*\\|\\*/")
   (while (cond ((look-back dylan-comment-pattern)
 		(goto-char (match-beginning 0)))
@@ -800,8 +931,9 @@ of enclosing '/*' comment.  Deals properly with nested '/*' and with '//'."
   t)
 
 (defun dylan-skip-star-comment-forward ()
-  "Utility function for `dylan-skip-whitespace-forward'.  Finds end
-of enclosing '/*' comment.  Deals properly with nested '/*' and with '//'."
+  "Utility function for `dylan-skip-whitespace-forward'.  Find
+end of enclosing \"/*\" comment.  Deals properly with nested
+\"/*\" and with \"//\"."
   (re-search-forward "/\\*\\|\\*/")
   (while (cond ((look-back dylan-comment-pattern)
 		(end-of-line))
@@ -813,8 +945,8 @@ of enclosing '/*' comment.  Deals properly with nested '/*' and with '//'."
 
 (defvar non-whitespace-string
   "\\s_\\|\\s(\\|\\s\"\\|\\s$\\|\\s<\\|\\s/\\|\\sw\\|\\s.\\|\\s)\\|\\s'\\|\\s\\"
-  "A magic search string which matches everything but 'whitespace'.  Used
-because old version of emacs don't have `skip-syntax-backward'.")
+  "A magic search string that matches everything but whitespace.  Used
+because old versions of emacs don't have `skip-syntax-backward'.")
 
 (defun dylan-skip-whitespace-backward ()
   "Skips over both varieties of comments and other whitespace characters."
@@ -863,9 +995,9 @@ because old version of emacs don't have `skip-syntax-backward'.")
 		  (aux-find-body-start (cdr clauses))))))))
 
 (defun find-body-start (exprs)
-  "When passed `dyl-start-expressions', processes it to find the beginning
-of the first statment in the compound statement which starts at the 
-current point."
+  "When passed `dyl-start-expressions', processes it to find the
+beginning of the first statment in the compound statement that
+starts at the current point."
   (cond ((null exprs) (point-max))
 	((listp (car exprs))
 	 (or (aux-find-body-start (car exprs)) (find-body-start (cdr exprs))))
@@ -874,7 +1006,7 @@ current point."
 	     (find-body-start (cdr exprs))))))
 
 (defun backward-dylan-statement (&optional in-case no-commas)
-  "Moves the cursor to some undefined point between the previous 'statement'
+  "Moves the cursor to some undefined point between the previous statement
 and the current one.  If we are already between statements, move back one 
 more."
   ;; don't go back into the interchange file header
@@ -926,14 +1058,14 @@ more."
 	(set-syntax-table dylan-mode-syntax-table)))))
 
 (defun dylan-beginning-of-form ()
-  "Finds the beginning of the innermost 'statement' which contains or
+  "Finds the beginning of the innermost statement that contains or
 terminates at the current point."
   (interactive)
   (backward-dylan-statement)
   (dylan-skip-whitespace-forward))
 
 (defun forward-dylan-statement (&optional in-case no-commas)
-  "Moves the cursor to some undefined point between the current 'statement'
+  "Moves the cursor to some undefined point between the current statement
 and the next one.  If we are already between statements, move forward one 
 more."
   (unwind-protect
@@ -959,7 +1091,7 @@ more."
     (set-syntax-table dylan-mode-syntax-table)))
 
 (defun dylan-end-of-form ()
-  "Finds the end of the innermost 'statement' which contains or begins
+  "Finds the end of the innermost statement that contains or begins
 at the current point."
   (interactive)
   (forward-dylan-statement))
@@ -1018,7 +1150,8 @@ at the current point."
 	  (when (interactive-p)
 	    (when (<= (current-column) (current-indentation))
 	      (back-to-indentation))
-	    (insert-char ?\s dylan-indent))
+	    (insert-char ?\  dylan-indent)) ; Using "?\ " instead of "?\s" for
+					    ; compatibility with older Emacsen.
 	(save-excursion
 	  ;; Because "\b" doesn't work with "symbol-chars" we temporarily
 	  ;; install a new syntax table and restore the old one when done
@@ -1103,8 +1236,9 @@ at the current point."
     (set-syntax-table dylan-mode-syntax-table)))
 
 (defun in-case ()
-  "Checks to see whether we are immediately nested in a 'case' or 'select'
-statement.  Is used to provide special re-indentation for ',', ';', and '=>'."
+  "Return t if point is immediately within a \"case\" or \"select\"
+statement, nil otherwise.  Used to provide special re-indentation
+for \",\", \";\", and \"=>\"."
   (save-excursion
     (dylan-find-keyword)
     (looking-at "case\\|select")))
@@ -1126,12 +1260,12 @@ statement.  Is used to provide special re-indentation for ',', ';', and '=>'."
     (this-command-keys)))
 
 (defun dylan-insert-and-indent ()
-  "Make ';' and ',' do re-indentation for case statements."
+  "Make \";\" and \",\" do re-indentation for case statements."
   (interactive)
   (self-insert-command 1)
   (save-excursion
     ;; These things are finicky around EOF, so use "point-marker" instead
-    ;; of "point" so that re-indentations won't yield infinite loops
+    ;; of "point" so that re-indentations won't yield infinite loops.
     (let ((dot (point-marker)))
       (beginning-of-line)
       (if (in-case)
@@ -1143,7 +1277,7 @@ statement.  Is used to provide special re-indentation for ',', ';', and '=>'."
 	      (forward-line 1)))))))
 
 (defun dylan-arrow-insert ()
-  "Make '=>' do re-indentation for case statements and function declarations."
+  "Make \"=>\" do re-indentation for case statements and function declarations."
   (interactive)
   (if (not (= (preceding-char) ?=))
       (self-insert-command 1)
@@ -1163,8 +1297,8 @@ statement.  Is used to provide special re-indentation for ',', ';', and '=>'."
 ;; finish off the enclosing indentation context.
 (defun dylan-insert-block-end ()
   "Insert whatever text is needed to finish off the enclosing indentation
-context (i.e. \"block\").  Makes educated guesses about whether newlines
-and closing punctuation are needed."
+context (e.g. \"end method foo;\").  Makes educated guesses about whether
+newlines and closing punctuation are needed."
   (interactive)
   (let* ((here (point))
 	 (terminator)
@@ -1231,8 +1365,8 @@ and closing punctuation are needed."
 
 (defun dylan-beginning-of-defun (&optional arg)
   "Move backward to next beginning of definition.
-With argument, do this that many times.
-Returns t unless search stops due to end of buffer."
+With ARG, do this ARG times.  Returns t unless search stops due
+to end of buffer."
   (interactive "p")
   ;; don't go back into the interchange file header
   (let ((header-end (dylan-header-end)))
@@ -1277,8 +1411,7 @@ Returns t unless search stops due to end of buffer."
 		))
 	    (if (and arg (> arg 1))
 		(dylan-end-of-defun (1- arg)))
-	    t
-	    )))))
+	    t)))))
 
 (defun dylan-mark-function ()
   "Put mark at end of Dylan function, point at beginning."
@@ -1286,27 +1419,41 @@ Returns t unless search stops due to end of buffer."
   (beginning-of-line)
   (dylan-end-of-defun)
   (push-mark (point) t t)
-  (dylan-beginning-of-defun)
-  )
+  (dylan-beginning-of-defun))
 
 
 (defun dylan-font-lock-fontify-region (beg end loudly)
-  "Dylan mode fontification. Specially handles fontification of
-interchange file headers, then calls the default function to
-fontify the body. This is particularly important since headers
-can contain apostrophes, for example, that would otherwise
-confuse the first-pass, character syntax-based fontification and
-cause it to treat code in the file body as the interior of a
-character literal."
+  "Dylan Mode font lock fontification. Handles fontification of
+interchange file headers separately from the file body; they have
+entirely separate character and keyword syntaxes.
+
+This is particularly important since headers can contain
+apostrophes, for example, that would otherwise confuse the
+first-pass, character syntax-based fontification and cause it to
+treat code in the file body as the interior of a string*.
+
+*In fact, this is still a problem with older Emacsen that don't
+ support the `font-lock-dont-widen' variable."
   (let ((header-end (dylan-header-end)))
-    ;; If the region overlaps the header, "fontify" the header by removing
-    ;; fontification. Our font-lock pattern skips over the header, but that
-    ;; leaves any existing attributes in place, so we need to remove them here.
+    ;; If the region overlaps the header, fontify the header with the
+    ;; appropriate keyword patterns and character syntax table.
     (when (< beg header-end)
-      (font-lock-unfontify-region beg header-end))
-    ;; Fontify the rest. We narrow the buffer to exclude the header from
-    ;; character syntactic fontification. Alternatively, perhaps we could
-    ;; establish a separate syntax table for the header.
+      (let ((end (min end header-end))
+	    (save-font-lock-dont-widen font-lock-dont-widen)
+	    (save-font-lock-keywords font-lock-keywords)
+	    (save-font-lock-keywords-only font-lock-keywords-only))
+	(save-restriction
+	  (narrow-to-region 1 end)
+	  (setq font-lock-dont-widen t)
+	  (setq font-lock-keywords dylan-font-lock-header-keywords)
+	  (setq font-lock-keywords-only t)
+	  (unwind-protect
+	      (font-lock-default-fontify-region beg end loudly)
+	    (setq font-lock-dont-widen save-font-lock-dont-widen)
+	    (setq font-lock-keywords save-font-lock-keywords)
+	    (setq font-lock-keywords-only save-font-lock-keywords-only)))))
+    ;; Fontify the Dylan code. We narrow the buffer to exclude the header from
+    ;; character syntactic fontification.
     (when (> end header-end)
       (let ((beg (max beg header-end))
 	    (save-font-lock-dont-widen font-lock-dont-widen))
@@ -1320,8 +1467,11 @@ character literal."
 
 (defun dylan-mode-variables ()
   ;; Use value appropriate for font-lock-mode now.  Reset after running hooks.
-  (if (fboundp 'font-lock-mode)
-      (setq font-lock-keywords dylan-font-lock-keywords))
+  ;; 
+  ;; cpage 2007-04-23: Why do this?
+  ;; 
+  (when (fboundp 'font-lock-mode)
+    (setq font-lock-keywords dylan-font-lock-keywords))
   (if (not (boundp 'font-lock-syntax-table))
       (set-syntax-table dylan-indent-syntax-table)
     (make-local-variable 'font-lock-syntax-table)
@@ -1349,27 +1499,29 @@ character literal."
   (setq parse-sexp-ignore-comments t)
   (setq local-abbrev-table dylan-mode-abbrev-table)
   (if (not dylan-mode-for-emacs-21-and-later)
-     (progn
-       (make-local-variable 'after-change-function)
-       (setq after-change-function nil))
-     (progn
-       (make-local-variable 'after-change-functions)
-       (if (not (fboundp 'after-change-functions))
-           (setq after-change-functions nil))))
+      (progn
+	(make-local-variable 'after-change-function)
+	(setq after-change-function nil))
+    (progn
+      (make-local-variable 'after-change-functions)
+      (if (not (fboundp 'after-change-functions))
+	  (setq after-change-functions nil))))
   (make-local-variable 'after-change-function)
   (setq after-change-function nil)
   (setq indent-tabs-mode nil)
-  (if dylan-mode-for-emacs-21-and-later
-      (progn
-	(set-syntax-table dylan-indent-syntax-table)
-	(dylan-set-up-syntax-tables)
-	(make-local-variable 'font-lock-defaults)
-	(setq font-lock-defaults
-	      '(dylan-font-lock-keywords
-		nil nil nil nil
-		(font-lock-fontify-region-function
-		 . dylan-font-lock-fontify-region)))))
-  (run-mode-hooks 'dylan-mode-hook)
+  (when dylan-mode-for-emacs-21-and-later
+    (set-syntax-table dylan-indent-syntax-table)
+    (dylan-set-up-syntax-tables)
+    (make-local-variable 'font-lock-defaults)
+    (setq font-lock-defaults
+	  '(dylan-font-lock-keywords
+	    nil t nil nil
+	    (font-lock-fontify-region-function
+	     . dylan-font-lock-fontify-region))))
+  (if (fboundp 'run-mode-hooks)
+      (run-mode-hooks 'dylan-mode-hook)
+    (run-hooks 'dylan-mode-hook))	; For compatibility with older Emacsen,
+					; fall back to `run-hooks'.
   ;; This is the table the user should always see, even though the indent and
   ;; font lock code both reset it temporarily.
   (set-syntax-table dylan-mode-syntax-table))
