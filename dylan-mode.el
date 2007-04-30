@@ -514,6 +514,7 @@ parens will be matched between each list element.")
 	      "\\)"
 	      "[ \t]*"			; space
 	      "\\("
+	      ;; Can keyword lines have empty values?
 	      "[^ \t\n][^\n]*?"		; value
 	      "\\)"
 	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
@@ -1557,6 +1558,10 @@ during initialization.
 
 
 ;;; Dylan mode load-time initialization
+
+;; Map Dylan file extensions to Dylan Mode
+(add-to-list 'auto-mode-alist
+	     '("\\.\\(dylan\\|intr\\|input\\)\\'" . dylan-mode))
 
 ;; We must use the "indentation" syntax table when doing font-lock
 ;; processing.  In modern EMACSen (xemacs 19.14, FSF 19.30), the
