@@ -1459,7 +1459,7 @@ treat code in the file body as the interior of a string*.
       (let ((beg (max beg header-end))
 	    (save-font-lock-dont-widen font-lock-dont-widen))
 	(save-restriction
-	  (narrow-to-region beg (point-max))
+	  (narrow-to-region header-end (point-max))
 	  (setq font-lock-dont-widen t)
 	  (unwind-protect
 	      (font-lock-default-fontify-region beg end loudly)
