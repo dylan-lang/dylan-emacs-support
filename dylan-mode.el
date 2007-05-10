@@ -5,7 +5,7 @@
 
 ;; Author: Robert Stockton (rgs@cs.cmu.edu), others, then Chris Page
 ;; Maintainer: Chris Page <cpage@opendylan.org>
-;; Version: 1.19
+;; Version: 1.20
 
 ;; This file is *NOT* part of GNU Emacs.
 
@@ -149,10 +149,12 @@
 ;;   version 1.19
 ;;     Added fontification of the Dylan interchange file header.
 ;;     Other miscellaneous fixes and cleanups.
+;;   version 1.20
+;;     Added support for multiple levels of font-lock decoration.
 
 ;;; Code:
 
-(defconst dylan-version "1.19"
+(defconst dylan-version "1.20"
   "Dylan Mode version number.")
 
 (defun dylan-version ()
@@ -179,17 +181,10 @@ When called interactively, displays the version."
 
 (defcustom dylan-highlight-function-calls nil
   "*Whether to highlight function calls in `font-lock-mode'.
+Applies only in font-lock decoration level 2 or higher.
 
 This uses a very simple regular expression that highlights just
 about anything adjacent to a left-parenthesis."
-  :type  'boolean
-  :group 'dylan)
-
-(defcustom dylan-highlight-defsites t
-  "*Whether to highlight all variable bindings in `font-lock-mode'.
-
-This adds highlighting of slot names, block exit functions, and
-local variables at their definitions."
   :type  'boolean
   :group 'dylan)
 
@@ -267,7 +262,7 @@ VARIABLE is one of the dyl-*-words variables listed in
 
 This is designed to be called from your `dylan-mode-hook'."
   (add-to-list variable keyword)
-  (set-dylan-patterns)
+  (dylan-mode-init-patterns-and-keywords)
   (if (fboundp 'font-lock-mode)
       (setq font-lock-keywords dylan-font-lock-keywords)))
 
@@ -325,7 +320,7 @@ include any general pattern that must be indented specially.")
     "handler" "in" "instance" "keyed-by" "let" "local" "otherwise"
     "slot" "subclass" "then" "to" "virtual")
   "Keywords that do not require special indentation handling, but which
-should be highlighted if this capability exists.")
+should be highlighted by font-lock.")
 
 
 ;;; The mode implementation
@@ -548,7 +543,18 @@ fontifying Dylan interchange file headers in Dylan Mode.")
 
 (defvar dylan-font-lock-keywords nil
   "Value to which `font-lock-keywords' should be set when in
-Dylan Mode.")
+Dylan Mode, for font-lock decoration level 0.")
+(defvar dylan-font-lock-keywords-1 nil
+  "Value to which `font-lock-keywords' should be set when in
+Dylan Mode, for font-lock decoration level 1.")
+(defvar dylan-font-lock-keywords-2 nil
+  "Value to which `font-lock-keywords' should be set when in
+Dylan Mode, for font-lock decoration level 2.")
+
+;; Regexp pattern that matches `define' and adjectives. A sub-pattern designed
+;; to be followed by patterns that match the define word or other parts of the
+;; definition macro call.
+(defconst dyl-define-pattern "define\\([ \t]+\\w+\\)*[ \t]+")
 
 (defvar dyl-other-definition-words nil)
 (defvar dyl-definition-words nil)
@@ -560,7 +566,14 @@ Dylan Mode.")
 (defvar dyl-type-parameterized-definition-pattern nil)
 (defvar dyl-parameterized-definition-pattern nil)
 (defvar dyl-end-keyword-pattern nil)
-(defvar separator-word-pattern nil)
+(defvar dyl-separator-word-pattern nil
+  ;; Try to find a way to make these context-sensitive, so they are only
+  ;; highlighted within the appropriate statements.  Unfortunately, doing this
+  ;; robustly may require knowing the syntax of all statement macros and parsing
+  ;; them so we don't highlight separators when they're within nested
+  ;; statements.  On the other hand, we may get a lot of mileage out of just
+  ;; handling all the iteration words in for statements.
+  "Separator words in statement macros.")
 (defvar dyl-constant-simple-definition-pattern nil)
 (defvar dyl-variable-simple-definition-pattern nil)
 (defvar dyl-other-simple-definition-pattern nil)
@@ -570,7 +583,9 @@ Dylan Mode.")
 (defvar find-keyword-pattern nil)
 (defvar dylan-beginning-of-form-pattern nil)
 
-(defun set-dylan-patterns ()
+(defun dylan-mode-init-keyword-patterns ()
+  ;; Construct Dylan Mode keyword patterns (used for indenting and font-lock),
+  ;; using the values of the various keyword list variables.
   
   ;; Concatenate various lists of words into other lists.
   (setq dyl-other-definition-words 
@@ -582,154 +597,176 @@ Dylan Mode.")
 		dyl-other-definition-words))
   
   ;; Define regular expression patterns using the word lists.
-  (let ((define-pattern "define\\([ \t]+\\w+\\)*[ \t]+")) ; Common sub-patterns.
-    (setq dyl-type-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-type-parameterized-definition-words) "\\)"))
-    (setq dyl-other-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-other-definition-words) "\\)"))
-    (setq dyl-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-definition-words) "\\)"))
-    (setq dyl-named-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-named-definition-words) "\\)"))
-    (setq dyl-unnamed-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-unnamed-definition-words) "\\)"))
-    (setq dyl-type-parameterized-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-type-parameterized-definition-words) "\\)"))
-    (setq dyl-parameterized-definition-pattern
-	  (concat "\\("
-		  (apply 'make-pattern (append dyl-type-parameterized-definition-words
-					       dyl-other-parameterized-definition-words))
-		  "\\)"))
-    (setq dyl-keyword-pattern
-	  ;; We disallow newlines in "define foo" patterns because it allows the
-	  ;; actual keyword to be confused for a qualifier if another definition
-	  ;; follows closely.
-	  (concat
-	   (apply 'make-pattern
-		  (concat define-pattern dyl-definition-pattern)
-		  dyl-statement-words)
-	   dyl-statement-prefixes))
-    (setq dyl-end-keyword-pattern
-	  ;; We intentionally disallow newlines in "end foo" constructs, because
-	  ;; doing so makes it very difficult to deal with the keyword "end" in
-	  ;; comments.
-	  (concat "\\bend\\b[ \t]*\\("
-		  (apply 'make-pattern
-			 (append dyl-definition-words dyl-statement-words))
-		  dyl-statement-prefixes
-		  "\\)?"))
-    (setq separator-word-pattern (apply 'make-pattern dyl-separator-words))
-    (setq dyl-constant-simple-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-constant-simple-definition-words) "\\)"))
-    (setq dyl-variable-simple-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-variable-simple-definition-words) "\\)"))
-    (setq dyl-other-simple-definition-pattern
-	  (concat "\\(" (apply 'make-pattern dyl-other-simple-definition-words) "\\)"))
-    (setq dyl-simple-definition-pattern
-	  (concat "\\(" (apply 'make-pattern
-			       (append dyl-constant-simple-definition-words
-				       dyl-variable-simple-definition-words
-				       dyl-other-simple-definition-words)) "\\)"))
-    (setq dyl-other-pattern
-	  (apply 'make-pattern
-		 (concat "define\\([ \t\n]+\\w+\\)*[ \t\n]+"
-			 dyl-simple-definition-pattern)
-		 dyl-other-words))
-    (setq dyl-start-expressions
-	  ;; cpage 2007-04-06: Why are these listed here? Shouldn't we build these
-	  ;; patterns from dyl-statement-words?
-	  (list '("if[ \t\n]*" "")
-		'("block[ \t\n]*" "")
-		'("for[ \t\n]*" "")
-		'("select[ \t\n]*" "")
-		'("when[ \t\n]*" "")
-		'("unless[ \t\n]*" "")
-		'("until[ \t\n]*" "")
-		'("while[ \t\n]*" "")
-		'("iterate[ \t\n]+\\w+[ \t\n]*" "")
-		'("profiling[ \t\n]*" "")	      
-		;; special patterns for "define method", which is funky
-		(list (concat "\\(" define-pattern "\\)?"
-			      "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
-		      "[ \t\n]*=>[^;)]+;?")
-		(list (concat "\\(" define-pattern "\\)?"
-			      "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
-		      "[ \t\n]*;")
-		(concat "define[ \t]+" dyl-named-definition-pattern
-			"[ \t\n]+[^ \t\n]+")
-		(concat "define[ \t]+" dyl-unnamed-definition-pattern)
-		(list (concat "\\(" define-pattern "\\)?"
-			      dyl-parameterized-definition-pattern
-			      "[ \t\n]+[^\( ]*[ \t\n]*")
-		      "")
-		"begin"
-		"case"
-		;; Since we don't know the syntax of all the "with(out)-" macros,
-		;; just assume that the user has already split the line at
-		;; the end of the header.
-		(concat dyl-with-statement-prefix "[^\n]*")
-		"[[({]"))
-    (setq find-keyword-pattern (concat "[][)(}{\"']\\|\\bdefine\\b\\|"
-				       dyl-end-keyword-pattern 
-				       "\\|" dyl-keyword-pattern))
-    (setq dylan-beginning-of-form-pattern (concat "[;,]\\|=>\\|"
-						  find-keyword-pattern
-						  "\\|" separator-word-pattern))
-    
-    (when (fboundp 'font-lock-mode)
-      (setq dylan-font-lock-keywords
-	    (list dyl-end-keyword-pattern
-		  dyl-keyword-pattern
-		  separator-word-pattern
-		  "[-_a-zA-Z?!*@<>$%]+:"
-		  ;; Is there a better way to fontify symbols? Using the
-		  ;; character syntax table, perhaps? Or font-lock syntactic
-		  ;; keywords?
-		  '("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
-		  "#rest\\|#key\\|#all-keys\\|#next"
-		  dyl-other-pattern
-		  (list (concat "\\b\\(" define-pattern
-				"\\(" dyl-constant-simple-definition-pattern "\\|"
-				dyl-variable-simple-definition-pattern "\\|"
-				dyl-other-simple-definition-pattern "\\)"
-				"\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			'(7 (cond ((match-beginning 4) 'font-lock-constant-face)
-				  ((match-beginning 5) 'font-lock-variable-name-face)
-				  (t 'font-lock-function-name-face))))
-		  (list (concat "\\b\\(" define-pattern
-				dyl-definition-pattern "\\)")
-			1 'font-lock-keyword-face)
-		  (list (concat "\\b\\(" define-pattern
-				"\\(" dyl-type-definition-pattern "\\|"
-				dyl-other-definition-pattern "\\)"
-				"\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			'(6 (cond ((match-beginning 4) 'font-lock-type-face)
-				  (t 'font-lock-function-name-face))))
-		  '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
-		  (list (concat "\\bend[ \t]+\\("
-				dyl-type-definition-pattern
-				"\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			'(3 (cond ((match-beginning 2) 'font-lock-type-face)
-				  (t 'font-lock-function-name-face))))))
-      (if dylan-highlight-function-calls
-	  (setq dylan-font-lock-keywords
-		(cons 
-		 '("\\b\\(\\(\\s_\\|\\w\\)+\\)(" 1 font-lock-function-name-face)
-		 dylan-font-lock-keywords)))
-      (if dylan-highlight-defsites
-	  (setq dylan-font-lock-keywords
-		(append
-		 dylan-font-lock-keywords
-		 (list
-		  '("slot[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
-		  '("block[ \t\n]+(\\([^)]+\\)"
-		    1 font-lock-function-name-face)
-		  '("let[ \t\n]+\\(\\w+\\)" 1 font-lock-variable-name-face)
-		  ;; This highlights commas and whitespace separating the
-		  ;; variable names. Try to find a way to highlight only the
-		  ;; variable names.
-		  '("let[ \t\n]+(\\([^)]+\\)"
-		    1 font-lock-variable-name-face))))))))
+  (setq dyl-type-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-type-parameterized-definition-words) "\\)"))
+  (setq dyl-other-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-other-definition-words) "\\)"))
+  (setq dyl-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-definition-words) "\\)"))
+  (setq dyl-named-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-named-definition-words) "\\)"))
+  (setq dyl-unnamed-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-unnamed-definition-words) "\\)"))
+  (setq dyl-type-parameterized-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-type-parameterized-definition-words) "\\)"))
+  (setq dyl-parameterized-definition-pattern
+	(concat "\\("
+		(apply 'make-pattern (append dyl-type-parameterized-definition-words
+					     dyl-other-parameterized-definition-words))
+		"\\)"))
+  (setq dyl-keyword-pattern
+	;; We disallow newlines in "define foo" patterns because it allows the
+	;; actual keyword to be confused for a qualifier if another definition
+	;; follows closely.
+	(concat
+	 (apply 'make-pattern
+		(concat dyl-define-pattern dyl-definition-pattern)
+		dyl-statement-words)
+	 dyl-statement-prefixes))
+  (setq dyl-end-keyword-pattern
+	;; We intentionally disallow newlines in "end foo" constructs, because
+	;; doing so makes it very difficult to deal with the keyword "end" in
+	;; comments.
+	(concat "\\bend\\b[ \t]*\\("
+		(apply 'make-pattern
+		       (append dyl-definition-words dyl-statement-words))
+		dyl-statement-prefixes
+		"\\)?"))
+  (setq dyl-separator-word-pattern (apply 'make-pattern dyl-separator-words))
+  (setq dyl-constant-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-constant-simple-definition-words) "\\)"))
+  (setq dyl-variable-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-variable-simple-definition-words) "\\)"))
+  (setq dyl-other-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern dyl-other-simple-definition-words) "\\)"))
+  (setq dyl-simple-definition-pattern
+	(concat "\\(" (apply 'make-pattern
+			     (append dyl-constant-simple-definition-words
+				     dyl-variable-simple-definition-words
+				     dyl-other-simple-definition-words)) "\\)"))
+  (setq dyl-other-pattern
+	(apply 'make-pattern
+	       (concat "define\\([ \t\n]+\\w+\\)*[ \t\n]+"
+		       dyl-simple-definition-pattern)
+	       dyl-other-words))
+  (setq dyl-start-expressions
+	;; cpage 2007-04-06: Why are these listed here? Shouldn't we build these
+	;; patterns from dyl-statement-words?
+	(list '("if[ \t\n]*" "")
+	      '("block[ \t\n]*" "")
+	      '("for[ \t\n]*" "")
+	      '("select[ \t\n]*" "")
+	      '("when[ \t\n]*" "")
+	      '("unless[ \t\n]*" "")
+	      '("until[ \t\n]*" "")
+	      '("while[ \t\n]*" "")
+	      '("iterate[ \t\n]+\\w+[ \t\n]*" "")
+	      '("profiling[ \t\n]*" "")	      
+	      ;; special patterns for "define method", which is funky
+	      (list (concat "\\(" dyl-define-pattern "\\)?"
+			    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+		    "[ \t\n]*=>[^;)]+;?")
+	      (list (concat "\\(" dyl-define-pattern "\\)?"
+			    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+		    "[ \t\n]*;")
+	      (concat "define[ \t]+" dyl-named-definition-pattern
+		      "[ \t\n]+[^ \t\n]+")
+	      (concat "define[ \t]+" dyl-unnamed-definition-pattern)
+	      (list (concat "\\(" dyl-define-pattern "\\)?"
+			    dyl-parameterized-definition-pattern
+			    "[ \t\n]+[^\( ]*[ \t\n]*")
+		    "")
+	      "begin"
+	      "case"
+	      ;; Since we don't know the syntax of all the "with(out)-" macros,
+	      ;; just assume that the user has already split the line at
+	      ;; the end of the header.
+	      (concat dyl-with-statement-prefix "[^\n]*")
+	      "[[({]"))
+  (setq find-keyword-pattern (concat "[][)(}{\"']\\|\\bdefine\\b\\|"
+				     dyl-end-keyword-pattern 
+				     "\\|" dyl-keyword-pattern))
+  (setq dylan-beginning-of-form-pattern (concat "[;,]\\|=>\\|"
+						find-keyword-pattern
+						"\\|" dyl-separator-word-pattern)))
+
+(defun dylan-mode-init-font-lock-keywords ()
+  ;; Construct Dylan Mode font-lock keyword variables, using the values of the
+  ;; various pattern variables.
+  
+  ;; Decoration level 0: Don't highlight anything, currently -- mostly useful
+  ;; for testing.  Think about how to best differentiate between 0 and 1 by
+  ;; moving some keyword patterns from 1 to 0, or by moving 2 to 3 and moving
+  ;; some from 1 to 2.  Also highlights anything the user adds with
+  ;; dylan-add-keyword.
+  (setq dylan-font-lock-keywords nil)
+  
+  ;; Decoration level 1: Most Dylan keywords
+  (setq dylan-font-lock-keywords-1
+	(append dylan-font-lock-keywords
+		(list dyl-end-keyword-pattern
+		      dyl-keyword-pattern
+		      dyl-separator-word-pattern
+		      ;; Symbols with keyword syntax
+		      "[-_a-zA-Z?!*@<>$%]+:"
+		      ;; Symbols with string syntax
+		      ;; 
+		      ;; Is there a better way to fontify these symbols? Using
+		      ;; font-lock syntactic keywords, perhaps?
+		      '("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
+		      ;; Function signature keywords
+		      "#rest\\|#key\\|#all-keys\\|#next"
+		      dyl-other-pattern
+		      ;; Definition starts
+		      (list (concat "\\b\\(" dyl-define-pattern
+				    "\\(" dyl-constant-simple-definition-pattern "\\|"
+				    dyl-variable-simple-definition-pattern "\\|"
+				    dyl-other-simple-definition-pattern "\\)"
+				    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			    '(7 (cond ((match-beginning 4) 'font-lock-constant-face)
+				      ((match-beginning 5) 'font-lock-variable-name-face)
+				      (t 'font-lock-function-name-face))))
+		      (list (concat "\\b\\(" dyl-define-pattern
+				    dyl-definition-pattern "\\)")
+			    1 'font-lock-keyword-face)
+		      (list (concat "\\b\\(" dyl-define-pattern
+				    "\\(" dyl-type-definition-pattern "\\|"
+				    dyl-other-definition-pattern "\\)"
+				    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			    '(6 (cond ((match-beginning 4) 'font-lock-type-face)
+				      (t 'font-lock-function-name-face))))
+		      ;; Local methods
+		      '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
+		      ;; Definition ends
+		      (list (concat "\\bend[ \t]+\\("
+				    dyl-type-definition-pattern
+				    "\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+			    '(3 (cond ((match-beginning 2) 'font-lock-type-face)
+				      (t 'font-lock-function-name-face)))))))
+  
+  ;; Decoration level 2: Highlight all function and local variable definitions,
+  ;; and, optionally, all function calls.
+  (setq dylan-font-lock-keywords-2
+	(append dylan-font-lock-keywords-1
+		'(("slot[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
+		  ("block[ \t\n]+(\\([^)]+\\)" 1 font-lock-function-name-face)
+		  ("let[ \t\n]+\\(\\w+\\)" 1 font-lock-variable-name-face)
+		  ;; This highlights commas and whitespace separating the variable
+		  ;; names. Try to find a way to highlight only the variable names.
+		  ("let[ \t\n]+(\\([^)]+\\)" 1 font-lock-variable-name-face))))
+  (when dylan-highlight-function-calls
+    (setq dylan-font-lock-keywords-2
+	  (append dylan-font-lock-keywords-2
+		  ;; Function calls
+		  '(("\\b\\(\\(\\s_\\|\\w\\)+\\)("
+		     1 font-lock-function-name-face))))))
+
+(defun dylan-mode-init-patterns-and-keywords ()
+  ;; Construct regexp patterns and font-lock keywords, using the values of the
+  ;; various keyword list variables.
+  (dylan-mode-init-keyword-patterns)
+  (when (fboundp 'font-lock-mode)
+    (dylan-mode-init-font-lock-keywords)))
 
 (defun look-back (regexp)
   "Attempt to find a match for REGEXP immediately preceding the
@@ -834,7 +871,7 @@ success and nil otherwise."
 			      (looking-at "for\\b")) (error nil)))
 		      (backward-up-list 1))
 		  t)
-		 ((and (looking-at separator-word-pattern)
+		 ((and (looking-at dyl-separator-word-pattern)
 		       (not match-statement-end))
 		  'not-found)
 		 ((and (looking-at ";") (not match-statement-end))
@@ -894,7 +931,7 @@ and nil otherwise."
 			(up-list 1))
 		    t)
 		   ((save-excursion (goto-char match-start)
-				    (looking-at separator-word-pattern))
+				    (looking-at dyl-separator-word-pattern))
 		    t)
 		   ((look-back ";$")
 		    (if (not match-statement-end)
@@ -997,7 +1034,7 @@ because old versions of emacs don't have `skip-syntax-backward'.")
 
 (defun find-body-start (exprs)
   "When passed `dyl-start-expressions', processes it to find the
-beginning of the first statment in the compound statement that
+beginning of the first statement in the compound statement that
 starts at the current point."
   (cond ((null exprs) (point-max))
 	((listp (car exprs))
@@ -1021,7 +1058,7 @@ more."
 	(let* ((dot (point)))
 	  ;; skip over "separator words"
 	  (if (save-excursion
-		(and (re-search-backward separator-word-pattern header-end t)
+		(and (re-search-backward dyl-separator-word-pattern header-end t)
 		     (if (not (looking-at "exception\\|elseif"))
 			 (forward-word 1)
 		       (goto-char (match-end 0))
@@ -1029,14 +1066,14 @@ more."
 			 (error nil))
 		       t)
 		     (>= (point) dot)))
-	      (progn (re-search-backward separator-word-pattern header-end t)
+	      (progn (re-search-backward dyl-separator-word-pattern header-end t)
 		     (dylan-skip-whitespace-backward)))
 	  (if (look-back "[,;]$\\|=>$")
 	      (backward-char))
 	  (cond ((not (dylan-find-keyword t in-case no-commas))
 		 (if (look-back "\\(define\\|local\\)[ \t]+") ; hack
 		     (goto-char (match-beginning 0))))
-		((looking-at separator-word-pattern)
+		((looking-at dyl-separator-word-pattern)
 		 (let ((start (point)))
 		   (cond ((looking-at "\\(exception\\|elseif\\)[ \t\n]*(")
 			  (goto-char (match-end 1))
@@ -1077,7 +1114,7 @@ more."
 	(dylan-skip-whitespace-forward)
 	(let* ((dot (point)))
 	  ;; skip over "separator words"
-	  (if (looking-at separator-word-pattern)
+	  (if (looking-at dyl-separator-word-pattern)
 	      (if (not (looking-at "exception\\|elseif"))
 			 (forward-word 1)
 		       (goto-char (match-end 0))
@@ -1187,7 +1224,7 @@ at the current point."
 		  (cond ((not block-indent)
 			 (indent-if-continuation ";" (point) 0))
 			;; some keywords line up with start of comp. stmt 
-			((looking-at separator-word-pattern) block-indent)
+			((looking-at dyl-separator-word-pattern) block-indent)
 			;; end keywords line up with start of comp. stmt 
 			((looking-at dyl-end-keyword-pattern) block-indent)
 			;; parenthesized expressions (separated by commas)
@@ -1466,7 +1503,7 @@ treat code in the file body as the interior of a string*.
 	    (setq font-lock-dont-widen save-font-lock-dont-widen)))))))
 
 
-(defun dylan-mode-variables ()
+(defun dylan-mode-init-variables ()
   ;; Use value appropriate for font-lock-mode now.  Reset after running hooks.
   ;; 
   ;; cpage 2007-04-23: Why do this?
@@ -1515,7 +1552,9 @@ treat code in the file body as the interior of a string*.
     (dylan-set-up-syntax-tables)
     (make-local-variable 'font-lock-defaults)
     (setq font-lock-defaults
-	  '(dylan-font-lock-keywords
+	  '((dylan-font-lock-keywords
+	     dylan-font-lock-keywords-1
+	     dylan-font-lock-keywords-2)
 	    nil t nil nil
 	    (font-lock-fontify-region-function
 	     . dylan-font-lock-fontify-region))))
@@ -1553,13 +1592,15 @@ during initialization.
 	mode-name "Dylan"
 	local-abbrev-table dylan-mode-abbrev-table
 	abbrev-mode t)
-  (set-dylan-patterns)
-  (dylan-mode-variables))
+  (dylan-mode-init-patterns-and-keywords)
+  (dylan-mode-init-variables))
 
 
 ;;; Dylan mode load-time initialization
 
-;; Map Dylan file extensions to Dylan Mode
+;; Map Dylan file extensions to Dylan Mode. (Is ".input" unique enough for us to
+;; automatically map it to Dylan Mode, or should we omit it and let users add it
+;; if desired?)
 (add-to-list 'auto-mode-alist
 	     '("\\.\\(dylan\\|intr\\|input\\)\\'" . dylan-mode))
 
@@ -1589,7 +1630,7 @@ during initialization.
 	     '(lambda ()
 		(if (not (eq major-mode 'dylan-mode))
 		    nil
-		  (setq font-lock-keywords dylan-font-lock-keywords)
+		  (setq font-lock-keywords dylan-font-lock-keywords-2)
 		  ;; This is to handle fontification updates while editing:
 		  (if (not dylan-mode-for-emacs-21-and-later)
 		      (progn
