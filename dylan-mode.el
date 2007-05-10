@@ -188,10 +188,18 @@ about anything adjacent to a left-parenthesis."
   :type  'boolean
   :group 'dylan)
 
-(defcustom dylan-mode-hook nil
+(defun dylan-indent-spaces-only ()
+  "Indent using spaces only, without any tab characters.
+
+A trivial function that sets `indent-tabs-mode' to nil, suitable
+for use as a Dylan mode hook."
+  (setq indent-tabs-mode nil))
+
+(defcustom dylan-mode-hook '(dylan-indent-spaces-only)
   "*Hook called by `dylan-mode'."
   ;; To Do: Add support for imenu, then enable this option.
   ;; :options '(imenu-add-menubar-index)
+  :options '(dylan-indent-spaces-only)
   :type  'hook
   :group 'dylan)
 
@@ -334,6 +342,7 @@ should be highlighted by font-lock.")
   (define-key map ">"       'dylan-arrow-insert)
   (define-key map "\n"      'dylan-newline-and-indent)
   (define-key map "\t"      'dylan-indent-line)
+  (define-key map "\177"    'backward-delete-char-untabify)
   (define-key map "\M-a"    'dylan-beginning-of-form)
   (define-key map "\M-e"    'dylan-end-of-form)
   (define-key map "\M-)"    'dylan-insert-block-end)
@@ -342,7 +351,7 @@ should be highlighted by font-lock.")
   (define-key map "\M-\C-h" 'dylan-mark-function))
 
 (defvar dylan-mode-map ()
-  "Keymap used in dylan mode.")
+  "Keymap for Dylan mode.")
 (if (not dylan-mode-map)
     (progn
       (setq dylan-mode-map (make-sparse-keymap))
@@ -1546,7 +1555,6 @@ treat code in the file body as the interior of a string*.
 	  (setq after-change-functions nil))))
   (make-local-variable 'after-change-function)
   (setq after-change-function nil)
-  (setq indent-tabs-mode nil)
   (when dylan-mode-for-emacs-21-and-later
     (set-syntax-table dylan-indent-syntax-table)
     (dylan-set-up-syntax-tables)
