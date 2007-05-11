@@ -275,42 +275,62 @@ This is designed to be called from your `dylan-mode-hook'."
       (setq font-lock-keywords dylan-font-lock-keywords)))
 
 (defvar dyl-unnamed-definition-words
-  '("interface")
+  '(;; Melange/C-FFI
+    "interface")
   "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dyl-named-definition-words
-  '("module" "library" "macro" "C-struct" "C-union" "C-function"
+  '(;; Dylan
+    "module" "library" "macro"
+    ;; C-FFI
+    "C-struct" "C-union" "C-function"
     "C-callable-wrapper")
   "Words that introduce simple named definitions like \"define library\".")
 
 (defvar dyl-type-parameterized-definition-words
-  '("class" "C-subtype" "C-mapped-subtype")
+  '(;; Dylan
+    "class"
+    ;; C-FFI
+    "C-subtype" "C-mapped-subtype")
   "Words that introduce type definitions like \"define class\". These are
 also parameterized like \"define method\" and are appended to 
 `dyl-other-parameterized-definition-words'.")
 
 (defvar dyl-other-parameterized-definition-words
-  '("method" "function" "C-variable" "C-address")
+  '(;; Dylan
+    "method" "function"
+    ;; C-FFI
+    "C-variable" "C-address")
   "Words that introduce trickier definitions like \"define method\".  These
 require special definitions to be added to `dyl-start-expressions'.")
 
 (defvar dyl-constant-simple-definition-words
-  '("constant")
+  '(;; Dylan
+    "constant")
   "Words that introduce module constant definitions. These must also be
 simple definitions and are appended to `dyl-other-simple-definition-words'.")
 
 (defvar dyl-variable-simple-definition-words
-  '("variable")
+  '(;; Dylan
+    "variable")
   "Words that introduce module variable definitions. These must also be
 simple definitions and are appended to `dyl-other-simple-definition-words'.")
 
 (defvar dyl-other-simple-definition-words
-  '("generic" "domain" "C-pointer-type" "table")
+  '(;; Dylan
+    "generic" "domain"
+    ;; C-FFI
+    "C-pointer-type"
+    ;; Extensions
+    "table")
   "Other words that introduce simple definitions (without implicit bodies).")
 
 (defvar dyl-statement-words
-  '("if" "block" "begin" "method" "case" "for" "select" "when" "unless"
-    "until" "while" "iterate" "profiling")
+  '(;; Dylan
+    "if" "block" "begin" "method" "case" "for" "select" "when" "unless"
+    "until" "while"
+    ;; Extensions
+    "iterate" "profiling")
   "Words that begin statements with implicit bodies.")
 
 ;; Names beginning "with-" and "without-" are commonly used as statement macros.
@@ -319,14 +339,18 @@ simple definitions and are appended to `dyl-other-simple-definition-words'.")
   (concat "\\|\\b" dyl-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
 
 (defvar dyl-separator-words
-  '("finally" "exception" "cleanup" "else" "elseif" "afterwards")
+  '(;; Dylan
+    "finally" "exception" "cleanup" "else" "elseif" "afterwards")
   "Patterns that act as separators in compound statements.  This may
 include any general pattern that must be indented specially.")
 
 (defvar dyl-other-words
-  '("above" "below" "by" "from"
-    "handler" "in" "instance" "keyed-by" "let" "local" "otherwise"
-    "slot" "subclass" "then" "to" "virtual")
+  '(;; Dylan
+    "above" "below" "by" "from"
+    "handler" "in" "instance" "let" "local" "otherwise"
+    "slot" "subclass" "then" "to"
+    ;; Extensions
+    "keyed-by" "virtual")
   "Keywords that do not require special indentation handling, but which
 should be highlighted by font-lock.")
 
