@@ -5,7 +5,7 @@
 
 ;; Author: Robert Stockton (rgs@cs.cmu.edu), others, then Chris Page
 ;; Maintainer: Chris Page <cpage@opendylan.org>
-;; Version: 1.20
+;; Version: 1.21
 
 ;; This file is *NOT* part of GNU Emacs.
 
@@ -151,10 +151,12 @@
 ;;     Other miscellaneous fixes and cleanups.
 ;;   version 1.20
 ;;     Added support for multiple levels of font-lock decoration.
+;;   version 1.21
+;;     Removed dylan-outdent-arrows. It should always be on.
 
 ;;; Code:
 
-(defconst dylan-version "1.20"
+(defconst dylan-version "1.21"
   "Dylan Mode version number.")
 
 (defun dylan-version ()
@@ -172,11 +174,6 @@ When called interactively, displays the version."
 (defcustom dylan-indent 2
   "*Number of spaces to indent each sub-block."
   :type  'integer
-  :group 'dylan)
-
-(defcustom dylan-outdent-arrows t
-  "*Whether to outdent \"=>\" in function signatures."
-  :type  'boolean
   :group 'dylan)
 
 (defcustom dylan-highlight-function-calls nil
@@ -1171,7 +1168,7 @@ at the current point."
 					 &optional in-case in-paren)
   (save-excursion
     (goto-char line-start)
-    (let ((arrow (and dylan-outdent-arrows (looking-at "=>"))))
+    (let ((arrow (looking-at "=>")))
       (dylan-skip-whitespace-backward)
       (if (look-back "finally$")	; special case -- this one is tricky
 	  0				; because "for" can have empty bodies
