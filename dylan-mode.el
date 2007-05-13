@@ -744,6 +744,8 @@ Dylan Mode, for Font Lock decoration level 2.")
 		      ;; Is there a better way to fontify these symbols? Using
 		      ;; font-lock syntactic keywords, perhaps?
 		      '("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
+		      ;; Logical negation operator
+		      '("\\W\\(~\\)" 1 font-lock-negation-char-face)
 		      ;; Function signature keywords
 		      ;;
 		      ;; "#" does not have symbol or word syntax, so we can't
