@@ -745,7 +745,18 @@ Dylan Mode, for Font Lock decoration level 2.")
 		      ;; font-lock syntactic keywords, perhaps?
 		      '("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
 		      ;; Function signature keywords
-		      "#rest\\|#key\\|#all-keys\\|#next"
+		      ;;
+		      ;; "#" does not have symbol or word syntax, so we can't
+		      ;; match for "\\<" at the start of #-words. Match for "not
+		      ;; a word constituent" instead. This highlights some
+		      ;; patterns that aren't valid Dylan, but it's close
+		      ;; enough. (e.g., it highlights "#key" within "##key".)
+		      (list (concat "\\W"
+				    (regexp-opt
+				    '("#rest" "#key" "#all-keys" "#next")
+				    t)
+				    "\\>")
+			    1 font-lock-keyword-face)
 		      dyl-other-pattern
 		      ;; Definition starts
 		      (list (concat "\\b\\(" dyl-define-pattern
