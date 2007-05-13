@@ -177,8 +177,8 @@ When called interactively, displays the version."
   :group 'dylan)
 
 (defcustom dylan-highlight-function-calls nil
-  "*Whether to highlight function calls in `font-lock-mode'.
-Applies only in font-lock decoration level 2 or higher.
+  "*Whether to highlight function calls in Font Lock mode.
+Applies only in Font Lock decoration level 2 or higher.
 
 This uses a very simple regular expression that highlights just
 about anything adjacent to a left-parenthesis."
@@ -573,13 +573,13 @@ fontifying Dylan interchange file headers in Dylan Mode.")
 
 (defvar dylan-font-lock-keywords nil
   "Value to which `font-lock-keywords' should be set when in
-Dylan Mode, for font-lock decoration level 0.")
+Dylan Mode, for Font Lock decoration level 0.")
 (defvar dylan-font-lock-keywords-1 nil
   "Value to which `font-lock-keywords' should be set when in
-Dylan Mode, for font-lock decoration level 1.")
+Dylan Mode, for Font Lock decoration level 1.")
 (defvar dylan-font-lock-keywords-2 nil
   "Value to which `font-lock-keywords' should be set when in
-Dylan Mode, for font-lock decoration level 2.")
+Dylan Mode, for Font Lock decoration level 2.")
 
 ;; Regexp pattern that matches `define' and adjectives. A sub-pattern designed
 ;; to be followed by patterns that match the define word or other parts of the
@@ -1534,7 +1534,7 @@ treat code in the file body as the interior of a string*.
 
 
 (defun dylan-mode-init-variables ()
-  ;; Use value appropriate for font-lock-mode now.  Reset after running hooks.
+  ;; Use value appropriate for font-lock mode now.  Reset after running hooks.
   ;; 
   ;; cpage 2007-04-23: Why do this?
   ;; 
@@ -1643,7 +1643,7 @@ during initialization.
 	 (not (boundp 'font-lock-syntax-table)))
     (progn
       (defvar old-after-change-function nil
-	"Used to modify the behavior of font-lock-mode.")
+	"Used to modify the behavior of Font Lock mode.")
       (defun dm-after-change-function (&rest args)
 	(let ((old-syntax-table (syntax-table)))
 	  (unwind-protect
