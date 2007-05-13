@@ -760,6 +760,13 @@ Dylan Mode, for Font Lock decoration level 2.")
 				    "\\>")
 			    1 font-lock-keyword-face)
 		      dyl-other-pattern
+		      ;; Condition signaling function calls
+		      (list (concat (regexp-opt
+				     '("signal" "error" "cerror"
+				       "break" "check-type" "abort")
+				     'words)
+				    "[ \t]*(")
+			    1 font-lock-warning-face)
 		      ;; Definition starts
 		      (list (concat "\\b\\(" dyl-define-pattern
 				    "\\(" dyl-constant-simple-definition-pattern "\\|"
