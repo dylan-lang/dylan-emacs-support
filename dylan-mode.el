@@ -734,65 +734,65 @@ Dylan Mode, for Font Lock decoration level 2.")
   ;; Decoration level 1: Most Dylan keywords
   (setq dylan-font-lock-keywords-1
 	(append dylan-font-lock-keywords
-		(list dyl-end-keyword-pattern
-		      dyl-keyword-pattern
-		      dyl-separator-word-pattern
-		      ;; Symbols with keyword syntax
-		      "[-_a-zA-Z?!*@<>$%]+:"
-		      ;; Symbols with string syntax
-		      ;; 
-		      ;; Is there a better way to fontify these symbols? Using
-		      ;; font-lock syntactic keywords, perhaps?
-		      '("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
-		      ;; Logical negation operator
-		      '("\\W\\(~\\)" 1 font-lock-negation-char-face)
-		      ;; Function signature keywords
-		      ;;
-		      ;; "#" does not have symbol or word syntax, so we can't
-		      ;; match for "\\<" at the start of #-words. Match for "not
-		      ;; a word constituent" instead. This highlights some
-		      ;; patterns that aren't valid Dylan, but it's close
-		      ;; enough. (e.g., it highlights "#key" within "##key".)
-		      (list (concat "\\W"
-				    (regexp-opt
-				    '("#rest" "#key" "#all-keys" "#next")
-				    t)
-				    "\\>")
-			    1 font-lock-keyword-face)
-		      dyl-other-pattern
-		      ;; Condition signaling function calls
-		      (list (concat (regexp-opt
-				     '("signal" "error" "cerror"
-				       "break" "check-type" "abort")
-				     'words)
-				    "[ \t]*(")
-			    1 font-lock-warning-face)
-		      ;; Definition starts
-		      (list (concat "\\b\\(" dyl-define-pattern
-				    "\\(" dyl-constant-simple-definition-pattern "\\|"
-				    dyl-variable-simple-definition-pattern "\\|"
-				    dyl-other-simple-definition-pattern "\\)"
-				    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			    '(7 (cond ((match-beginning 4) 'font-lock-constant-face)
-				      ((match-beginning 5) 'font-lock-variable-name-face)
-				      (t 'font-lock-function-name-face))))
-		      (list (concat "\\b\\(" dyl-define-pattern
-				    dyl-definition-pattern "\\)")
-			    1 'font-lock-keyword-face)
-		      (list (concat "\\b\\(" dyl-define-pattern
-				    "\\(" dyl-type-definition-pattern "\\|"
-				    dyl-other-definition-pattern "\\)"
-				    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			    '(6 (cond ((match-beginning 4) 'font-lock-type-face)
-				      (t 'font-lock-function-name-face))))
-		      ;; Local methods
-		      '("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
-		      ;; Definition ends
-		      (list (concat "\\bend[ \t]+\\("
-				    dyl-type-definition-pattern
-				    "\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-			    '(3 (cond ((match-beginning 2) 'font-lock-type-face)
-				      (t 'font-lock-function-name-face)))))))
+		`(,dyl-end-keyword-pattern
+		  ,dyl-keyword-pattern
+		  ,dyl-separator-word-pattern
+		  ;; Symbols with keyword syntax
+		  "[-_a-zA-Z?!*@<>$%]+:"
+		  ;; Symbols with string syntax
+		  ;; 
+		  ;; Is there a better way to fontify these symbols? Using
+		  ;; font-lock syntactic keywords, perhaps?
+		  ("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
+		  ;; Logical negation operator
+		  ("\\W\\(~\\)" 1 font-lock-negation-char-face)
+		  ;; Function signature keywords
+		  ;;
+		  ;; "#" does not have symbol or word syntax, so we can't
+		  ;; match for "\\<" at the start of #-words. Match for "not
+		  ;; a word constituent" instead. This highlights some
+		  ;; patterns that aren't valid Dylan, but it's close
+		  ;; enough. (e.g., it highlights "#key" within "##key".)
+		  (,(concat "\\W"
+			    (regexp-opt
+			     '("#rest" "#key" "#all-keys" "#next")
+			     t)
+			    "\\>")
+		   1 font-lock-keyword-face)
+		  ,dyl-other-pattern
+		  ;; Condition signaling function calls
+		  (,(concat (regexp-opt
+			     '("signal" "error" "cerror"
+			       "break" "check-type" "abort")
+			     'words)
+			    "[ \t]*(")
+		   1 font-lock-warning-face)
+		  ;; Definition starts
+		  (,(concat "\\b\\(" dyl-define-pattern
+			    "\\(" dyl-constant-simple-definition-pattern "\\|"
+			    dyl-variable-simple-definition-pattern "\\|"
+			    dyl-other-simple-definition-pattern "\\)"
+			    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+		   (7 (cond ((match-beginning 4) 'font-lock-constant-face)
+			    ((match-beginning 5) 'font-lock-variable-name-face)
+			    (t 'font-lock-function-name-face))))
+		  (,(concat "\\b\\(" dyl-define-pattern
+			    dyl-definition-pattern "\\)")
+		   1 font-lock-keyword-face)
+		  (,(concat "\\b\\(" dyl-define-pattern
+			    "\\(" dyl-type-definition-pattern "\\|"
+			    dyl-other-definition-pattern "\\)"
+			    "\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+		   (6 (cond ((match-beginning 4) 'font-lock-type-face)
+			    (t 'font-lock-function-name-face))))
+		  ;; Local methods
+		  ("method[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
+		  ;; Definition ends
+		  (,(concat "\\bend[ \t]+\\("
+			    dyl-type-definition-pattern
+			    "\\|\\w*\\)\\b[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+		   (3 (cond ((match-beginning 2) 'font-lock-type-face)
+			    (t 'font-lock-function-name-face)))))))
   
   ;; Decoration level 2: Highlight all function and local variable definitions,
   ;; and, optionally, all function calls.
