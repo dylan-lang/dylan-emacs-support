@@ -682,37 +682,37 @@ Dylan Mode, for Font Lock decoration level 2.")
   (setq dyl-start-expressions
 	;; cpage 2007-04-06: Why are these listed here? Shouldn't we build these
 	;; patterns from dyl-statement-words?
-	(list '("if[ \t\n]*" "")
-	      '("block[ \t\n]*" "")
-	      '("for[ \t\n]*" "")
-	      '("select[ \t\n]*" "")
-	      '("when[ \t\n]*" "")
-	      '("unless[ \t\n]*" "")
-	      '("until[ \t\n]*" "")
-	      '("while[ \t\n]*" "")
-	      '("iterate[ \t\n]+\\w+[ \t\n]*" "")
-	      '("profiling[ \t\n]*" "")	      
-	      ;; special patterns for "define method", which is funky
-	      (list (concat "\\(" dyl-define-pattern "\\)?"
-			    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
-		    "[ \t\n]*=>[^;)]+;?")
-	      (list (concat "\\(" dyl-define-pattern "\\)?"
-			    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
-		    "[ \t\n]*;")
-	      (concat "define[ \t]+" dyl-named-definition-pattern
-		      "[ \t\n]+[^ \t\n]+")
-	      (concat "define[ \t]+" dyl-unnamed-definition-pattern)
-	      (list (concat "\\(" dyl-define-pattern "\\)?"
-			    dyl-parameterized-definition-pattern
-			    "[ \t\n]+[^\( ]*[ \t\n]*")
-		    "")
-	      "begin"
-	      "case"
-	      ;; Since we don't know the syntax of all the "with(out)-" macros,
-	      ;; just assume that the user has already split the line at
-	      ;; the end of the header.
-	      (concat dyl-with-statement-prefix "[^\n]*")
-	      "[[({]"))
+	`(("if[ \t\n]*" "")
+	  ("block[ \t\n]*" "")
+	  ("for[ \t\n]*" "")
+	  ("select[ \t\n]*" "")
+	  ("when[ \t\n]*" "")
+	  ("unless[ \t\n]*" "")
+	  ("until[ \t\n]*" "")
+	  ("while[ \t\n]*" "")
+	  ("iterate[ \t\n]+\\w+[ \t\n]*" "")
+	  ("profiling[ \t\n]*" "")	      
+	  ;; special patterns for "define method", which is funky
+	  (,(concat "\\(" dyl-define-pattern "\\)?"
+		    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+	   "[ \t\n]*=>[^;)]+;?")
+	  (,(concat "\\(" dyl-define-pattern "\\)?"
+		    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+	   "[ \t\n]*;")
+	  ,(concat "define[ \t]+" dyl-named-definition-pattern
+		   "[ \t\n]+[^ \t\n]+")
+	  ,(concat "define[ \t]+" dyl-unnamed-definition-pattern)
+	  (,(concat "\\(" dyl-define-pattern "\\)?"
+		    dyl-parameterized-definition-pattern
+		    "[ \t\n]+[^\( ]*[ \t\n]*")
+	   "")
+	  "begin"
+	  "case"
+	  ;; Since we don't know the syntax of all the "with(out)-" macros,
+	  ;; just assume that the user has already split the line at
+	  ;; the end of the header.
+	  ,(concat dyl-with-statement-prefix "[^\n]*")
+	  "[[({]"))
   (setq find-keyword-pattern (concat "[][)(}{\"']\\|\\bdefine\\b\\|"
 				     dyl-end-keyword-pattern 
 				     "\\|" dyl-keyword-pattern))
