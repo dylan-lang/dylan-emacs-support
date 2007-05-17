@@ -880,7 +880,8 @@ success and nil otherwise."
        (if (re-search-backward (if match-statement-end
 				   dylan-beginning-of-form-pattern
 				 find-keyword-pattern) header-end t)
-	   (cond ((look-back dylan-comment-pattern)
+	   (cond (;; Skip backwards over eol comments.
+		  (look-back dylan-comment-pattern)
 		  (goto-char (match-beginning 0))
 		  'not-found)
 		 ;; If point is inside a block comment, keep searching. Since
@@ -893,6 +894,7 @@ success and nil otherwise."
 		 ((equal (get-text-property (point) 'face)
 			 font-lock-comment-face)
 		  'not-found)
+		 ;; Skip backwards over balanced parens.
 		 ((looking-at "[])}'\"]")
 		  (condition-case nil
 		      (progn 
@@ -900,17 +902,27 @@ success and nil otherwise."
 			(backward-sexp 1)
 			'not-found)
 		    (error nil)))
+		 ;; At start of unrecognized definition. Stop searching. 
 		 ((and (looking-at "define") ; non-nesting top level form
 		       (not (looking-at dyl-keyword-pattern)))
 		  nil)
-		 ((or (looking-at "end")
-		      (and (look-back "\\bend[ \t]+$") (backward-word 1)))
-		  (dylan-find-keyword)
+		 ;; Skip backward over blocks/statements that end with "end".
+		 ((or (looking-at "end")	       ; Point is either before or
+		      (and (look-back "\\bend[ \t]*$") ; after "end".
+			   (backward-word 1)))
+		  (dylan-find-keyword)	; Search for the start of the block.
+		  ;; cpage 2007-05-17: Why does this check for "method" and
+		  ;; "define"? Should it also check for "define...function"?
+		  ;; What about "define...class", etc.?
 		  (if (or (and (looking-at "method")
 			       (look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$"))
 			  (looking-at "define"))
 		      nil
 		    'not-found))
+		 ;; cpage 2007-05-17: What is this for? Does it handle `until:'
+		 ;; and `while:' within `for' iteration clauses? Shouldn't it
+		 ;; test for the keywords with the colon?
+		 ;; 
 		 ;; hack for overloaded uses of "while" and "until" reserved words
 		 ((or (looking-at "until") (looking-at "while"))
 		  (if (save-excursion
@@ -921,10 +933,14 @@ success and nil otherwise."
 			      (looking-at "for\\b")) (error nil)))
 		      (backward-up-list 1))
 		  t)
+		 ;; Statement macro separator words.
 		 ((and (looking-at dyl-separator-word-pattern)
 		       (not match-statement-end))
 		  'not-found)
-		 ((and (looking-at ";") (not match-statement-end))
+		 ;; cpage 2007-05-17: What do the following three clauses look
+		 ;; for?
+		 ((and (looking-at ";")
+		       (not match-statement-end))
 		  'not-found)
 		 ((and (looking-at ",")
 		       (or (not match-statement-end) no-commas))
@@ -1206,6 +1222,11 @@ at the current point."
 					       (equal term-char ";"))
 		      (point)) line-start)
 		 0)
+		;; Comma-separated lists of local methods should be indented to
+		;; line up with the first method when it begins on the same line
+		;; as "local".
+		((looking-at "local[ \t]+")
+		 (- (match-end 0) (match-beginning 0)))
 		;; Give continuations of generic functions extra indentation to
 		;; match what happens with method declarations.  This is an odd
 		;; special case, but some folks like it.  If you don't, comment
@@ -1248,12 +1269,12 @@ at the current point."
 	  ;; use looking-at to examine the start of the current line of code
 	  ;; without having to put whitespace at the start of all the patterns.
 	  (back-to-indentation)
-	  (let* ((body-start)		; beginning of "body" of enclosing
-					; compound statement
-		 (in-paren)		; t if in parenthesized expr.
-		 (paren-indent 0)       ; indentation of first non-space after open paren.
-		 (in-case)		; t if in "case" or "select" stmt
-		 (block-indent		; indentation of enclosing comp. stmt
+	  (let* ((body-start)		; Beginning of "body" of enclosing
+					; compound statement.
+		 (in-paren)		; t if in parenthesized expression.
+		 (paren-indent 0)       ; Indentation of first non-space after open paren.
+		 (in-case)		; t if in "case" or "select" statement.
+		 (block-indent		; Indentation of enclosing compound statement.
 		  (save-excursion
 		    (if (not (dylan-find-keyword))
 			nil
