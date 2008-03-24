@@ -1575,7 +1575,7 @@ treat code in the file body as the interior of a string*.
 
 (defun dylan-find-slime-buffer-package ()
   (let ((case-fold-search t)
-        (regexp "^module: \\([^ \n\r\t]+\\)"))
+        (regexp "^[mM]odule:[ \t]+\\([^ \n\r\t]+\\)"))
     (save-excursion
       (when (or (re-search-backward regexp nil t)
                 (re-search-forward regexp nil t))
