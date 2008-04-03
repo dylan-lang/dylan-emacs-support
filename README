@@ -7,3 +7,17 @@ lines to your .emacs file:
 (setq load-path (cons "/usr/lib/dylan/elisp" load-path))
 (autoload 'dylan-mode "dylan-mode" "Dylan-mode" t)
 (setq auto-mode-alist (cons '("\\.dylan\\'" . dylan-mode) auto-mode-alist))
+
+Dylan-slime interface
+---------------------
+
+To enable slime with Open Dylan, compile project dswank
+ (located in fundev/sources/environment/dswank) and
+download slime from
+ cvs -d :pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot co slime
+
+Add the following lines to your .emacs file:
+(add-to-list 'load-path "/path/to/slime/")  ; your SLIME directory
+(setq inferior-lisp-program "/path/to/dswank") ; your dswank binary
+(require 'slime)
+(slime-setup '(slime-dylan))
