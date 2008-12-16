@@ -12,8 +12,11 @@ Dylan-slime interface
 ---------------------
 
 To enable slime with Open Dylan, compile project dswank
- (located in fundev/sources/environment/dswank) and
-download slime from
+ (located in fundev/sources/environment/dswank) 
+$ OPEN_DYLAN_USER_REGISTRIES=fundev/sources/registry opendylan -build dswank
+(binary will end in ~/Open-Dylan/bin/dswank)
+
+Afterwards download slime from
  cvs -d :pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot co slime
 
 Add the following lines to your .emacs file:
