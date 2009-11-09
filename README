@@ -23,4 +23,4 @@ Add the following lines to your .emacs file:
 (add-to-list 'load-path "/path/to/slime/")  ; your SLIME directory
 (setq inferior-lisp-program "/path/to/dswank") ; your dswank binary
 (require 'slime)
-(slime-setup '(slime-dylan))
+(slime-setup '(slime-dylan slime-repl))
