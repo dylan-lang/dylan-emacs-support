@@ -6,8 +6,7 @@ Designed to be bound to the SPC key.  Prefix argument can be used to insert
 more than one space."
   (interactive "p")
   (self-insert-command n)
-  (when (and slime-space-information-p
-             (slime-background-activities-enabled-p))
+  (when (slime-background-activities-enabled-p)
     (slime-dylan-show-arglist)))
 
 (defun slime-dylan-show-arglist ()
@@ -23,7 +22,7 @@ more than one space."
     (save-excursion
       (backward-up-list 1)
       (backward-sexp 1)
-      (slime-symbol-name-at-point))))
+      (slime-symbol-at-point))))
 
 (defun slime-dylan-init ()
   (add-hook 'dylan-mode-hook 'slime-dylan-bind-keys))
