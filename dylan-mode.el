@@ -1217,6 +1217,9 @@ at the current point."
 		((= real-start block-start) 0)
 		((< (point) block-start)
 		 (+ dylan-indent (if (and arrow (not in-case)) -3 0)))
+		;; Indent keyword args to line up with the first arg after #key.
+		((looking-at "#key[ \t]+")
+		 (- (match-end 0) (match-beginning 0)))
 		((< (save-excursion
 		      (forward-dylan-statement in-case
 					       (equal term-char ";"))
