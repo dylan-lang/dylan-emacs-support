@@ -442,7 +442,7 @@ is no equivalent to \"\b\" for identifiers.")
     (modify-syntax-entry ?! "w" dylan-indent-syntax-table)
     (modify-syntax-entry ?= "w" dylan-indent-syntax-table)
     (modify-syntax-entry ?: "w" dylan-indent-syntax-table)
-	
+    
     ;; Set up comment syntax (for both tables). Different Emacsen handle
     ;; comments differently.
     (cond ((or (and (boundp 'running-lemacs) running-lemacs)
@@ -1123,17 +1123,17 @@ more."
 	(dylan-skip-whitespace-backward)
 	(let* ((dot (point)))
 	  ;; skip over "separator words"
-	  (if (save-excursion
-		(and (re-search-backward dyl-separator-word-pattern header-end t)
-		     (if (not (looking-at "exception\\|elseif"))
-			 (forward-word 1)
-		       (goto-char (match-end 0))
-		       (condition-case nil (forward-list 1)
-			 (error nil))
-		       t)
-		     (>= (point) dot)))
-	      (progn (re-search-backward dyl-separator-word-pattern header-end t)
-		     (dylan-skip-whitespace-backward)))
+	  (when (save-excursion
+		  (and (re-search-backward dyl-separator-word-pattern header-end t)
+		       (if (not (looking-at "exception\\|elseif"))
+			   (forward-word 1)
+			 (goto-char (match-end 0))
+			 (condition-case nil (forward-list 1)
+			   (error nil))
+			 t)
+		       (>= (point) dot)))
+	    (re-search-backward dyl-separator-word-pattern header-end t)
+	    (dylan-skip-whitespace-backward))
 	  (if (look-back "[,;]$\\|=>$")
 	      (backward-char))
 	  (cond ((not (dylan-find-keyword t in-case no-commas))
@@ -1220,6 +1220,7 @@ at the current point."
 		;; Indent keyword args to line up with the first arg after #key.
 		((looking-at "#key[ \t]+")
 		 (- (match-end 0) (match-beginning 0)))
+		;; What does this do?
 		((< (save-excursion
 		      (forward-dylan-statement in-case
 					       (equal term-char ";"))
@@ -1633,12 +1634,14 @@ treat code in the file body as the interior of a string*.
     (dylan-set-up-syntax-tables)
     (make-local-variable 'font-lock-defaults)
     (setq font-lock-defaults
-	  '((dylan-font-lock-keywords
+	  `((dylan-font-lock-keywords
 	     dylan-font-lock-keywords-1
 	     dylan-font-lock-keywords-2)
 	    nil t nil nil
 	    (font-lock-fontify-region-function
-	     . dylan-font-lock-fontify-region))))
+	     . dylan-font-lock-fontify-region)
+	    (font-lock-syntax-table
+	      . ,dylan-indent-syntax-table))))
   (make-local-variable 'slime-buffer-package)
   (setq slime-buffer-package (dylan-find-slime-buffer-package))
   (if (fboundp 'slime-mode)
@@ -1673,12 +1676,12 @@ during initialization.
   (interactive)
   (kill-all-local-variables)
   (use-local-map dylan-mode-map)
+  (dylan-mode-init-patterns-and-keywords)
+  (dylan-mode-init-variables)
   (setq major-mode 'dylan-mode
 	mode-name "Dylan"
 	local-abbrev-table dylan-mode-abbrev-table
-	abbrev-mode t)
-  (dylan-mode-init-patterns-and-keywords)
-  (dylan-mode-init-variables))
+	abbrev-mode t))
 
 
 ;;; Dylan mode load-time initialization
