@@ -2,25 +2,37 @@ Dylan-mode elisp files
 ----------------------
 
 To enable auto-loading of dylan-mode upon loading a .dylan file, add these
-lines to your .emacs file:
+lines to your .emacs file::
 
-(setq load-path (cons "/usr/lib/dylan/elisp" load-path))
-(autoload 'dylan-mode "dylan-mode" "Dylan-mode" t)
-(setq auto-mode-alist (cons '("\\.dylan\\'" . dylan-mode) auto-mode-alist))
+  (setq load-path (cons "/usr/lib/dylan/elisp" load-path))
+  (autoload 'dylan-mode "dylan-mode" "Dylan-mode" t)
+  (setq auto-mode-alist (cons '("\\.dylan\\'" . dylan-mode) auto-mode-alist))
+
 
 Dylan-slime interface
 ---------------------
 
-To enable slime with Open Dylan, compile project dswank
- (located in fundev/sources/environment/dswank) 
-$ OPEN_DYLAN_USER_REGISTRIES=fundev/sources/registry opendylan -build dswank
-(binary will end in ~/Open-Dylan/bin/dswank)
+To enable slime with Open Dylan, compile project dswank (located in
+opendylan/sources/environment/dswank)::
 
-Afterwards download slime from
- cvs -d :pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot co slime
+  $ OPEN_DYLAN_USER_REGISTRIES=fundev/sources/registry opendylan -build dswank
 
-Add the following lines to your .emacs file:
-(add-to-list 'load-path "/path/to/slime/")  ; your SLIME directory
-(setq inferior-lisp-program "/path/to/dswank") ; your dswank binary
-(require 'slime)
-(slime-setup '(slime-dylan slime-repl))
+The binary will end up in ``~/Open-Dylan/bin/dswank``.
+
+Afterwards download slime with  ::
+
+  cvs -d :pserver:anonymous:anonymous@common-lisp.net:/project/slime/cvsroot co slime
+
+Add the following lines to your .emacs file::
+
+  (add-to-list 'load-path "/path/to/slime/")  ; your SLIME directory
+  (setq inferior-lisp-program "/path/to/dswank") ; your dswank binary
+  (require 'slime)
+  (slime-setup '(slime-dylan slime-repl))
+
+
+Enscript Support
+----------------
+
+The file dylan.st adds Dylan support to Enscript.  This file is now included
+with Enscript (circa version 1.6.5).
