@@ -24,7 +24,7 @@
   "Bla bla bla"
   :group 'slime-mode-faces)
 (defface face-inlining
-  `((t (:background "dimgray")))
+  `((t (:background "dimgray"))) ; should be darkgrey...
   "Bla bla bla"
   :group 'slime-mode-faces)
 (defface face-slot-accessor-fixed-offset
@@ -32,11 +32,11 @@
   "Bla bla bla"
   :group 'slime-mode-faces)
 (defface face-eliminated
-  `((t (:background "pink")))
+  `((t (:background "pink"))) ; should be lightgrey according to documentation
   "Bla bla bla"
   :group 'slime-mode-faces)
 (defface face-dynamic-extent
-  `((t (:background "DarkTurquoise")))
+  `((t (:background "DarkTurquoise"))) ; no documentation for this :/
   "Bla bla bla"
   :group 'slime-mode-faces)
 (defface face-program-notes
@@ -44,7 +44,7 @@
   "Bla bla bla"
   :group 'slime-mode-faces)
 (defface face-bogus-upgrade
-  `((t (:background "orange")))
+  `((t (:background "orange"))) ; no documentation for that - and according to source only relevant for dylan library?
   "Bla bla bla"
   :group 'slime-mode-faces)
 
@@ -96,6 +96,7 @@
                     (overlay-put over1 'face oldface)
                     (overlay-put over2 'face oldface))))
             (let ((over (make-overlay start end)))
+;              (message (concat "Color is " color))
               (if (string= color "not-all-known")
                   (overlay-put over 'face 'face-not-all-methods-known)
                 (if (string= color "failed-to-select")
