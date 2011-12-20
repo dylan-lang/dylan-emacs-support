@@ -11,6 +11,8 @@
 (defvar color-background                       "background")
 (defvar color-bogus-upgrade                    "bogus-upgrade")
 
+; major problem: if one coloring of the same type is contained in another, you can't recognize the inner one - make the color lighter/darker/a white background at the borders? any good ideas here?
+
 (defface face-not-all-methods-known
   `((t (:background "magenta")))
   "Bla bla bla"
