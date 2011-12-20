@@ -35,8 +35,8 @@
 	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
 	 (library (find-dylan-library)))
     (expand-file-name
-      (personal-dylan-build-file-name 
-       (concat "/" library "/" stem ".el")))))
+      (concat "~/stage1/build"
+       "/" library "/" stem ".el"))))
 
 (defun color-foregrounds (color l)
   (save-excursion
@@ -44,10 +44,19 @@
       (let* ((spec (car l))
            (sl (car spec)) (sc (car (cdr spec)))
          (el (car (cdr (cdr spec)))) (ec (car (cdr (cdr (cdr spec))))))
-        (goto-char 1) (forward-line (- sl 1)) (forward-char sc)
-        (set-mark (point))
-        (goto-char 1) (forward-line (- el 1)) (forward-char ec)
-        (facemenu-set-foreground color))
+        (goto-char 1) (forward-line sl) (forward-char sc)
+        (let ((start (point))
+              (overlay (slime-note-at-point)))
+;        (set-mark (point))
+          (goto-char 1) (forward-line el) (forward-char ec)
+;        (facemenu-set-background color))
+          (let ((end (point)))
+            (if overlay
+                (slime-merge-note-into-overlay overlay severity message)
+              (slime-create-note-overlay "what?" start end :warning 'color)))))
+;        (set-mark (point))
+;        (message (concat "set mark at " (number-to-string (+ sl 1)) ":" (number-to-string sc) "-" (number-to-string (+ el 1)) ":" (number-to-string ec) ":" color)))
+;        (facemenu-set-foreground color))
       (setq l (cdr l)))))
 
 (defun color-backgrounds (color l)
@@ -66,17 +75,23 @@
   "Color the current Dylan file with recorded optimization information"
   (interactive)
   (let ((file (dylan-color-file)))
-    (setq old-buffer-read-only buffer-read-only)
-    (setq buffer-read-only nil)
-    (point-to-register 1)
-    (end-of-buffer) 
-    (facemenu-set-foreground "black" 1)
-    (facemenu-set-background color-background 1)
-    (register-to-point 1)
+;    (setq old-buffer-read-only buffer-read-only)
+;    (setq buffer-read-only nil)
+;    (point-to-register 1)
+;    (end-of-buffer)
+;    (facemenu-set-foreground "black" 1)
+;    (facemenu-set-background "yellow" 1)
+;    (set-mark (point))
+;    (slime-create-note-overlay "fooo" 10 20 :warning "barffff")
+;    (let ((overlay (make-overlay 10 20)))
+;      (overlay-put overlay 'slime-note "foooo"))
+;    (forward-line 3)
+;    (facemenu-set-foreground "green")
+;    (register-to-point 1)
 
-    (message "Using color file: %s" file)
+;    (message "Using color file: %s" file)
     (load-file file)
-    (message "Used color file: %s" file)
+;    (message "Used color file: %s" file)
 
     (cond
       (old-buffer-read-only
