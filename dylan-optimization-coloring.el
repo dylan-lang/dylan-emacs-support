@@ -35,8 +35,8 @@
 	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
 	 (library (find-dylan-library)))
     (expand-file-name
-      (concat "~/stage1/build"
-       "/" library "/" stem ".el"))))
+     (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "~/Open-Dylan")
+             "/build/" library "/" stem ".el"))))
 
 (defun color-foregrounds (color l)
   (save-excursion
