@@ -9,8 +9,8 @@ lines to your .emacs file::
   (setq auto-mode-alist (cons '("\\.dylan\\'" . dylan-mode) auto-mode-alist))
 
 
-Dylan-slime interface
----------------------
+Dylan-dime interface
+--------------------
 
 dswank is part of the release since opendylan-2011.1
 
@@ -24,6 +24,7 @@ Add the following lines to your .emacs file::
   (require 'dime)
   (dime-setup '(dime-dylan dime-repl dime-compiler-notes-tree))
 
+dime is a fork of slime.
 
 Enscript Support
 ----------------
