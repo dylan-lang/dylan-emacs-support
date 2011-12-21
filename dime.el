@@ -1,4 +1,4 @@
-;;; dime.el --- Superior Lisp Interaction Mode for Emacs
+;;; dime.el --- Superior Dylan Interaction Mode for Emacs
 ;;
 ;;;; License
 ;;     Copyright (C) 2003  Eric Marsden, Luke Gorrie, Helmut Eller
@@ -25,20 +25,20 @@
 
 ;;;; Commentary
 ;;
-;; This file contains extensions for programming in Common Lisp. The
+;; This file contains extensions for programming in Common Dylan. The
 ;; main features are:
 ;;
 ;;   A socket-based communication/RPC interface between Emacs and
-;;   Lisp, enabling introspection and remote development.
+;;   Dylan, enabling introspection and remote development.
 ;;
-;;   The `dime-mode' minor-mode complementing `lisp-mode'. This new
-;;   mode includes many commands for interacting with the Common Lisp
+;;   The `dime-mode' minor-mode complementing `dylan-mode'. This new
+;;   mode includes many commands for interacting with the Common Dylan
 ;;   process.
 ;;
-;;   A Common Lisp debugger written in Emacs Lisp. The debugger pops up
-;;   an Emacs buffer similar to the Emacs/Elisp debugger.
+;;   A Common Dylan debugger written in Emacs Dylan. The debugger pops up
+;;   an Emacs buffer similar to the Emacs/Edylan debugger.
 ;;
-;;   A Common Lisp inspector to interactively look at run-time data.
+;;   A Common Dylan inspector to interactively look at run-time data.
 ;;
 ;;   Trapping compiler messages and creating annotations in the source
 ;;   file on the appropriate forms.
@@ -46,7 +46,7 @@
 ;; DIME should work with Emacs 22 and 23.  If it works on XEmacs,
 ;; consider yourself lucky.
 ;;
-;; In order to run DIME, a supporting Lisp server called Swank is
+;; In order to run DIME, a supporting Dylan server called Swank is
 ;; required. Swank is distributed with dime.el and will automatically
 ;; be started in a normal installation.
 
@@ -83,18 +83,18 @@
     (let ((path (or (locate-library "dime") load-file-name)))
       (and path (file-name-directory path)))
     "Directory containing the Dime package.
-This is used to load the supporting Common Lisp library, Swank.
+This is used to load the supporting Common Dylan library, Swank.
 The default value is automatically computed from the location of the
-Emacs Lisp package."))
+Emacs Dylan package."))
 
-(defvar dime-lisp-modes '(lisp-mode))
+(defvar dime-dylan-modes '(dylan-mode))
 (defvar dime-setup-contribs nil)
 
 (defun dime-setup (&optional contribs)
-  "Setup Emacs so that lisp-mode buffers always use DIME.
+  "Setup Emacs so that dylan-mode buffers always use DIME.
 CONTRIBS is a list of contrib packages to load."
-  (when (member 'lisp-mode dime-lisp-modes)
-    (add-hook 'dylan-mode-hook 'dime-lisp-mode-hook))
+  (when (member 'dylan-mode dime-dylan-modes)
+    (add-hook 'dylan-mode-hook 'dime-dylan-mode-hook))
   (setq dime-setup-contribs contribs)
   (dime-setup-contribs))
 
@@ -108,10 +108,10 @@ CONTRIBS is a list of contrib packages to load."
         (when (fboundp init)
           (funcall init))))))
 
-(defun dime-lisp-mode-hook ()
+(defun dime-dylan-mode-hook ()
   (dime-mode 1)
-  (set (make-local-variable 'lisp-indent-function)
-       'common-lisp-indent-function))
+  (set (make-local-variable 'dylan-indent-function)
+       'common-dylan-indent-function))
 
 (eval-and-compile
   (defun dime-changelog-date (&optional interactivep)
@@ -137,14 +137,14 @@ Return nil if the ChangeLog file cannot be found."
 ;;;;; dime
 
 (defgroup dime nil
-  "Interaction with the Superior Lisp Environment."
+  "Interaction with the Superior Dylan Environment."
   :prefix "dime-"
   :group 'applications)
 
 ;;;;; dime-ui
 
 (defgroup dime-ui nil
-  "Interaction with the Superior Lisp Environment."
+  "Interaction with the Superior Dylan Environment."
   :prefix "dime-"
   :group 'dime)
 
@@ -157,46 +157,46 @@ debugger backtraces and apropos listings."
 
 (defcustom dime-kill-without-query-p nil
   "If non-nil, kill DIME processes without query when quitting Emacs.
-This applies to the *inferior-lisp* buffer and the network connections."
+This applies to the *inferior-dylan* buffer and the network connections."
   :type 'boolean
   :group 'dime-ui)
 
-;;;;; dime-lisp
+;;;;; dime-dylan
 
-(defgroup dime-lisp nil
-  "Lisp server configuration."
+(defgroup dime-dylan nil
+  "Dylan server configuration."
   :prefix "dime-"
   :group 'dime)
 
-(defcustom dime-backend "swank-loader.lisp"
-  "The name of the Lisp file that loads the Swank server.
+(defcustom dime-backend "swank-loader.dylan"
+  "The name of the Dylan file that loads the Swank server.
 This name is interpreted relative to the directory containing
 dime.el, but could also be set to an absolute filename."
   :type 'string
-  :group 'dime-lisp)
+  :group 'dime-dylan)
 
 (defcustom dime-connected-hook nil
-  "List of functions to call when DIME connects to Lisp."
+  "List of functions to call when DIME connects to Dylan."
   :type 'hook
-  :group 'dime-lisp)
+  :group 'dime-dylan)
 
 (defcustom dime-enable-evaluate-in-emacs nil
-  "*If non-nil, the inferior Lisp can evaluate arbitrary forms in Emacs.
+  "*If non-nil, the inferior Dylan can evaluate arbitrary forms in Emacs.
 The default is nil, as this feature can be a security risk."
   :type '(boolean)
-  :group 'dime-lisp)
+  :group 'dime-dylan)
 
-(defcustom dime-lisp-host "127.0.0.1"
+(defcustom dime-dylan-host "127.0.0.1"
   "The default hostname (or IP address) to connect to."
   :type 'string
-  :group 'dime-lisp)
+  :group 'dime-dylan)
 
 (defcustom dime-port 4005
   "Port to use as the default for `dime-connect'."
   :type 'integer
-  :group 'dime-lisp)
+  :group 'dime-dylan)
 
-(defvar dime-connect-host-history (list dime-lisp-host))
+(defvar dime-connect-host-history (list dime-dylan-host))
 (defvar dime-connect-port-history (list (prin1-to-string dime-port)))
 
 (defvar dime-net-valid-coding-systems
@@ -228,12 +228,12 @@ See also `dime-net-valid-coding-systems'."
               (mapcar (lambda (x)
                         (list 'const (car x)))
                       dime-net-valid-coding-systems))
-  :group 'dime-lisp)
+  :group 'dime-dylan)
 
 ;;;;; dime-mode
 
 (defgroup dime-mode nil
-  "Settings for dime-mode Lisp source buffers."
+  "Settings for dime-mode Dylan source buffers."
   :prefix "dime-"
   :group 'dime)
 
@@ -384,7 +384,7 @@ more easily. See `dime-init-keymaps'.")
 
 (define-minor-mode dime-mode
   "\\<dime-mode-map>\
-DIME: The Superior Lisp Interaction Mode for Emacs (minor-mode).
+DIME: The Superior Dylan Interaction Mode for Emacs (minor-mode).
 
 Commands to compile the current buffer's source file and visually
 highlight any resulting compiler notes and warnings:
@@ -589,8 +589,8 @@ edit s-exprs, e.g. for source buffers and the REPL.")
     (?d dime-describe-symbol)
     (?f dime-describe-function)
     (?h dime-documentation-lookup)
-    (?~ common-lisp-hyperspec-format)
-    (?# common-lisp-hyperspec-lookup-reader-macro)))
+    (?~ common-dylan-hyperspec-format)
+    (?# common-dylan-hyperspec-lookup-reader-macro)))
   
 (defvar dime-who-map nil
   "Keymap for who-xref commands. Bound to a prefix key.")
@@ -680,7 +680,7 @@ This list of flushed between commands."))
   `(let ((,var ,value))
      (when ,var ,@body)))
 
-(put 'when-let 'lisp-indent-function 1)
+(put 'when-let 'dylan-indent-function 1)
 
 (defmacro destructure-case (value &rest patterns)
   "Dispatch VALUE to one of PATTERNS.
@@ -706,16 +706,16 @@ corresponding values in the CDR of VALUE."
 		   patterns)
 	 ,@(if (eq (caar (last patterns)) t)
 	       '()
-	     `((t (error "Elisp destructure-case failed: %S" ,tmp))))))))
+	     `((t (error "Edylan destructure-case failed: %S" ,tmp))))))))
 
-(put 'destructure-case 'lisp-indent-function 1)
+(put 'destructure-case 'dylan-indent-function 1)
 
 (defmacro dime-define-keys (keymap &rest key-command)
   "Define keys in KEYMAP. Each KEY-COMMAND is a list of (KEY COMMAND)."
   `(progn . ,(mapcar (lambda (k-c) `(define-key ,keymap . ,k-c))
 		     key-command)))
 
-(put 'dime-define-keys 'lisp-indent-function 1)
+(put 'dime-define-keys 'dylan-indent-function 1)
 
 (defmacro* with-struct ((conc-name &rest slots) struct &body body)
   "Like with-slots but works only for structs.
@@ -733,7 +733,7 @@ corresponding values in the CDR of VALUE."
 		      slots)
 	   . ,body)))))
 
-(put 'with-struct 'lisp-indent-function 2)
+(put 'with-struct 'dylan-indent-function 2)
 
 ;;;;; Very-commonly-used functions
 
@@ -809,13 +809,13 @@ positions before and after executing BODY."
        (prog1 (progn ,@body)
 	 (add-text-properties ,start (point) ,props)))))
 
-(put 'dime-propertize-region 'lisp-indent-function 1)
+(put 'dime-propertize-region 'dylan-indent-function 1)
 
 (defun dime-add-face (face string)
   (add-text-properties 0 (length string) (list 'face face) string)
   string)
 
-(put 'dime-add-face 'lisp-indent-function 1)
+(put 'dime-add-face 'dylan-indent-function 1)
 
 ;; Interface
 (defsubst dime-insert-propertized (props &rest args)
@@ -830,7 +830,7 @@ Assumes all insertions are made at point."
        (prog1 (progn ,@body)
          (dime-indent-rigidly ,start (point) ,l)))))
 
-(put 'dime-with-rigid-indentation 'lisp-indent-function 1)
+(put 'dime-with-rigid-indentation 'dylan-indent-function 1)
 
 (defun dime-indent-rigidly (start end column)
   ;; Similar to `indent-rigidly' but doesn't inherit text props.
@@ -908,7 +908,7 @@ MODE is the name of a major mode which will be enabled.
          (set-window-point (dime-display-popup-buffer ,(or select nil))
                            (point))))))
 
-(put 'dime-with-popup-buffer 'lisp-indent-function 1)
+(put 'dime-with-popup-buffer 'dylan-indent-function 1)
 
 (defun dime-make-popup-buffer (name buffer-vars mode)
   "Return a temporary buffer called NAME.
@@ -972,7 +972,7 @@ can restore it later."
                  (set (make-local-variable (car var+val)) (cdr var+val))))
              ,vals)))))
 
-(put 'dime-save-local-variables 'lisp-indent-function 1)
+(put 'dime-save-local-variables 'dylan-indent-function 1)
 
 (define-minor-mode dime-popup-buffer-mode 
   "Mode for displaying read only stuff"
@@ -1013,67 +1013,67 @@ last activated the buffer."
 
 ;;;;; Filename translation
 ;;;
-;;; Filenames passed between Emacs and Lisp should be translated using
-;;; these functions. This way users who run Emacs and Lisp on separate
+;;; Filenames passed between Emacs and Dylan should be translated using
+;;; these functions. This way users who run Emacs and Dylan on separate
 ;;; machines have a chance to integrate file operations somehow.
 
-(defvar dime-to-lisp-filename-function #'convert-standard-filename
+(defvar dime-to-dylan-filename-function #'convert-standard-filename
   "Function to translate Emacs filenames to CL namestrings.")
-(defvar dime-from-lisp-filename-function #'identity
+(defvar dime-from-dylan-filename-function #'identity
   "Function to translate CL namestrings to Emacs filenames.")
 
-(defun dime-to-lisp-filename (filename)
-  "Translate the string FILENAME to a Lisp filename."
-  (funcall dime-to-lisp-filename-function filename))
+(defun dime-to-dylan-filename (filename)
+  "Translate the string FILENAME to a Dylan filename."
+  (funcall dime-to-dylan-filename-function filename))
 
-(defun dime-from-lisp-filename (filename)
-  "Translate the Lisp filename FILENAME to an Emacs filename."
-  (funcall dime-from-lisp-filename-function filename))
+(defun dime-from-dylan-filename (filename)
+  "Translate the Dylan filename FILENAME to an Emacs filename."
+  (funcall dime-from-dylan-filename-function filename))
 
 
 ;;;; Starting DIME
 ;;;
-;;; This section covers starting an inferior-lisp, compiling and
+;;; This section covers starting an inferior-dylan, compiling and
 ;;; starting the server, initiating a network connection.
 
 ;;;;; Entry points
 
-;; We no longer load inf-lisp, but we use this variable for backward
+;; We no longer load inf-dylan, but we use this variable for backward
 ;; compatibility.
-(defvar inferior-lisp-program "lisp" 
-  "*Program name for invoking an inferior Lisp with for Inferior Lisp mode.")
+(defvar inferior-dylan-program "dylan" 
+  "*Program name for invoking an inferior Dylan with for Inferior Dylan mode.")
 
-(defvar dime-lisp-implementations nil
-  "*A list of known Lisp implementations.
+(defvar dime-dylan-implementations nil
+  "*A list of known Dylan implementations.
 The list should have the form: 
   ((NAME (PROGRAM PROGRAM-ARGS...) &key KEYWORD-ARGS) ...)
 
 NAME is a symbol for the implementation.
-PROGRAM and PROGRAM-ARGS are strings used to start the Lisp process.
+PROGRAM and PROGRAM-ARGS are strings used to start the Dylan process.
 For KEYWORD-ARGS see `dime-start'.
 
 Here's an example: 
- ((cmucl (\"/opt/cmucl/bin/lisp\" \"-quiet\") :init dime-init-command)
+ ((cmucl (\"/opt/cmucl/bin/dylan\" \"-quiet\") :init dime-init-command)
   (acl (\"acl7\") :coding-system emacs-mule))")
 
-(defvar dime-default-lisp nil
-  "*The name of the default Lisp implementation.
-See `dime-lisp-implementations'")
+(defvar dime-default-dylan nil
+  "*The name of the default Dylan implementation.
+See `dime-dylan-implementations'")
 
 ;; dummy definitions for the compiler
 (defvar dime-net-processes)
 (defvar dime-default-connection)
 
 (defun dime (&optional command coding-system)
-  "Start an inferior^_superior Lisp and connect to its Swank server."
+  "Start an inferior^_superior Dylan and connect to its Swank server."
   (interactive)
-  (let ((inferior-lisp-program (or command inferior-lisp-program))
+  (let ((inferior-dylan-program (or command inferior-dylan-program))
         (dime-net-coding-system (or coding-system dime-net-coding-system)))
     (dime-start* (cond ((and command (symbolp command))
-                         (dime-lisp-options command))
+                         (dime-dylan-options command))
                         (t (dime-read-interactive-args))))))
 
-(defvar dime-inferior-lisp-program-history '()
+(defvar dime-inferior-dylan-program-history '()
   "History list of command strings.  Used by `dime'.")
                                                   
 (defun dime-read-interactive-args ()
@@ -1082,32 +1082,32 @@ See `dime-lisp-implementations'")
 The rules for selecting the arguments are rather complicated:
 
 - In the most common case, i.e. if there's no prefix-arg in
-  effect and if `dime-lisp-implementations' is nil, use
-  `inferior-lisp-program' as fallback.
+  effect and if `dime-dylan-implementations' is nil, use
+  `inferior-dylan-program' as fallback.
 
-- If the table `dime-lisp-implementations' is non-nil use the
-  implementation with name `dime-default-lisp' or if that's nil
+- If the table `dime-dylan-implementations' is non-nil use the
+  implementation with name `dime-default-dylan' or if that's nil
   the first entry in the table.
 
 - If the prefix-arg is `-', prompt for one of the registered
-  lisps.
+  dylans.
 
 - If the prefix-arg is positive, read the command to start the
   process."
-  (let ((table dime-lisp-implementations))
-    (cond ((not current-prefix-arg) (dime-lisp-options))
+  (let ((table dime-dylan-implementations))
+    (cond ((not current-prefix-arg) (dime-dylan-options))
           ((eq current-prefix-arg '-)
            (let ((key (completing-read 
-                       "Lisp name: " (mapcar (lambda (x) 
+                       "Dylan name: " (mapcar (lambda (x) 
                                                (list (symbol-name (car x)))) 
                                              table)
                        nil t)))
-             (dime-lookup-lisp-implementation table (intern key))))
+             (dime-lookup-dylan-implementation table (intern key))))
           (t
            (destructuring-bind (program &rest program-args)
                (split-string (read-string 
-                              "Run lisp: " inferior-lisp-program
-                              'dime-inferior-lisp-program-history))
+                              "Run dylan: " inferior-dylan-program
+                              'dime-inferior-dylan-program-history))
              (let ((coding-system 
                     (if (eq 16 (prefix-numeric-value current-prefix-arg))
                         (read-coding-system "set dime-coding-system: "
@@ -1116,35 +1116,35 @@ The rules for selecting the arguments are rather complicated:
                (list :program program :program-args program-args
                      :coding-system coding-system)))))))
 
-(defun dime-lisp-options (&optional name)
-  (let ((table dime-lisp-implementations))
+(defun dime-dylan-options (&optional name)
+  (let ((table dime-dylan-implementations))
     (assert (or (not name) table))
-    (cond (table (dime-lookup-lisp-implementation dime-lisp-implementations 
-                                                   (or name dime-default-lisp
+    (cond (table (dime-lookup-dylan-implementation dime-dylan-implementations 
+                                                   (or name dime-default-dylan
                                                        (car (car table)))))
           (t (destructuring-bind (program &rest args)
-                 (split-string inferior-lisp-program)
+                 (split-string inferior-dylan-program)
                (list :program program :program-args args))))))
 
-(defun dime-lookup-lisp-implementation (table name)
+(defun dime-lookup-dylan-implementation (table name)
   (let ((arguments (rest (assoc name table))))
     (unless arguments
-      (error "Could not find lisp implementation with the name '%S'" name))
+      (error "Could not find dylan implementation with the name '%S'" name))
     (when (and (= (length arguments) 1)
                (functionp (first arguments)))
       (setf arguments (funcall (first arguments))))
     (destructuring-bind ((prog &rest args) &rest keys) arguments
       (list* :name name :program prog :program-args args keys))))
 
-(defun* dime-start (&key (program inferior-lisp-program) program-args 
+(defun* dime-start (&key (program inferior-dylan-program) program-args 
                           directory
                           (coding-system dime-net-coding-system)
                           (init 'dime-init-command)
                           name
-                          (buffer "*inferior-lisp*")
+                          (buffer "*inferior-dylan*")
                           init-function
                           env)
-  "Start a Lisp process and connect to it.
+  "Start a Dylan process and connect to it.
 This function is intended for programmatic use if `dime' is not
 flexible enough.
 
@@ -1158,7 +1158,7 @@ CODING-SYSTEM a symbol for the coding system. The default is
 ENV environment variables for the subprocess (see `process-environment').
 INIT-FUNCTION function to call right after the connection is established.
 BUFFER the name of the buffer to use for the subprocess.
-NAME a symbol to describe the Lisp implementation
+NAME a symbol to describe the Dylan implementation
 DIRECTORY change to this directory before starting the process.
 "
   (let ((args (list :program program :program-args program-args :buffer buffer 
@@ -1167,7 +1167,7 @@ DIRECTORY change to this directory before starting the process.
     (dime-check-coding-system coding-system)
     (when (dime-bytecode-stale-p)
       (dime-urge-bytecode-recompile))
-    (let ((proc (dime-maybe-start-lisp program program-args env
+    (let ((proc (dime-maybe-start-dylan program program-args env
                                         directory buffer)))
       (dime-inferior-connect proc args)
       (pop-to-buffer (process-buffer proc)))))
@@ -1201,15 +1201,15 @@ DIRECTORY change to this directory before starting the process.
                      (t fun))))
     (dime-start* (plist-put (copy-list options) :init-function init))))
 
-;;;;; Start inferior lisp
+;;;;; Start inferior dylan
 ;;;
 ;;; Here is the protocol for starting DIME:
 ;;;
 ;;;   0. Emacs recompiles/reloads dime.elc if it exists and is stale.
-;;;   1. Emacs starts an inferior Lisp process.
-;;;   2. Emacs tells Lisp (via stdio) to load and start Swank.
-;;;   3. Lisp recompiles the Swank if needed.
-;;;   4. Lisp starts the Swank server and writes its TCP port to a temp file.
+;;;   1. Emacs starts an inferior Dylan process.
+;;;   2. Emacs tells Dylan (via stdio) to load and start Swank.
+;;;   3. Dylan recompiles the Swank if needed.
+;;;   4. Dylan starts the Swank server and writes its TCP port to a temp file.
 ;;;   5. Emacs reads the temp file to get the port and then connects.
 ;;;   6. Emacs prints a message of warm encouragement for the hacking ahead.
 ;;;
@@ -1218,7 +1218,7 @@ DIRECTORY change to this directory before starting the process.
 ;;; fair while if Swank needs recompilation.
 
 (defvar dime-connect-retry-timer nil
-  "Timer object while waiting for an inferior-lisp to start.")
+  "Timer object while waiting for an inferior-dylan to start.")
 
 ;;; Recompiling bytecode:
 
@@ -1243,7 +1243,7 @@ Warning: don't use this in XEmacs, it seems to crash it!"
   "Urge the user to recompile dime.elc.
 Return true if we have been given permission to continue."
   (cond ((featurep 'xemacs)
-         ;; My XEmacs crashes and burns if I recompile/reload an elisp
+         ;; My XEmacs crashes and burns if I recompile/reload an edylan
          ;; file from itself. So they have to do it themself.
          (or (y-or-n-p "dime.elc is older than source.  Continue? ")
              (signal 'quit nil)))
@@ -1259,32 +1259,32 @@ Return true if we have been given permission to continue."
          (message "Cancelled connection attempt."))
         (t (error "Not connecting"))))
 
-;;; Starting the inferior Lisp and loading Swank:
+;;; Starting the inferior Dylan and loading Swank:
 
-(defun dime-maybe-start-lisp (program program-args env directory buffer)
-  "Return a new or existing inferior lisp process."
+(defun dime-maybe-start-dylan (program program-args env directory buffer)
+  "Return a new or existing inferior dylan process."
   (cond ((not (comint-check-proc buffer))
-         (dime-start-lisp program program-args env directory buffer))
-        ((dime-reinitialize-inferior-lisp-p program program-args env buffer)
+         (dime-start-dylan program program-args env directory buffer))
+        ((dime-reinitialize-inferior-dylan-p program program-args env buffer)
          (when-let (conn (find (get-buffer-process buffer) dime-net-processes 
                                :key #'dime-inferior-process))
            (dime-net-close conn))
          (get-buffer-process buffer))
-        (t (dime-start-lisp program program-args env directory
+        (t (dime-start-dylan program program-args env directory
                              (generate-new-buffer-name buffer)))))
 
-(defun dime-reinitialize-inferior-lisp-p (program program-args env buffer)
-  (let ((args (dime-inferior-lisp-args (get-buffer-process buffer))))
+(defun dime-reinitialize-inferior-dylan-p (program program-args env buffer)
+  (let ((args (dime-inferior-dylan-args (get-buffer-process buffer))))
     (and (equal (plist-get args :program) program)
          (equal (plist-get args :program-args) program-args)
          (equal (plist-get args :env) env)
-         (not (y-or-n-p "Create an additional *inferior-lisp*? ")))))
+         (not (y-or-n-p "Create an additional *inferior-dylan*? ")))))
 
 (defvar dime-inferior-process-start-hook nil
   "Hook called whenever a new process gets started.")
 
-(defun dime-start-lisp (program program-args env directory buffer)
-  "Does the same as `inferior-lisp' but less ugly.
+(defun dime-start-dylan (program program-args env directory buffer)
+  "Does the same as `inferior-dylan' but less ugly.
 Return the created process."
   (with-current-buffer (get-buffer-create buffer)
     (when directory
@@ -1292,7 +1292,7 @@ Return the created process."
     (comint-mode)
     (let ((process-environment (append env process-environment))
           (process-connection-type nil))
-      (comint-exec (current-buffer) "inferior-lisp" program nil program-args))
+      (comint-exec (current-buffer) "inferior-dylan" program nil program-args))
     (lisp-mode-variables t)
     (let ((proc (get-buffer-process (current-buffer))))
       (dime-set-query-on-exit-flag proc)
@@ -1300,35 +1300,35 @@ Return the created process."
       proc)))
 
 (defun dime-inferior-connect (process args)
-  "Start a Swank server in the inferior Lisp and connect."
+  "Start a Swank server in the inferior Dylan and connect."
   (dime-delete-swank-port-file 'quiet)
   (dime-start-swank-server process args)
   (dime-read-port-and-connect process nil))
 
-(defvar dime-inferior-lisp-args nil
+(defvar dime-inferior-dylan-args nil
   "A buffer local variable in the inferior proccess.
 See `dime-start'.")
 
 (defun dime-start-swank-server (process args)
-  "Start a Swank server on the inferior lisp."
+  "Start a Swank server on the inferior dylan."
   (destructuring-bind (&key coding-system init &allow-other-keys) args
     (with-current-buffer (process-buffer process)
-      (make-local-variable 'dime-inferior-lisp-args)
-      (setq dime-inferior-lisp-args args)
+      (make-local-variable 'dime-inferior-dylan-args)
+      (setq dime-inferior-dylan-args args)
       (let ((str (funcall init (dime-swank-port-file) coding-system)))
         (goto-char (process-mark process)) 
         (insert-before-markers str)
         (process-send-string process str)))))
 
-(defun dime-inferior-lisp-args (process)
+(defun dime-inferior-dylan-args (process)
   "Return the initial process arguments.
 See `dime-start'."
   (with-current-buffer (process-buffer process)
-    dime-inferior-lisp-args))
+    dime-inferior-dylan-args))
 
 ;; XXX load-server & start-server used to be separated. maybe that was  better.
 (defun dime-init-command (port-filename coding-system)
-  "Return a string to initialize Lisp."
+  "Return a string to initialize Dylan."
   (let ((loader (if (file-name-absolute-p dime-backend)
                     dime-backend
                   (concat dime-path dime-backend)))
@@ -1336,11 +1336,11 @@ See `dime-start'."
     ;; Return a single form to avoid problems with buffered input.
     (format "%S\n\n"
             `(progn
-               (load ,(dime-to-lisp-filename (expand-file-name loader)) 
+               (load ,(dime-to-dylan-filename (expand-file-name loader)) 
                      :verbose t)
                (funcall (read-from-string "swank-loader:init"))
                (funcall (read-from-string "swank:start-server")
-                        ,(dime-to-lisp-filename port-filename)
+                        ,(dime-to-dylan-filename port-filename)
                         :coding-system ,encoding)))))
 
 (defun dime-swank-port-file ()
@@ -1377,9 +1377,9 @@ See `dime-start'."
                 (> (nth 7 (file-attributes file)) 0)) ; file size
            (dime-cancel-connect-retry-timer)
            (let ((port (dime-read-swank-port))
-                 (args (dime-inferior-lisp-args process)))
+                 (args (dime-inferior-dylan-args process)))
              (dime-delete-swank-port-file 'message)
-             (let ((c (dime-connect dime-lisp-host port
+             (let ((c (dime-connect dime-dylan-host port
                                      (plist-get args :coding-system))))
                (dime-set-inferior-process c process))))
           ((and retries (zerop retries))
@@ -1466,15 +1466,15 @@ The default condition handler for timer functions (see
 ;;;
 ;;; Each DIME protocol message beings with a 3-byte length header
 ;;; followed by an S-expression as text. The sexp must be readable
-;;; both by Emacs and by Common Lisp, so if it contains any embedded
+;;; both by Emacs and by Common Dylan, so if it contains any embedded
 ;;; code fragments they should be sent as strings.
 ;;;
 ;;; The set of meaningful protocol messages are not specified
 ;;; here. They are defined elsewhere by the event-dispatching
-;;; functions in this file and in swank.lisp.
+;;; functions in this file and in swank.dylan.
 
 (defvar dime-net-processes nil
-  "List of processes (sockets) connected to Lisps.")
+  "List of processes (sockets) connected to Dylans.")
 
 (defvar dime-net-process-close-hooks '()
   "List of functions called when a dime network connection closes.
@@ -1495,7 +1495,7 @@ first line of the file."
 (defun dime-net-connect (host port coding-system)
   "Establish a connection with a CL."
   (let* ((inhibit-quit nil)
-         (proc (open-network-stream "DIME Lisp" nil host port))
+         (proc (open-network-stream "DIME Dylan" nil host port))
          (buffer (dime-make-net-buffer " *cl-connection*")))
     (push proc dime-net-processes)
     (set-process-buffer proc buffer)
@@ -1547,9 +1547,9 @@ first line of the file."
 
 ;;; Interface
 (defun dime-net-send (sexp proc)
-  "Send a SEXP to Lisp over the socket PROC.
+  "Send a SEXP to Dylan over the socket PROC.
 This is the lowest level of communication. The sexp will be READ and
-EVAL'd by Lisp."
+EVAL'd by Dylan."
   (let* ((msg (concat (dime-prin1-to-string sexp) "\n"))
          (string (concat (dime-net-encode-length (length msg)) msg))
          (coding-system (cdr (process-coding-system proc))))
@@ -1585,7 +1585,7 @@ EVAL'd by Lisp."
          (kill-buffer (process-buffer process)))))
 
 (defun dime-net-sentinel (process message)
-  (message "Lisp connection closed unexpectedly: %s" message)
+  (message "Dylan connection closed unexpectedly: %s" message)
   (dime-net-close process))
 
 ;;; Socket input is handled by `dime-net-filter', which decodes any
@@ -1599,7 +1599,7 @@ EVAL'd by Lisp."
   (dime-process-available-input process))
 
 (defun dime-process-available-input (process)
-  "Process all complete messages that have arrived from Lisp."
+  "Process all complete messages that have arrived from Dylan."
   (with-current-buffer (process-buffer process)
     (while (dime-net-have-input-p)
       (let ((event (dime-net-read-or-lose process))
@@ -1666,20 +1666,20 @@ This is more compatible with the CL reader."
 
 ;;;; Connections
 ;;;
-;;; "Connections" are the high-level Emacs<->Lisp networking concept.
+;;; "Connections" are the high-level Emacs<->Dylan networking concept.
 ;;;
-;;; Emacs has a connection to each Lisp process that it's interacting
+;;; Emacs has a connection to each Dylan process that it's interacting
 ;;; with. Typically there would only be one, but a user can choose to
-;;; connect to many Lisps simultaneously.
+;;; connect to many Dylans simultaneously.
 ;;;
 ;;; A connection consists of a control socket, optionally an extra
-;;; socket dedicated to receiving Lisp output (an optimization), and a
+;;; socket dedicated to receiving Dylan output (an optimization), and a
 ;;; set of connection-local state variables.
 ;;;
 ;;; The state variables are stored as buffer-local variables in the
 ;;; control socket's process-buffer and are used via accessor
 ;;; functions. These variables include things like the *FEATURES* list
-;;; and Unix Pid of the Lisp process.
+;;; and Unix Pid of the Dylan process.
 ;;;
 ;;; One connection is "current" at any given time. This is:
 ;;;   `dime-dispatching-connection' if dynamically bound, or
@@ -1694,7 +1694,7 @@ This is more compatible with the CL reader."
 ;;; `dime-buffer-connection' so that commands in the new buffer will
 ;;; use the connection that the buffer originated from. For example,
 ;;; the apropos command creates the *Apropos* buffer and any command
-;;; in that buffer (e.g. `M-.') will go to the same Lisp that did the
+;;; in that buffer (e.g. `M-.') will go to the same Dylan that did the
 ;;; apropos search. REPL buffers are similarly tied to their
 ;;; respective connections.
 ;;;
@@ -1704,14 +1704,14 @@ This is more compatible with the CL reader."
 ;;; connection.
 ;;;
 ;;; This is mostly transparent. The user should be aware that he can
-;;; set the default connection to pick which Lisp handles commands in
-;;; Lisp-mode source buffers, and dime hackers should be aware that
+;;; set the default connection to pick which Dylan handles commands in
+;;; Dylan-mode source buffers, and dime hackers should be aware that
 ;;; they can tie a buffer to a specific connection. The rest takes
 ;;; care of itself.
 
 (defvar dime-dispatching-connection nil
   "Network process currently executing.
-This is dynamically bound while handling messages from Lisp; it
+This is dynamically bound while handling messages from Dylan; it
 overrides `dime-buffer-connection' and `dime-default-connection'.")
 
 (make-variable-buffer-local
@@ -1721,18 +1721,18 @@ This overrides `dime-default-connection'."))
 
 (defvar dime-default-connection nil
   "Network connection to use by default.
-Used for all Lisp communication, except when overridden by
+Used for all Dylan communication, except when overridden by
 `dime-dispatching-connection' or `dime-buffer-connection'.")
 
 (defun dime-current-connection ()
-  "Return the connection to use for Lisp interaction.
+  "Return the connection to use for Dylan interaction.
 Return nil if there's no connection."
   (or dime-dispatching-connection
       dime-buffer-connection
       dime-default-connection))
 
 (defun dime-connection ()
-  "Return the connection to use for Lisp interaction.
+  "Return the connection to use for Dylan interaction.
 Signal an error if there's no connection."
   (let ((conn (dime-current-connection)))
     (cond ((and (not conn) dime-net-processes)
@@ -1747,7 +1747,7 @@ Signal an error if there's no connection."
 
 ;; FIXME: should be called auto-start
 (defcustom dime-auto-connect 'never
-  "Controls auto connection when information from lisp process is needed.
+  "Controls auto connection when information from dylan process is needed.
 This doesn't mean it will connect right after Dime is loaded."
   :group 'dime-mode
   :type '(choice (const never)
@@ -1797,7 +1797,7 @@ This doesn't mean it will connect right after Dime is loaded."
                    dime-net-processes))
          (p (car tail)))
     (dime-select-connection p)
-    (message "Lisp: %s %s" (dime-connection-name p) (process-contact p))))
+    (message "Dylan: %s %s" (dime-connection-name p) (process-contact p))))
 
 (defmacro* dime-with-connection-buffer ((&optional process) &rest body)
   "Execute BODY in the process-buffer of PROCESS.
@@ -1809,7 +1809,7 @@ If PROCESS is not specified, `dime-connection' is used.
                            (error "No connection")))
      ,@body))
 
-(put 'dime-with-connection-buffer 'lisp-indent-function 1)
+(put 'dime-with-connection-buffer 'dylan-indent-function 1)
 
 ;;; Connection-local variables:
 
@@ -1837,34 +1837,34 @@ the binding for `dime-connection'."
             (\, store)))
        '(\, varname))))
 
-(put 'dime-def-connection-var 'lisp-indent-function 2)
+(put 'dime-def-connection-var 'dylan-indent-function 2)
 (put 'dime-indulge-pretty-colors 'dime-def-connection-var t)
 
 (dime-def-connection-var dime-connection-number nil
   "Serial number of a connection.
 Bound in the connection's process-buffer.")
 
-(dime-def-connection-var dime-lisp-features '()
-  "The symbol-names of Lisp's *FEATURES*.
-This is automatically synchronized from Lisp.")
+(dime-def-connection-var dime-dylan-features '()
+  "The symbol-names of Dylan's *FEATURES*.
+This is automatically synchronized from Dylan.")
 
-(dime-def-connection-var dime-lisp-modules '()
-  "The strings of Lisp's *MODULES*.")
+(dime-def-connection-var dime-dylan-modules '()
+  "The strings of Dylan's *MODULES*.")
 
 (dime-def-connection-var dime-pid nil
-  "The process id of the Lisp process.")
+  "The process id of the Dylan process.")
 
-(dime-def-connection-var dime-lisp-implementation-type nil
-  "The implementation type of the Lisp process.")
+(dime-def-connection-var dime-dylan-implementation-type nil
+  "The implementation type of the Dylan process.")
 
-(dime-def-connection-var dime-lisp-implementation-version nil
-  "The implementation type of the Lisp process.")
+(dime-def-connection-var dime-dylan-implementation-version nil
+  "The implementation type of the Dylan process.")
 
-(dime-def-connection-var dime-lisp-implementation-name nil
-  "The short name for the Lisp implementation.")
+(dime-def-connection-var dime-dylan-implementation-name nil
+  "The short name for the Dylan implementation.")
 
-(dime-def-connection-var dime-lisp-implementation-program nil
-  "The argv[0] of the process running the Lisp implementation.")
+(dime-def-connection-var dime-dylan-implementation-program nil
+  "The argv[0] of the process running the Dylan implementation.")
 
 (dime-def-connection-var dime-connection-name nil
   "The short name for connection.")
@@ -1876,7 +1876,7 @@ This is automatically synchronized from Lisp.")
   "The communication style.")
 
 (dime-def-connection-var dime-machine-instance nil
-  "The name of the (remote) machine running the Lisp process.")
+  "The name of the (remote) machine running the Dylan process.")
 
 ;;;;; Connection setup
 
@@ -1909,29 +1909,29 @@ This is automatically synchronized from Lisp.")
                       (dime-curry #'dime-set-connection-info proc))))
 
 (defun dime-set-connection-info (connection info)
-  "Initialize CONNECTION with INFO received from Lisp."
+  "Initialize CONNECTION with INFO received from Dylan."
   (let ((dime-dispatching-connection connection)
         (dime-current-thread t))
-    (destructuring-bind (&key pid style lisp-implementation machine
+    (destructuring-bind (&key pid style dylan-implementation machine
                               features package version modules
                               &allow-other-keys) info
       (dime-check-version version connection)
       (setf (dime-pid) pid
             (dime-communication-style) style
-            (dime-lisp-features) features
-            (dime-lisp-modules) modules)
-      (destructuring-bind (&key type name version program) lisp-implementation
-        (setf (dime-lisp-implementation-type) type
-              (dime-lisp-implementation-version) version
-              (dime-lisp-implementation-name) name
-              (dime-lisp-implementation-program) program
+            (dime-dylan-features) features
+            (dime-dylan-modules) modules)
+      (destructuring-bind (&key type name version program) dylan-implementation
+        (setf (dime-dylan-implementation-type) type
+              (dime-dylan-implementation-version) version
+              (dime-dylan-implementation-name) name
+              (dime-dylan-implementation-program) program
               (dime-connection-name) (dime-generate-connection-name name)))
       (destructuring-bind (&key instance type version) machine
         (setf (dime-machine-instance) instance)))
     (let ((args (when-let (p (dime-inferior-process))
-                  (dime-inferior-lisp-args p))))
+                  (dime-inferior-dylan-args p))))
       (when-let (name (plist-get args ':name))
-        (unless (string= (dime-lisp-implementation-name) name)
+        (unless (string= (dime-dylan-implementation-name) name)
           (setf (dime-connection-name)
                 (dime-generate-connection-name (symbol-name name)))))
       (dime-load-contribs)
@@ -1949,9 +1949,9 @@ This is automatically synchronized from Lisp.")
       (dime-net-close conn)
       (top-level)))
 
-(defun dime-generate-connection-name (lisp-name)
+(defun dime-generate-connection-name (dylan-name)
   (loop for i from 1
-        for name = lisp-name then (format "%s<%d>" lisp-name i)
+        for name = dylan-name then (format "%s<%d>" dylan-name i)
         while (find name dime-net-processes 
                     :key #'dime-connection-name :test #'equal)
         finally (return name)))
@@ -1985,7 +1985,7 @@ This is automatically synchronized from Lisp.")
     (cadr (process-contact connection))))
 
 (defun dime-process (&optional connection)
-  "Return the Lisp process for CONNECTION (default `dime-connection').
+  "Return the Dylan process for CONNECTION (default `dime-connection').
 Return nil if there's no process object for the connection."
   (let ((proc (dime-inferior-process connection)))
     (if (and proc 
@@ -2003,7 +2003,7 @@ Return nil if there's no process object for the connection."
       ((:spawn :sigio) nil))))
 
 (defvar dime-inhibit-pipelining t
-  "*If true, don't send background requests if Lisp is already busy.")
+  "*If true, don't send background requests if Dylan is already busy.")
 
 (defun dime-background-activities-enabled-p ()
   (and (let ((con (dime-current-connection)))
@@ -2015,11 +2015,11 @@ Return nil if there's no process object for the connection."
 
 ;;;; Communication protocol
 
-;;;;; Emacs Lisp programming interface
+;;;;; Emacs Dylan programming interface
 ;;;
 ;;; The programming interface for writing Emacs commands is based on
-;;; remote procedure calls (RPCs). The basic operation is to ask Lisp
-;;; to apply a named Lisp function to some arguments, then to do
+;;; remote procedure calls (RPCs). The basic operation is to ask Dylan
+;;; to apply a named Dylan function to some arguments, then to do
 ;;; something with the result.
 ;;;
 ;;; Requests can be either synchronous (blocking) or asynchronous
@@ -2034,8 +2034,8 @@ Return nil if there's no process object for the connection."
 ;;; completion) and that shouldn't trigger errors (e.g. not evaluate
 ;;; user-entered code).
 ;;;
-;;; We have the concept of the "current Lisp package". RPC requests
-;;; always say what package the user is making them from and the Lisp
+;;; We have the concept of the "current Dylan package". RPC requests
+;;; always say what package the user is making them from and the Dylan
 ;;; side binds that package to *BUFFER-PACKAGE* to use as it sees
 ;;; fit. The current package is defined as the buffer-local value of
 ;;; `dime-buffer-package' if set, and otherwise the package named by
@@ -2043,7 +2043,7 @@ Return nil if there's no process object for the connection."
 ;;; then forwards).
 ;;;
 ;;; Similarly we have the concept of the current thread, i.e. which
-;;; thread in the Lisp process should handle the request. The current
+;;; thread in the Dylan process should handle the request. The current
 ;;; thread is determined solely by the buffer-local value of
 ;;; `dime-current-thread'. This is usually bound to t meaning "no
 ;;; particular thread", but can also be used to nominate a specific
@@ -2052,14 +2052,14 @@ Return nil if there's no process object for the connection."
 
 (make-variable-buffer-local
  (defvar dime-current-thread t
-   "The id of the current thread on the Lisp side.  
+   "The id of the current thread on the Dylan side.  
 t means the \"current\" thread;
 :repl-thread the thread that executes REPL requests;
 fixnum a specific thread."))
 
 (make-variable-buffer-local
  (defvar dime-buffer-package nil
-   "The Lisp package associated with the current buffer.
+   "The Dylan package associated with the current buffer.
 This is set only in buffers bound to specific packages."))
 
 ;;; `dime-rex' is the RPC primitive which is used to implement both
@@ -2078,9 +2078,9 @@ Remote EXecute SEXP.
 VARs are a list of saved variables visible in the other forms.  Each
 VAR is either a symbol or a list (VAR INIT-VALUE).
 
-SEXP is evaluated and the princed version is sent to Lisp.
+SEXP is evaluated and the princed version is sent to Dylan.
 
-PACKAGE is evaluated and Lisp binds *BUFFER-PACKAGE* to this package.
+PACKAGE is evaluated and Dylan binds *BUFFER-PACKAGE* to this package.
 The default value is (dime-current-package).
 
 CLAUSES is a list of patterns with same syntax as
@@ -2102,11 +2102,11 @@ versions cannot deal with that."
                 (destructure-case ,result
                   ,@continuations)))))))
 
-(put 'dime-rex 'lisp-indent-function 2)
+(put 'dime-rex 'dylan-indent-function 2)
 
 ;;; Interface
 (defun dime-current-package ()
-  "Return the Common Lisp package in the current context.
+  "Return the Common Dylan package in the current context.
 If `dime-buffer-package' has a value then return that, otherwise
 search for and read an `in-package' form."
   (or dime-buffer-package
@@ -2120,7 +2120,7 @@ The result should be the package-name (a string)
 or nil if nothing suitable can be found.")
 
 (defun dime-find-buffer-package ()
-  "Figure out which Lisp package the current buffer is associated with."
+  "Figure out which Dylan package the current buffer is associated with."
   (funcall dime-find-buffer-package-function))
 
 (make-variable-buffer-local
@@ -2133,11 +2133,11 @@ or nil if nothing suitable can be found.")
 ;;  (in-package :cl)
 ;;  (in-package "CL")
 ;;  (in-package |CL|)
-;;  (in-package #+ansi-cl :cl #-ansi-cl 'lisp)
+;;  (in-package #+ansi-cl :cl #-ansi-cl 'dylan)
 
 (defun dime-search-buffer-package ()
   (let ((case-fold-search t)
-        (regexp (concat "^(\\(cl:\\|common-lisp:\\)?in-package\\>[ \t']*"
+        (regexp (concat "^(\\(cl:\\|common-dylan:\\)?in-package\\>[ \t']*"
                         "\\([^)]+\\)[ \t]*)")))
     (save-excursion
       (when (or (re-search-backward regexp nil t)
@@ -2153,7 +2153,7 @@ or nil if nothing suitable can be found.")
   "List of stack-tags of continuations waiting on the stack.")
 
 (defun dime-eval (sexp &optional package)
-  "Evaluate EXPR on the superior Lisp and return the result."
+  "Evaluate EXPR on the superior Dylan and return the result."
   (when (null package) (setq package (dime-current-package)))
   (let* ((tag (gensym (format "dime-result-%d-" 
                               (1+ (dime-continuation-counter)))))
@@ -2169,17 +2169,17 @@ or nil if nothing suitable can be found.")
                    tag sexp))
           (throw tag (list #'identity value)))
          ((:abort condition)
-          (throw tag (list #'error "Synchronous Lisp Evaluation aborted"))))
+          (throw tag (list #'error "Synchronous Dylan Evaluation aborted"))))
        (let ((debug-on-quit t)
              (inhibit-quit nil)
              (conn (dime-connection)))
          (while t 
            (unless (eq (process-status conn) 'open)
-             (error "Lisp connection closed unexpectedly"))
+             (error "Dylan connection closed unexpectedly"))
            (dime-accept-process-output nil 0.01)))))))
 
 (defun dime-eval-async (sexp &optional cont package)
-  "Evaluate EXPR on the superior Lisp and call CONT with the result."
+  "Evaluate EXPR on the superior Dylan and call CONT with the result."
   (dime-rex (cont (buffer (current-buffer)))
       (sexp (or package (dime-current-package)))
     ((:ok result)
@@ -2194,7 +2194,7 @@ or nil if nothing suitable can be found.")
   ;; following will make debugging much easier:
   :dime-eval-async)
 
-(put 'dime-eval-async 'lisp-indent-function 1)
+(put 'dime-eval-async 'dylan-indent-function 1)
 
 ;;; These functions can be handy too:
 
@@ -2203,9 +2203,9 @@ or nil if nothing suitable can be found.")
   (not (null dime-net-processes)))
 
 (defun dime-check-connected ()
-  "Signal an error if we are not connected to Lisp."
+  "Signal an error if we are not connected to Dylan."
   (unless (dime-connected-p)
-    (error "Not connected. Use `%s' to start a Lisp."
+    (error "Not connected. Use `%s' to start a Dylan."
            (substitute-command-keys "\\[dime]"))))
 
 ;; UNUSED
@@ -2218,7 +2218,7 @@ or nil if nothing suitable can be found.")
                   (eq dime-buffer-connection conn))))
 
 (defun dime-busy-p (&optional conn)
-  "True if Lisp has outstanding requests.
+  "True if Dylan has outstanding requests.
 Debugged requests are ignored."
   (let ((debugged (sldb-debugged-continuations (or conn (dime-connection)))))
     (remove-if (lambda (id) 
@@ -2242,12 +2242,12 @@ Debugged requests are ignored."
 ;;;
 ;;; This is the protocol in all its glory. The input to this function
 ;;; is a protocol event that either originates within Emacs or arrived
-;;; over the network from Lisp.
+;;; over the network from Dylan.
 ;;;
 ;;; Each event is a list beginning with a keyword and followed by
 ;;; arguments. The keyword identifies the type of event. Events
 ;;; originating from Emacs have names starting with :emacs- and events
-;;; from Lisp don't.
+;;; from Dylan don't.
 
 (dime-def-connection-var dime-rex-continuations '()
   "List of (ID . FUNCTION) continuations waiting for RPC results.")
@@ -2300,7 +2300,7 @@ Debugged requests are ignored."
           ((:emacs-return-string thread tag string)
            (dime-send `(:emacs-return-string ,thread ,tag ,string)))
           ((:new-features features)
-           (setf (dime-lisp-features) features))
+           (setf (dime-dylan-features) features))
           ((:indentation-update info)
            (dime-handle-indentation-update info))
           ((:eval-no-wait form)
@@ -2308,7 +2308,7 @@ Debugged requests are ignored."
            (eval (read form)))
           ((:eval thread tag form-string)
            (dime-check-eval-in-emacs-enabled)
-           (dime-eval-for-lisp thread tag form-string))
+           (dime-eval-for-dylan thread tag form-string))
           ((:emacs-return thread tag value)
            (dime-send `(:emacs-return ,thread ,tag ,value)))
           ((:ed what)
@@ -2420,7 +2420,7 @@ Debugged requests are ignored."
             (lambda (self . ,args) . ,body)
             ,(dime-channel-method-table-name type)))
 
-(put 'dime-define-channel-method 'lisp-indent-function 3)
+(put 'dime-define-channel-method 'dylan-indent-function 3)
 (put 'dime-indulge-pretty-colors 'dime-define-channel-method t)
 
 (defun dime-send-to-remote-channel (channel-id msg)
@@ -2481,21 +2481,21 @@ Debugged requests are ignored."
 
 ;;;;; Cleanup after a quit
 
-(defun dime-restart-inferior-lisp ()
-  "Kill and restart the Lisp subprocess."
+(defun dime-restart-inferior-dylan ()
+  "Kill and restart the Dylan subprocess."
   (interactive)
-  (assert (dime-inferior-process) () "No inferior lisp process")
-  (dime-quit-lisp-internal (dime-connection) 'dime-restart-sentinel t))
+  (assert (dime-inferior-process) () "No inferior dylan process")
+  (dime-quit-dylan-internal (dime-connection) 'dime-restart-sentinel t))
 
 (defun dime-restart-sentinel (process message)
-  "Restart the inferior lisp process.
+  "Restart the inferior dylan process.
 Also rearrange windows."
   (assert (process-status process) 'closed)
   (let* ((proc (dime-inferior-process process))
-         (args (dime-inferior-lisp-args proc))
+         (args (dime-inferior-dylan-args proc))
          (buffer (buffer-name (process-buffer proc)))
          (buffer-window (get-buffer-window buffer))
-         (new-proc (dime-start-lisp (plist-get args :program)
+         (new-proc (dime-start-dylan (plist-get args :program)
                                      (plist-get args :program-args)
                                      (plist-get args :env)
                                      nil
@@ -2511,7 +2511,7 @@ Also rearrange windows."
 This is only used by the repl command sayoonara."
   (dolist (buf (buffer-list))
     (when (or (string= (buffer-name buf) dime-event-buffer-name)
-              (string-match "^\\*inferior-lisp*" (buffer-name buf))
+              (string-match "^\\*inferior-dylan*" (buffer-name buf))
               (string-match "^\\*dime-repl .*\\*$" (buffer-name buf))
               (string-match "^\\*sldb .*\\*$" (buffer-name buf))
               (string-match "^\\*DIME.*\\*$" (buffer-name buf)))
@@ -2589,7 +2589,7 @@ between compiler notes and to display their full details."
 
 ;;; FIXME: This should become a DEFCUSTOM
 (defvar dime-compile-file-options '()
-  "Plist of additional options that C-c C-k should pass to Lisp.
+  "Plist of additional options that C-c C-k should pass to Dylan.
 Currently only :fasl-directory is supported.")
 
 (defun dime-compile-file (&optional load policy)
@@ -2604,7 +2604,7 @@ See `dime-compile-and-load-file' for further details."
              (y-or-n-p (format "Save file %s? " (buffer-file-name))))
     (save-buffer))
   (run-hook-with-args 'dime-before-compile-functions (point-min) (point-max))
-  (let ((file (dime-to-lisp-filename (buffer-file-name)))
+  (let ((file (dime-to-dylan-filename (buffer-file-name)))
         (options (dime-simplify-plist `(,@dime-compile-file-options
                                          :policy ,policy))))
     (dime-eval-async
@@ -2658,7 +2658,7 @@ to it depending on its sign."
         ,string
         ,(buffer-name)
         ',position
-        ,(if (buffer-file-name) (dime-to-lisp-filename (buffer-file-name)))
+        ,(if (buffer-file-name) (dime-to-dylan-filename (buffer-file-name)))
         ',dime-compilation-policy)
       #'dime-compilation-finished)))
 
@@ -3132,10 +3132,10 @@ is replaced with the source root directory of BUFFER-FILENAME.
 If no common source root could be determined, return NIL.
 
 E.g. (dime-file-name-merge-source-root
-       \"/usr/local/src/joe/upstream/sbcl/code/late-extensions.lisp\"
-       \"/usr/local/src/joe/hacked/sbcl/compiler/deftype.lisp\")
+       \"/usr/local/src/joe/upstream/sbcl/code/late-extensions.dylan\"
+       \"/usr/local/src/joe/hacked/sbcl/compiler/deftype.dylan\")
  
-        ==> \"/usr/local/src/joe/hacked/sbcl/code/late-extensions.lisp\"
+        ==> \"/usr/local/src/joe/hacked/sbcl/code/late-extensions.dylan\"
 "
   (let ((target-dirs (dime-split-string (file-name-directory target-filename) "/" t))
         (buffer-dirs (dime-split-string (file-name-directory buffer-filename) "/" t)))
@@ -3185,13 +3185,13 @@ highlighting face."
   "When working on multiple source trees simultaneously, the way
 `dime-edit-definition' (M-.) works can sometimes be confusing:
 
-`M-.' visits locations that are present in the current Lisp image,
+`M-.' visits locations that are present in the current Dylan image,
 which works perfectly well as long as the image reflects the source
 tree that one is currently looking at.
 
 In the other case, however, one can easily end up visiting a file
 in a different source root directory (the one corresponding to
-the Lisp image), and is thus easily tricked to modify the wrong
+the Dylan image), and is thus easily tricked to modify the wrong
 source files---which can lead to quite some stressfull cursing.
 
 If this variable is T, a warning message is issued to raise the
@@ -3234,7 +3234,7 @@ you should check twice before modifying.")
 (defun dime-goto-location-buffer (buffer)
   (destructure-case buffer
     ((:file filename)
-     (let ((filename (dime-from-lisp-filename filename)))
+     (let ((filename (dime-from-dylan-filename filename)))
        (dime-check-location-filename-sanity filename)
        (set-buffer (or (get-file-buffer filename)
                        (let ((find-file-suppress-same-file-warnings t))
@@ -3245,7 +3245,7 @@ you should check twice before modifying.")
     ((:source-form string)
      (set-buffer (get-buffer-create (dime-buffer-name :source)))
      (erase-buffer)
-     (lisp-mode)
+     (dylan-mode)
      (insert string)
      (goto-char (point-min)))
     ((:zip file entry)
@@ -3730,7 +3730,7 @@ for the most recently enclosed macro or function."
   (interactive)
   (let ((pos (point)))
     (unless (get-text-property (line-beginning-position) 'dime-repl-prompt)
-      (lisp-indent-line))
+      (dylan-indent-line))
     (when (= pos (point))
       (cond ((save-excursion (re-search-backward "[^() \n\t\r]+\\=" nil t))
              (dime-complete-symbol))
@@ -3887,7 +3887,7 @@ FILE-ALIST is an alist of the form ((FILENAME . (XREF ...)) ...)."
            ((:buffer bufname)
             (let ((buffer (get-buffer bufname)))
               (if buffer 
-                  (format "%S" buffer) ; "#<buffer foo.lisp>"
+                  (format "%S" buffer) ; "#<buffer foo.dylan>"
                 (format "%s (previously existing buffer)" bufname))))
            ((:source-form _) "(S-Exp)")
            ((:zip zip entry) entry)))
@@ -3983,7 +3983,7 @@ The result is a (possibly empty) list of definitions."
 ;;;;; first-change-hook
 
 (defun dime-first-change-hook ()
-  "Notify Lisp that a source file's buffer has been modified."
+  "Notify Dylan that a source file's buffer has been modified."
   ;; Be careful not to disturb anything!
   ;; In particular if we muck up the match-data then query-replace
   ;; breaks. -luke (26/Jul/2004)
@@ -3992,7 +3992,7 @@ The result is a (possibly empty) list of definitions."
       (when (and (buffer-file-name)
                  (file-exists-p (buffer-file-name))
                  (dime-background-activities-enabled-p))
-        (let ((filename (dime-to-lisp-filename (buffer-file-name))))          
+        (let ((filename (dime-to-dylan-filename (buffer-file-name))))          
            (dime-eval-async `(swank:buffer-first-change ,filename)))))))
 
 (defun dime-setup-first-change-hook ()
@@ -4002,9 +4002,9 @@ The result is a (possibly empty) list of definitions."
 (add-hook 'dime-mode-hook 'dime-setup-first-change-hook)
 
 
-;;;; Eval for Lisp
+;;;; Eval for Dylan
 
-(defun dime-eval-for-lisp (thread tag form-string)
+(defun dime-eval-for-dylan (thread tag form-string)
   (let ((ok nil) 
         (value nil)
         (error nil)
@@ -4065,7 +4065,7 @@ WHAT can be:
   A function name (:function-name STRING)
   nil.
 
-This is for use in the implementation of COMMON-LISP:ED."
+This is for use in the implementation of COMMON-DYLAN:ED."
   (when dime-ed-use-dedicated-frame
     (unless (and dime-ed-frame (frame-live-p dime-ed-frame))
       (setq dime-ed-frame (make-frame)))
@@ -4073,7 +4073,7 @@ This is for use in the implementation of COMMON-LISP:ED."
   (when what
     (destructure-case what
       ((:filename file &key line column position)
-       (find-file (dime-from-lisp-filename file))
+       (find-file (dime-from-dylan-filename file))
        (when line (dime-goto-line line))
        (when column (move-to-column column))
        (when position (goto-char position)))
@@ -4123,7 +4123,7 @@ inserted in the current buffer."
   (dime-message "%s" value))
 
 (defun dime-eval-with-transcript (form)
-  "Eval FROM in Lisp.  Display output, if any."
+  "Eval FROM in Dylan.  Display output, if any."
   (run-hooks 'dime-transcript-start-hook)
   (dime-rex () (form)
     ((:ok value)
@@ -4134,7 +4134,7 @@ inserted in the current buffer."
      (message "Evaluation aborted on %s." condition))))
 
 (defun dime-eval-print (string)
-  "Eval STRING in Lisp; insert any output and the result at point."
+  "Eval STRING in Dylan; insert any output and the result at point."
   (dime-eval-async `(swank:eval-and-grab-output ,string)
                     (lambda (result)
                       (destructuring-bind (output value) result
@@ -4142,7 +4142,7 @@ inserted in the current buffer."
                         (insert output value)))))
 
 (defun dime-eval-save (string)
-  "Evaluate STRING in Lisp and save the result in the kill ring."
+  "Evaluate STRING in Dylan and save the result in the kill ring."
   (dime-eval-async `(swank:eval-and-grab-output ,string)
     (lambda (result)
       (destructuring-bind (output value) result
@@ -4151,7 +4151,7 @@ inserted in the current buffer."
           (message "Evaluation finished; pushed result to kill ring."))))))
         
 (defun dime-eval-describe (form)
-  "Evaluate FORM in Lisp and display the result in a new buffer."
+  "Evaluate FORM in Dylan and display the result in a new buffer."
   (dime-eval-async form (dime-rcurry #'dime-show-description
                                        (dime-current-package))))
 
@@ -4220,13 +4220,13 @@ First make the variable unbound, then evaluate the entire form."
   (insert "\n")
   (dime-eval-print string))
 
-;;;; Edit Lisp value
+;;;; Edit Dylan value
 ;;;
 (defun dime-edit-value (form-string)
   "\\<dime-edit-value-mode-map>\
 Edit the value of a setf'able form in a new buffer.
 The value is inserted into a temporary buffer for editing and then set
-in Lisp when committed with \\[dime-edit-value-commit]."
+in Dylan when committed with \\[dime-edit-value-commit]."
   (interactive 
    (list (dime-read-from-minibuffer "Edit value (evaluated): "
 				     (dime-sexp-at-point))))
@@ -4242,7 +4242,7 @@ in Lisp when committed with \\[dime-edit-value-commit]."
    "The form being edited by `dime-edit-value'."))
 
 (define-minor-mode dime-edit-value-mode
-  "Mode for editing a Lisp value."
+  "Mode for editing a Dylan value."
   nil
   " Edit-Value"
   '(("\C-c\C-c" . dime-edit-value-commit)))
@@ -4252,7 +4252,7 @@ in Lisp when committed with \\[dime-edit-value-commit]."
          (buffer (dime-with-popup-buffer (name :package package
                                                 :connection t
                                                 :select t
-                                                :mode 'lisp-mode)
+                                                :mode 'dylan-mode)
                    (dime-popup-buffer-mode -1) ; don't want binding of 'q'
                    (dime-mode 1)
                    (dime-edit-value-mode 1)
@@ -4264,7 +4264,7 @@ in Lisp when committed with \\[dime-edit-value-commit]."
       (message "Type C-c C-c when done"))))
 
 (defun dime-edit-value-commit ()
-  "Commit the edited value to the Lisp image.
+  "Commit the edited value to the Dylan image.
 \\(See `dime-edit-value'.)"
   (interactive)
   (if (null dime-edit-form-string)
@@ -4304,36 +4304,36 @@ in Lisp when committed with \\[dime-edit-value-commit]."
                     (lambda (result) (message "%s" result))))
 
 (defun dime-load-file (filename)
-  "Load the Lisp file FILENAME."
+  "Load the Dylan file FILENAME."
   (interactive (list 
 		(read-file-name "Load file: " nil nil
 				nil (if (buffer-file-name)
                                         (file-name-nondirectory 
                                          (buffer-file-name))))))
-  (let ((lisp-filename (dime-to-lisp-filename (expand-file-name filename))))
-    (dime-eval-with-transcript `(swank:load-file ,lisp-filename))))
+  (let ((dylan-filename (dime-to-dylan-filename (expand-file-name filename))))
+    (dime-eval-with-transcript `(swank:load-file ,dylan-filename))))
 
 (defvar dime-change-directory-hooks nil
   "Hook run by `dime-change-directory'.
 The functions are called with the new (absolute) directory.")
 
 (defun dime-change-directory (directory)
-  "Make DIRECTORY become Lisp's current directory.
+  "Make DIRECTORY become Dylan's current directory.
 Return whatever swank:set-default-directory returns."
   (let ((dir (expand-file-name directory)))
     (prog1 (dime-eval `(swank:set-default-directory
-                         ,(dime-to-lisp-filename dir)))
+                         ,(dime-to-dylan-filename dir)))
       (dime-with-connection-buffer nil (cd-absolute dir))
       (run-hook-with-args 'dime-change-directory-hooks dir))))
  
 (defun dime-cd (directory)
-  "Make DIRECTORY become Lisp's current directory.
+  "Make DIRECTORY become Dylan's current directory.
 Return whatever swank:set-default-directory returns."
   (interactive (list (read-directory-name "Directory: " nil nil t)))
   (message "default-directory: %s" (dime-change-directory directory)))
 
 (defun dime-pwd ()
-  "Show Lisp's default directory."
+  "Show Dylan's default directory."
   (interactive)
   (message "Directory %s" (dime-eval `(swank:default-directory))))
 
@@ -4411,17 +4411,17 @@ If PACKAGE is NIL, then search in all packages."
                             (stripped-symbol 
                              (and symbol-at-point
                                   (downcase
-                                   (common-lisp-hyperspec-strip-cl-package 
+                                   (common-dylan-hyperspec-strip-cl-package 
                                     symbol-at-point)))))
                        (if (and stripped-symbol
                                 (intern-soft stripped-symbol
-                                             common-lisp-hyperspec-symbols))
+                                             common-dylan-hyperspec-symbols))
                            stripped-symbol
                          (completing-read
-                          "Look up symbol in Common Lisp HyperSpec: "
-                          common-lisp-hyperspec-symbols #'boundp
+                          "Look up symbol in Common Dylan HyperSpec: "
+                          common-dylan-hyperspec-symbols #'boundp
                           t stripped-symbol
-                          'common-lisp-hyperspec-history)))))
+                          'common-dylan-hyperspec-history)))))
   (hyperspec-lookup symbol-name))
   
 (defun dime-describe-symbol (symbol-name)
@@ -4570,7 +4570,7 @@ With prefix argument include internal symbols."
 
 (defvar dime-xref-mode-map)
 
-(define-derived-mode dime-xref-mode lisp-mode "Xref"
+(define-derived-mode dime-xref-mode dylan-mode "Xref"
   "dime-xref-mode: Major mode for cross-referencing.
 \\<dime-xref-mode-map>\
 The most important commands:
@@ -4620,7 +4620,7 @@ The most important commands:
        (dime-set-truncate-lines)
        ,@body)))
 
-(put 'dime-with-xref-buffer 'lisp-indent-function 1)
+(put 'dime-with-xref-buffer 'dylan-indent-function 1)
 
 (defun dime-insert-xrefs (xref-alist)
   "Insert XREF-ALIST in the current-buffer.
@@ -4723,7 +4723,7 @@ This is used by `dime-goto-next-xref'")
   (dime-xref :callees symbol-name))
 
 (defun dime-xref (type symbol &optional continuation)
-  "Make an XREF request to Lisp."
+  "Make an XREF request to Dylan."
   (dime-eval-async
    `(swank:xref ',type ',symbol)
    (dime-rcurry (lambda (result type symbol package cont)
@@ -4741,7 +4741,7 @@ This is used by `dime-goto-next-xref'")
   (when (eq xrefs :not-implemented)
     (error "%s is not implemented yet on %s." 
            (dime-xref-type type)
-           (dime-lisp-implementation-name))))
+           (dime-dylan-implementation-name))))
 
 (defun dime-xref-type (type)
   (format "who-%s" (dime-cl-symbol-name type)))
@@ -4889,7 +4889,7 @@ When displaying XREF information, this goes to the previous reference."
 
 (defun dime-xref-recompilation-cont (results dspecs buffer)
   ;; Extreme long-windedness to insert status of recompilation;
-  ;; sometimes Elisp resembles more of an Ewwlisp.
+  ;; sometimes Edylan resembles more of an Ewwdylan.
 
   ;; FIXME: Should probably throw out the whole recompilation cruft
   ;; anyway.  -- helmut
@@ -5011,7 +5011,7 @@ This variable specifies both what was expanded and how.")
 (defun dime-create-macroexpansion-buffer ()
   (let ((name (dime-buffer-name :macroexpansion)))
     (dime-with-popup-buffer (name :package t :connection t
-                                   :mode 'lisp-mode)
+                                   :mode 'dylan-mode)
       (dime-mode 1)
       (dime-macroexpansion-minor-mode 1)
       (setq font-lock-keywords-case-fold-search t)
@@ -5110,7 +5110,7 @@ argument is given, with CL:MACROEXPAND."
 ;;;; Subprocess control
 
 (defun dime-interrupt ()
-  "Interrupt Lisp."
+  "Interrupt Dylan."
   (interactive)
   (cond ((dime-use-sigint-for-interrupt) (dime-send-sigint))
         (t (dime-dispatch-event `(:emacs-interrupt ,dime-current-thread)))))
@@ -5118,14 +5118,14 @@ argument is given, with CL:MACROEXPAND."
 (defun dime-quit ()
   (error "Not implemented properly.  Use `dime-interrupt' instead."))
 
-(defun dime-quit-lisp (&optional kill)
-  "Quit lisp, kill the inferior process and associated buffers."
+(defun dime-quit-dylan (&optional kill)
+  "Quit dylan, kill the inferior process and associated buffers."
   (interactive "P")
-  (dime-quit-lisp-internal (dime-connection) 'dime-quit-sentinel kill))
+  (dime-quit-dylan-internal (dime-connection) 'dime-quit-sentinel kill))
 
-(defun dime-quit-lisp-internal (connection sentinel kill)
+(defun dime-quit-dylan-internal (connection sentinel kill)
   (let ((dime-dispatching-connection connection))
-    (dime-eval-async '(swank:quit-lisp))
+    (dime-eval-async '(swank:quit-dylan))
     (let* ((process (dime-inferior-process connection)))
       (set-process-filter connection  nil)
       (set-process-sentinel connection sentinel)
@@ -5193,7 +5193,7 @@ argument is given, with CL:MACROEXPAND."
       (dime-add-face ',facename ,var)
       ,var)))
 
-(put 'in-sldb-face 'lisp-indent-function 1)
+(put 'in-sldb-face 'dylan-indent-function 1)
 
 
 ;;;;; sldb-mode
@@ -5203,7 +5203,7 @@ argument is given, with CL:MACROEXPAND."
     ;; We give < and > parenthesis syntax, so that #< ... > is treated
     ;; as a balanced expression.  This enables autodoc-mode to match
     ;; #<unreadable> actual arguments in the backtraces with formal
-    ;; arguments of the function.  (For Lisp mode, this is not
+    ;; arguments of the function.  (For Dylan mode, this is not
     ;; desirable, since we do not wish to get a mismatched paren
     ;; highlighted everytime we type < or >.)
     (modify-syntax-entry ?< "(" table)
@@ -5212,7 +5212,7 @@ argument is given, with CL:MACROEXPAND."
   "Syntax table for SLDB mode.")
 
 (define-derived-mode sldb-mode fundamental-mode "sldb"
-  "Superior lisp debugger mode.
+  "Superior dylan debugger mode.
 In addition to ordinary DIME commands, the following are
 available:\\<sldb-mode-map>
 
@@ -5503,7 +5503,7 @@ Regexp heuristics are used to avoid showing SWANK-internal frames."
 
 (defun sldb-insert-frames (frames more)
   "Insert FRAMES into buffer.
-If MORE is non-nil, more frames are on the Lisp stack."
+If MORE is non-nil, more frames are on the Dylan stack."
   (mapc #'sldb-insert-frame frames)
   (when more
     (dime-insert-propertized
@@ -5669,7 +5669,7 @@ preserve the current row and column as closely as possible."
        (prog1 (save-excursion ,@body)
          (dime-restore-coordinate ,base ,goal ,mark)))))
 
-(put 'dime-save-coordinates 'lisp-indent-function 1)
+(put 'dime-save-coordinates 'dylan-indent-function 1)
 
 (defun dime-coordinates (origin)
   ;; Return a pair (X . Y) for the column and line distance to ORIGIN.
@@ -6001,13 +6001,13 @@ restart to invoke, otherwise use the restart at point."
   "Run `gud-gdb'on the connection with PID `pid'. 
 
 If `lightweight' is given, do not send any request to the
-inferior Lisp (e.g. to obtain default gdb config) but only
-operate from the Emacs side; intended for cases where the Lisp is
+inferior Dylan (e.g. to obtain default gdb config) but only
+operate from the Emacs side; intended for cases where the Dylan is
 truly screwed up."
   (interactive
    (list (dime-read-connection "Attach gdb to: " (dime-connection)) "P"))
   (let ((pid  (dime-pid connection))
-        (file (dime-lisp-implementation-program connection))
+        (file (dime-dylan-implementation-program connection))
         (commands (unless lightweight
                     (let ((dime-dispatching-connection connection))
                       (dime-eval `(swank:gdb-initial-commands))))))
@@ -6314,7 +6314,7 @@ was called originally."
   (interactive (list (dime-connection-at-point)))
   (let ((dime-dispatching-connection connection)
         (end (time-add (current-time) (seconds-to-time 3))))
-    (dime-quit-lisp t)
+    (dime-quit-dylan t)
     (while (memq connection dime-net-processes)
       (when (time-less-p end (current-time))
         (message "Quit timeout expired.  Disconnecting.")
@@ -6325,7 +6325,7 @@ was called originally."
 (defun dime-restart-connection-at-point (connection)
   (interactive (list (dime-connection-at-point)))
   (let ((dime-dispatching-connection connection))
-    (dime-restart-inferior-lisp)))
+    (dime-restart-inferior-dylan)))
   
 (defun dime-connection-list-make-default ()
   "Make the connection at point the default connection."
@@ -6367,7 +6367,7 @@ was called originally."
                (dime-connection-name p)
                (or (process-id p) (process-contact p))
                (dime-pid p)
-               (dime-lisp-implementation-type p))))
+               (dime-dylan-implementation-type p))))
     (when default 
       (goto-char default-pos))))
 
@@ -6864,19 +6864,19 @@ switch-to-buffer."
   (top-level))
 
 (def-dime-selector-method ?i
-  "*inferior-lisp* buffer."
+  "*inferior-dylan* buffer."
   (cond ((and (dime-connected-p) (dime-process))
          (process-buffer (dime-process)))
         (t
-         "*inferior-lisp*")))
+         "*inferior-dylan*")))
 
 (def-dime-selector-method ?v
   "*dime-events* buffer."
   dime-event-buffer-name)
 
 (def-dime-selector-method ?l
-  "most recently visited lisp-mode buffer."
-  (dime-recently-visited-buffer 'lisp-mode))
+  "most recently visited dylan-mode buffer."
+  (dime-recently-visited-buffer 'dylan-mode))
 
 (def-dime-selector-method ?d
   "*sldb* buffer for the current connection."
@@ -6884,8 +6884,8 @@ switch-to-buffer."
       (error "No debugger buffer")))
 
 (def-dime-selector-method ?e
-  "most recently visited emacs-lisp-mode buffer."
-  (dime-recently-visited-buffer 'emacs-lisp-mode))
+  "most recently visited emacs-dylan-mode buffer."
+  (dime-recently-visited-buffer 'emacs-dylan-mode))
 
 (def-dime-selector-method ?c
   "DIME connections buffer."
@@ -6893,7 +6893,7 @@ switch-to-buffer."
   dime-connections-buffer-name)
 
 (def-dime-selector-method ?n
-  "Cycle to the next Lisp connection."
+  "Cycle to the next Dylan connection."
   (dime-cycle-connections)
   (concat "*dime-repl "
           (dime-connection-name (dime-current-connection))
@@ -6918,25 +6918,25 @@ Only considers buffers that are not already visible."
 ;;;; Indentation
 
 (defun dime-update-indentation ()
-  "Update indentation for all macros defined in the Lisp system."
+  "Update indentation for all macros defined in the Dylan system."
   (interactive)
   (dime-eval-async '(swank:update-indentation-information)))
 
 (defvar dime-indentation-update-hooks)
 
 (defun dime-handle-indentation-update (alist)
-  "Update Lisp indent information.
+  "Update Dylan indent information.
 
 ALIST is a list of (SYMBOL-NAME . INDENT-SPEC) of proposed indentation
-settings for `common-lisp-indent-function'. The appropriate property
+settings for `common-dylan-indent-function'. The appropriate property
 is setup, unless the user already set one explicitly."
   (dolist (info alist)
     (let ((symbol (intern (car info)))
           (indent (cdr info)))
       ;; Does the symbol have an indentation value that we set?
-      (when (equal (get symbol 'common-lisp-indent-function)
+      (when (equal (get symbol 'common-dylan-indent-function)
                    (get symbol 'dime-indent))
-        (put symbol 'common-lisp-indent-function indent)
+        (put symbol 'common-dylan-indent-function indent)
         (put symbol 'dime-indent indent))
       (run-hook-with-args 'dime-indentation-update-hooks symbol indent))))
 
@@ -6953,13 +6953,13 @@ is setup, unless the user already set one explicitly."
 (defun dime-load-contribs ()
   (let ((needed (remove-if (lambda (s) 
                              (member (subseq (symbol-name s) 1)
-                                     (mapcar #'downcase (dime-lisp-modules))))
+                                     (mapcar #'downcase (dime-dylan-modules))))
                            dime-required-modules)))
     (when needed
       ;; No asynchronous request because with :SPAWN that could result
       ;; in the attempt to load modules concurrently which may not be
-      ;; supported by the host Lisp.
-      (setf (dime-lisp-modules) 
+      ;; supported by the host Dylan.
+      (setf (dime-dylan-modules) 
             (dime-eval `(swank:swank-require ',needed))))))
 
 (defstruct dime-contrib
@@ -7001,7 +7001,7 @@ is setup, unless the user already set one explicitly."
              :swank-dependencies ',swank-dependencies
              :enable ',enable :disable ',disable))))))
 
-(put 'define-dime-contrib 'lisp-indent-function 1)
+(put 'define-dime-contrib 'dylan-indent-function 1)
 (put 'dime-indulge-pretty-colors 'define-dime-contrib t)
 
 (defun dime-all-contribs ()
@@ -7045,7 +7045,7 @@ is setup, unless the user already set one explicitly."
        [ "Eval And Pretty-Print"   dime-pprint-eval-last-expression ,C ]
        [ "Eval Region"             dime-eval-region ,C ]
        [ "Interactive Eval..."     dime-interactive-eval ,C ]
-       [ "Edit Lisp Value..."      dime-edit-value ,C ]
+       [ "Edit Dylan Value..."      dime-edit-value ,C ]
        [ "Call Defun"              dime-call-defun ,C ])
       ("Debugging"
        [ "Macroexpand Once..."     dime-macroexpand-1 ,C ]
@@ -7147,7 +7147,7 @@ is setup, unless the user already set one explicitly."
 ;;;; Cheat Sheet
 
 (defvar dime-cheat-sheet-table
-  '((:title "Editing lisp code"
+  '((:title "Editing dylan code"
      :map dime-mode-map
      :bindings ((dime-eval-defun "Evaluate current top level form")
                 (dime-compile-defun "Compile current top level form")
@@ -7192,7 +7192,7 @@ is setup, unless the user already set one explicitly."
   (setq buffer-read-only nil)
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
-  (insert "DIME: The Superior Lisp Interaction Mode for Emacs (minor-mode).\n\n")
+  (insert "DIME: The Superior Dylan Interaction Mode for Emacs (minor-mode).\n\n")
   (dolist (mode dime-cheat-sheet-table)
     (let ((title (getf mode :title))
           (mode-map (getf mode :map))
@@ -7262,8 +7262,8 @@ is setup, unless the user already set one explicitly."
 (defvar dime-test-buffer-name "*Tests*"
   "The name of the buffer used to display test results.")
 
-(defvar dime-lisp-under-test nil
-  "The name of Lisp currently executing the tests.")
+(defvar dime-dylan-under-test nil
+  "The name of Dylan currently executing the tests.")
 
 (defvar dime-randomize-test-order t
   "*If t execute tests in random order.
@@ -7314,7 +7314,7 @@ that succeeded initially folded away."
     (read (completing-read "Test: " alist nil t))))
 
 (defun dime-test-should-fail-p ()
-  (member dime-lisp-under-test (dime-test.fails-for dime-current-test)))
+  (member dime-dylan-under-test (dime-test.fails-for dime-current-test)))
 
 (defun dime-shuffle-list (list)
   (let* ((len (length list))
@@ -7337,7 +7337,7 @@ Return the number of failed tests."
           (dime-expected-passes 0)
           (dime-unexpected-failures 0)
           (dime-expected-failures 0)
-          (dime-lisp-under-test (dime-lisp-implementation-name)))
+          (dime-dylan-under-test (dime-dylan-implementation-name)))
       (dolist (dime-current-test dime-tests)
         (with-struct (dime-test. name (function fname) inputs style) 
             dime-current-test
@@ -7499,7 +7499,7 @@ conditions (assertions)."
                                               :style ',style
                                               :inputs ,inputs))))))))
 
-(put 'def-dime-test 'lisp-indent-function 4)
+(put 'def-dime-test 'dylan-indent-function 4)
 
 (defmacro dime-check (test-name &rest body)
   "Check a condition (assertion.)
@@ -7530,7 +7530,7 @@ BODY returns true if the check succeeds."
 (defun dime-print-check-error (reason)
   (dime-test-failure "ERROR" (format "%S" reason)))
 
-(put 'dime-check 'lisp-indent-function 1)
+(put 'dime-check 'dylan-indent-function 1)
 
 
 ;;;;; Test case definitions
@@ -7595,7 +7595,7 @@ BODY returns true if the check succeeds."
   ;; We test that `dime-symbol-at-point' works at every
   ;; character of the symbol name.
   (with-temp-buffer
-    (lisp-mode)
+    (dylan-mode)
     (insert prefix)
     (let ((start (point)))
       (insert symbol suffix)
@@ -7695,7 +7695,7 @@ BODY returns true if the check succeeds."
     ("#'foo")
     ("#'(lambda (x) x)"))
   (with-temp-buffer
-    (lisp-mode)
+    (dylan-mode)
     (insert string)
     (goto-char (point-min))
     (dime-test-expect (format "Check sexp `%s' (at %d)..."
@@ -7742,9 +7742,9 @@ BODY returns true if the check succeeds."
       (let ((dime-buffer-package "SWANK")
             (symbol '*buffer-package*))
         (dime-edit-definition (symbol-name symbol))
-        (dime-check ("Checking that we've got M-. into swank.lisp. %S" symbol)
+        (dime-check ("Checking that we've got M-. into swank.dylan. %S" symbol)
           (string= (file-name-nondirectory (buffer-file-name))
-                   "swank.lisp"))
+                   "swank.dylan"))
         (dime-pop-find-definition-stack)
         (dime-check ("Checking that we've got back.")
           (and (eq (current-buffer) tmpbuffer)
@@ -7757,7 +7757,7 @@ BODY returns true if the check succeeds."
 
 (def-dime-test find-definition
     (name buffer-package snippet)
-    "Find the definition of a function or macro in swank.lisp."
+    "Find the definition of a function or macro in swank.dylan."
     '(("start-server" "SWANK" "(defun start-server ")
       ("swank::start-server" "CL-USER" "(defun start-server ")
       ("swank:start-server" "CL-USER" "(defun start-server "))
@@ -7769,8 +7769,8 @@ BODY returns true if the check succeeds."
         (dime-buffer-package buffer-package))
     (dime-edit-definition name)
     ;; Postconditions
-    (dime-check ("Definition of `%S' is in swank.lisp." name)
-      (string= (file-name-nondirectory (buffer-file-name)) "swank.lisp"))
+    (dime-check ("Definition of `%S' is in swank.dylan." name)
+      (string= (file-name-nondirectory (buffer-file-name)) "swank.dylan"))
     (dime-check "Definition now at point." (looking-at snippet))
     (dime-pop-find-definition-stack)
     (dime-check "Returning from definition restores original buffer/position."
@@ -7778,7 +7778,7 @@ BODY returns true if the check succeeds."
            (= orig-pos (point)))))
     (dime-check-top-level))
 
-(def-dime-test (find-definition.2 (:fails-for "allegro" "lispworks"))
+(def-dime-test (find-definition.2 (:fails-for "allegro" "dylanworks"))
     (buffer-content buffer-package snippet)
     "Check that we're able to find definitions even when
 confronted with nasty #.-fu."
@@ -7844,7 +7844,7 @@ Confirm that EXPECTED-ARGLIST is displayed."
        "(swank::compile-string-for-emacs string buffer position filename policy)")
       ("swank::connection.socket-io"
        "(swank::connection.socket-io \\(struct\\(ure\\)?\\|object\\|instance\\|x\\))")
-      ("cl:lisp-implementation-type" "(cl:lisp-implementation-type)")
+      ("cl:dylan-implementation-type" "(cl:dylan-implementation-type)")
       ("cl:class-name" 
        "(cl:class-name \\(class\\|object\\|instance\\|structure\\))"))
   (let ((arglist (dime-eval `(swank:operator-arglist ,function-name 
@@ -7854,7 +7854,7 @@ Confirm that EXPECTED-ARGLIST is displayed."
                        (lambda (pattern arglist)
                          (and arglist (string-match pattern arglist))))))
 
-(def-dime-test (compile-defun (:fails-for "allegro" "lispworks" "clisp" "ccl"))
+(def-dime-test (compile-defun (:fails-for "allegro" "dylanworks" "cdylan" "ccl"))
     (program subform)
     "Compile PROGRAM containing errors.
 Confirm that SUBFORM is correctly located."
@@ -7893,7 +7893,7 @@ Confirm that SUBFORM is correctly located."
       )
   (dime-check-top-level)    
   (with-temp-buffer
-    (lisp-mode)
+    (dylan-mode)
     (insert program)
     (let ((font-lock-verbose nil))
       (setq dime-buffer-package ":swank")
@@ -7906,11 +7906,11 @@ Confirm that SUBFORM is correctly located."
         (equal (read (current-buffer)) subform))))
   (dime-check-top-level))
 
-(def-dime-test (compile-file (:fails-for "allegro" "lispworks" "clisp"))
+(def-dime-test (compile-file (:fails-for "allegro" "dylanworks" "cdylan"))
     (string)
     "Insert STRING in a file, and compile it."
     `((,(pp-to-string '(defun foo () nil))))
-  (let ((filename "/tmp/dime-tmp-file.lisp"))
+  (let ((filename "/tmp/dime-tmp-file.dylan"))
     (with-temp-file filename
       (insert string))
     (let ((cell (cons nil nil)))
@@ -8126,7 +8126,7 @@ the buffer's undo-list."
   (dime-check-top-level)
   (setq dime-buffer-package ":swank")
   (with-temp-buffer
-    (lisp-mode)
+    (dylan-mode)
     (dolist (def macro-defs) 
       (dime-compile-string def 0)
       (dime-sync-to-top-level 5))
@@ -8178,8 +8178,8 @@ the buffer's undo-list."
 "
        ("23" "42")))
   (with-temp-buffer
-    (lisp-mode)
-    (dime-lisp-mode-hook)
+    (dylan-mode)
+    (dime-dylan-mode-hook)
     (insert buffer-content)
     (dime-compile-region (point-min) (point-max))
     (dime-sync-to-top-level 3)
@@ -8358,14 +8358,14 @@ Reconnect afterwards."
     (assert (equal (process-status p) 'run) nil "Subprocess not running")
     (with-current-buffer (process-buffer p)
       (assert (< (buffer-size) 500) nil "Unusual output"))
-    (dime-inferior-connect p (dime-inferior-lisp-args p))
+    (dime-inferior-connect p (dime-inferior-dylan-args p))
     (lexical-let ((hook nil) (p p))
       (setq hook (lambda ()
                    (dime-test-expect 
                     "We are connected again" p (dime-inferior-process))
                    (remove-hook 'dime-connected-hook hook)))
       (add-hook 'dime-connected-hook hook)
-      (dime-wait-condition "Lisp restarted" 
+      (dime-wait-condition "Dylan restarted" 
                             (lambda () 
                               (not (member hook dime-connected-hook)))
                             5))))
@@ -8463,7 +8463,7 @@ keys."
           until (= (point) (point-max))
           maximizing column)))
 
-;;;;; CL symbols vs. Elisp symbols.
+;;;;; CL symbols vs. Edylan symbols.
 
 (defun dime-cl-symbol-name (symbol)
   (let ((n (if (stringp symbol) symbol (symbol-name symbol))))
@@ -8506,7 +8506,7 @@ current package is used."
        (save-current-buffer ,@body)
        (/= ,pointvar (point)))))
 
-(put 'dime-point-moves-p 'lisp-indent-function 0)
+(put 'dime-point-moves-p 'dylan-indent-function 0)
 
 (defun dime-forward-sexp (&optional count)
   "Like `forward-sexp', but understands reader-conditionals (#- and #+),
@@ -8560,7 +8560,7 @@ and skips comments."
 (defun dime-eval-feature-expression (e)
   "Interpret a reader conditional expression."
   (cond ((symbolp e)
-         (memq (dime-keywordify e) (dime-lisp-features)))
+         (memq (dime-keywordify e) (dime-dylan-features)))
         ((and (consp e) (symbolp (car e)))
          (funcall (let ((head (dime-keywordify (car e))))
                     (case head
@@ -8579,7 +8579,7 @@ and skips comments."
                   (cdr e)))
         (t (signal 'dime-incorrect-feature-expression e))))
 
-;;;;; Extracting Lisp forms from the buffer or user
+;;;;; Extracting Dylan forms from the buffer or user
 
 (defun dime-defun-at-point ()
   "Return the text of the defun at point."
@@ -8718,7 +8718,7 @@ will return \"\"."
   `(unless (fboundp ',name)
      (defun ,name ,@rest)))
 
-(put 'dime-defun-if-undefined 'lisp-indent-function 2)
+(put 'dime-defun-if-undefined 'dylan-indent-function 2)
 (put 'dime-indulge-pretty-colors 'dime-defun-if-undefined t)
 
 ;; FIXME: defining macros here is probably too late for the compiler
@@ -8726,7 +8726,7 @@ will return \"\"."
   `(unless (fboundp ',name)
      (defmacro ,name ,@rest)))
 
-(put 'dime-defmacro-if-undefined 'lisp-indent-function 2)
+(put 'dime-defmacro-if-undefined 'dylan-indent-function 2)
 (put 'dime-indulge-pretty-colors 'dime-defmacro-if-undefined t)
 
 (defvar dime-accept-process-output-supports-floats 
@@ -9073,7 +9073,7 @@ If they are not, position point at the first syntax error found."
   (let ((regexp (format "(\\(%S\\)\\s +\\(\\(\\w\\|\\s_\\)+\\)"
                         def-foo-symbol)))
     (font-lock-add-keywords
-     'emacs-lisp-mode
+     'emacs-dylan-mode
      `((,regexp (1 font-lock-keyword-face)
                 (2 font-lock-variable-name-face))))))
  

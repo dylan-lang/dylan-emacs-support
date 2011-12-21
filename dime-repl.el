@@ -16,9 +16,9 @@
 ;;
 
 (define-dime-contrib dime-repl
-  "Read-Eval-Print Loop written in Emacs Lisp.
+  "Read-Eval-Print Loop written in Emacs Dylan.
 
-This contrib implements a Lisp Listener along with some niceties like
+This contrib implements a Dylan Listener along with some niceties like
 a persistent history and various \"shortcut\" commands.  Nothing here
 depends on comint.el; I/O is multiplexed over DIME's socket.
 
@@ -40,12 +40,12 @@ maintain."
   :group 'dime)
 
 (defcustom dime-repl-shortcut-dispatch-char ?\,
-  "Character used to distinguish repl commands from lisp forms."
+  "Character used to distinguish repl commands from dylan forms."
   :type '(character)
   :group 'dime-repl)
 
-(defcustom dime-repl-only-save-lisp-buffers t
-  "When T we only attempt to save lisp-mode file buffers. When
+(defcustom dime-repl-only-save-dylan-buffers t
+  "When T we only attempt to save dylan-mode file buffers. When
   NIL dime will attempt to save all buffers (as per
   save-some-buffers). This applies to all ASDF related repl
   shortcuts."
@@ -67,7 +67,7 @@ maintain."
     '((((class color) (background light)) (:foreground "RosyBrown"))
       (((class color) (background dark)) (:foreground "LightSalmon"))
       (t (:slant italic))))
-  "Face for Lisp output in the DIME REPL."
+  "Face for Dylan output in the DIME REPL."
   :group 'dime-repl)
 
 (defface dime-repl-input-face
@@ -102,7 +102,7 @@ maintain."
 (defvar dime-repl-read-mode)
 
 (defun dime-reading-p ()
-  "True if Lisp is currently reading input from the REPL."
+  "True if Dylan is currently reading input from the REPL."
   (with-current-buffer (dime-output-buffer)
     dime-repl-read-mode))
 
@@ -136,7 +136,7 @@ maintain."
                   (unless (eq major-mode 'dime-repl-mode) 
                     (dime-repl-mode))
                   (setq dime-buffer-connection connection)
-		  (setq dime-buffer-package (dime-lisp-package connection))
+		  (setq dime-buffer-package (dime-dylan-package connection))
                   (dime-reset-repl-markers)
                   (unless noprompt 
                     (dime-repl-insert-prompt))
@@ -180,11 +180,11 @@ maintain."
 
 (defvar dime-open-stream-hooks)
 
-(defun dime-open-stream-to-lisp (port)
-  (let ((stream (open-network-stream "*lisp-output-stream*" 
+(defun dime-open-stream-to-dylan (port)
+  (let ((stream (open-network-stream "*dylan-output-stream*" 
                                      (dime-with-connection-buffer ()
                                        (current-buffer))
-				     dime-lisp-host port)))
+				     dime-dylan-host port)))
     (dime-set-query-on-exit-flag stream)
     (set-process-filter stream 'dime-output-filter)
     (let ((pcs (process-coding-system (dime-current-connection))))
@@ -246,7 +246,7 @@ This is set to nil after displaying the buffer.")
      (prog1 (progn . ,body)
        (set-marker ,marker ,pos)))))
 
-(put 'dime-save-marker 'lisp-indent-function 1)
+(put 'dime-save-marker 'dylan-indent-function 1)
 
 (defun dime-repl-emit (string)
   ;; insert the string STRING in the output buffer
@@ -342,7 +342,7 @@ the buffer should appear."
 ;;
 ;; This invariant is important, because we must be prepared for
 ;; asynchronous output and asynchronous reads.  ("Asynchronous" means,
-;; triggered by Lisp and not by Emacs.)
+;; triggered by Dylan and not by Emacs.)
 ;;
 ;; All output is inserted at the output-end marker.  Some care must be
 ;; taken when output-end and input-start are at the same position: if
@@ -354,7 +354,7 @@ the buffer should appear."
 ;;
 ;; A "synchronous" evaluation request proceeds as follows: the user
 ;; inserts some text between input-start and point-max and then hits
-;; return.  We send that region to Lisp, move the output and input
+;; return.  We send that region to Dylan, move the output and input
 ;; makers to the line after the input and wait.  When we receive the
 ;; result, we insert it together with a prompt between the output-end
 ;; and input-start mark.  See `dime-repl-insert-prompt'.
@@ -367,16 +367,16 @@ the buffer should appear."
 ;; there is no prompt between output-end and input-start.
 ;;
 
-;; FIXME: dime-lisp-package should be local in a REPL buffer
-(dime-def-connection-var dime-lisp-package
-    "COMMON-LISP-USER"
-  "The current package name of the Superior lisp.
-This is automatically synchronized from Lisp.")
+;; FIXME: dime-dylan-package should be local in a REPL buffer
+(dime-def-connection-var dime-dylan-package
+    "COMMON-DYLAN-USER"
+  "The current package name of the Superior dylan.
+This is automatically synchronized from Dylan.")
 
-(dime-def-connection-var dime-lisp-package-prompt-string
+(dime-def-connection-var dime-dylan-package-prompt-string
     "CL-USER"
-  "The current package name of the Superior lisp.
-This is automatically synchronized from Lisp.")
+  "The current package name of the Superior dylan.
+This is automatically synchronized from Dylan.")
 
 (dime-make-variables-buffer-local
  (defvar dime-repl-package-stack nil
@@ -463,7 +463,7 @@ joined together."))
   dime-repl-mode-map)
 
 (defun dime-repl-mode () 
-  "Major mode for interacting with a superior Lisp.
+  "Major mode for interacting with a superior Dylan.
 \\{dime-repl-mode-map}"
   (interactive)
   (kill-all-local-variables)
@@ -471,8 +471,8 @@ joined together."))
   (dime-editing-mode 1)
   (dime-repl-map-mode 1)
   (lisp-mode-variables t)
-  (set (make-local-variable 'lisp-indent-function)
-       'common-lisp-indent-function)
+  (set (make-local-variable 'dylan-indent-function)
+       'common-dylan-indent-function)
   (setq font-lock-defaults nil)
   (setq mode-name "REPL")
   (setq dime-current-thread :repl-thread)
@@ -521,7 +521,7 @@ joined together."))
 
 (defun dime-repl-eval-string (string)
   (dime-rex ()
-      ((list 'swank:listener-eval string) (dime-lisp-package))
+      ((list 'swank:listener-eval string) (dime-dylan-package))
     ((:ok result)
      (dime-repl-insert-result result))
     ((:abort condition)
@@ -560,7 +560,7 @@ Return the position of the prompt beginning."
     (dime-save-marker dime-output-end
       (unless (bolp) (insert-before-markers "\n"))
       (let ((prompt-start (point))
-            (prompt (format "%s> " (dime-lisp-package-prompt-string))))
+            (prompt (format "%s> " (dime-dylan-package-prompt-string))))
         (dime-propertize-region
             '(face dime-repl-prompt-face read-only t intangible t
                    dime-repl-prompt t
@@ -793,7 +793,7 @@ earlier in the buffer."
   (save-restriction
     (narrow-to-region dime-repl-prompt-start-mark (point-max))
     (insert "\n")
-    (lisp-indent-line)))
+    (dylan-indent-line)))
 
 (defun dime-repl-delete-current-input ()
   "Delete all text from the prompt."
@@ -820,7 +820,7 @@ earlier in the buffer."
 (defvar dime-repl-clear-buffer-hook)
 
 (defun dime-repl-clear-buffer ()
-  "Delete the output generated by the Lisp process."
+  "Delete the output generated by the Dylan process."
   (interactive)
   (let ((inhibit-read-only t))
     (delete-region (point-min) dime-repl-prompt-start-mark)
@@ -850,14 +850,14 @@ earlier in the buffer."
   "Set the package of the REPL buffer to PACKAGE."
   (interactive (list (let* ((p (dime-current-package))
                             (p (and p (dime-pretty-package-name p)))
-                            (p (and (not (equal p (dime-lisp-package))) p)))
+                            (p (and (not (equal p (dime-dylan-package))) p)))
                        (dime-read-package-name "Package: " p))))
   (with-current-buffer (dime-output-buffer)
     (let ((previouse-point (- (point) dime-repl-input-start-mark)))
       (destructuring-bind (name prompt-string)
           (dime-repl-shortcut-eval `(swank:set-package ,package))
-        (setf (dime-lisp-package) name)
-        (setf (dime-lisp-package-prompt-string) prompt-string)
+        (setf (dime-dylan-package) name)
+        (setf (dime-dylan-package-prompt-string) prompt-string)
         (setf dime-buffer-package name)
         (dime-repl-insert-prompt)
         (when (plusp previouse-point)
@@ -1219,8 +1219,8 @@ The handler will use qeuery to ask the use if the error should be ingored."
   (find-if (lambda (s) (member name (dime-repl-shortcut.names s)))
            dime-repl-shortcut-table))
 
-(defmacro defdime-repl-shortcut (elisp-name names &rest options)
-  "Define a new repl shortcut. ELISP-NAME is a symbol specifying
+(defmacro defdime-repl-shortcut (edylan-name names &rest options)
+  "Define a new repl shortcut. EDYLAN-NAME is a symbol specifying
 the name of the interactive function to create, or NIL if no
 function should be created. 
 
@@ -1229,12 +1229,12 @@ NAMES is a list of \(full-name . aliases\).
 OPTIONS is an plist specifying the handler doing the actual work
 of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
   `(progn
-     ,(when elisp-name
-        `(defun ,elisp-name ()
+     ,(when edylan-name
+        `(defun ,edylan-name ()
            (interactive)
            (call-interactively ,(second (assoc :handler options)))))
      (let ((new-shortcut (make-dime-repl-shortcut
-                          :symbol ',elisp-name
+                          :symbol ',edylan-name
                           :names (list ,@names)
                           ,@(apply #'append options))))
        (setq dime-repl-shortcut-table
@@ -1242,7 +1242,7 @@ of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
                           (member ',(car names) (dime-repl-shortcut.names s)))
                         dime-repl-shortcut-table))
        (push new-shortcut dime-repl-shortcut-table)
-       ',elisp-name)))
+       ',edylan-name)))
 
 (defun dime-repl-shortcut-eval (sexp &optional package)
   "This function should be used by REPL shortcut handlers instead
@@ -1280,10 +1280,10 @@ expansion will be added to the REPL's history.)"
               (insert "\n     " (dime-repl-shortcut.one-liner shortcut)))
             (insert "\n")))))))
 
-(defun dime-save-some-lisp-buffers ()
-  (if dime-repl-only-save-lisp-buffers
+(defun dime-save-some-dylan-buffers ()
+  (if dime-repl-only-save-dylan-buffers
       (save-some-buffers nil (lambda ()
-                               (and (memq major-mode dime-lisp-modes)
+                               (and (memq major-mode dime-dylan-modes)
                                     (not (null buffer-file-name)))))
       (save-some-buffers)))
   
@@ -1332,7 +1332,7 @@ expansion will be added to the REPL's history.)"
 (defdime-repl-shortcut dime-repl-push-package ("push-package" "+p")
   (:handler (lambda (package)
               (interactive (list (dime-read-package-name "Package: ")))
-              (push (dime-lisp-package) dime-repl-package-stack)
+              (push (dime-dylan-package) dime-repl-package-stack)
               (dime-repl-set-package package)))
   (:one-liner "Save the current package and set it to a new one."))
 
@@ -1365,19 +1365,19 @@ expansion will be added to the REPL's history.)"
   (:handler (lambda ()
               (interactive)
               (when (dime-connected-p)
-                (dime-quit-lisp))
+                (dime-quit-dylan))
               (dime-kill-all-buffers)))
-  (:one-liner "Quit all Lisps and close all DIME buffers."))
+  (:one-liner "Quit all Dylans and close all DIME buffers."))
 
 (defdime-repl-shortcut dime-repl-quit ("quit")
   (:handler (lambda ()
 	      (interactive)
-              ;; `dime-quit-lisp' determines the connection to quit
+              ;; `dime-quit-dylan' determines the connection to quit
               ;; on behalf of the REPL's `dime-buffer-connection'.
               (let ((repl-buffer (dime-output-buffer)))
-                (dime-quit-lisp)
+                (dime-quit-dylan)
                 (kill-buffer repl-buffer))))
-  (:one-liner "Quit the current Lisp."))
+  (:one-liner "Quit the current Dylan."))
 
 (defdime-repl-shortcut dime-repl-defparameter ("defparameter" "!")
   (:handler (lambda (name value)
@@ -1392,16 +1392,16 @@ expansion will be added to the REPL's history.)"
   (:handler (lambda (filename)
               (interactive (list (expand-file-name
                                   (read-file-name "File: " nil nil nil nil))))
-              (dime-save-some-lisp-buffers)
+              (dime-save-some-dylan-buffers)
               (dime-repl-shortcut-eval-async
                `(swank:compile-file-if-needed 
-                 ,(dime-to-lisp-filename filename) t)
+                 ,(dime-to-dylan-filename filename) t)
                #'dime-compilation-finished)))
-  (:one-liner "Compile (if neccessary) and load a lisp file."))
+  (:one-liner "Compile (if neccessary) and load a dylan file."))
 
-(defdime-repl-shortcut nil  ("restart-inferior-lisp")
-  (:handler 'dime-restart-inferior-lisp)
-  (:one-liner "Restart *inferior-lisp* and reconnect DIME."))
+(defdime-repl-shortcut nil  ("restart-inferior-dylan")
+  (:handler 'dime-restart-inferior-dylan)
+  (:one-liner "Restart *inferior-dylan* and reconnect DIME."))
 
 (defun dime-redirect-inferior-output (&optional noerror)
   "Redirect output of the inferior-process to the REPL buffer."
@@ -1412,7 +1412,7 @@ expansion will be added to the REPL's history.)"
                                        (dime-current-connection))))
              (set-process-filter proc filter)))
 	  (noerror)
-	  (t (error "No inferior lisp process")))))
+	  (t (error "No inferior dylan process")))))
 
 (defun dime-inferior-output-filter (proc string conn)
   (cond ((eq (process-status conn) 'closed)
@@ -1455,7 +1455,7 @@ expansion will be added to the REPL's history.)"
                   (qualified-symbol-name (dime-qualify-cl-symbol-name symbol))
                   (symbol-name (dime-cl-symbol-name qualified-symbol-name))
                   (symbol-package (dime-cl-symbol-package qualified-symbol-name))
-                  (call (if (equalp (dime-lisp-package) symbol-package)
+                  (call (if (equalp (dime-dylan-package) symbol-package)
                             symbol-name
                             qualified-symbol-name)))
              (dime-switch-to-output-buffer)
@@ -1513,18 +1513,18 @@ expansion will be added to the REPL's history.)"
   (dime-repl))
 
 (defun dime-set-default-directory (directory)
-  "Make DIRECTORY become Lisp's current directory."
+  "Make DIRECTORY become Dylan's current directory."
   (interactive (list (read-directory-name "Directory: " nil nil t)))
   (let ((dir (expand-file-name directory)))
     (message "default-directory: %s"
-             (dime-from-lisp-filename
+             (dime-from-dylan-filename
               (dime-repl-shortcut-eval `(swank:set-default-directory
-                                          ,(dime-to-lisp-filename dir)))))
+                                          ,(dime-to-dylan-filename dir)))))
     (with-current-buffer (dime-output-buffer)
       (setq default-directory dir))))
 
 (defun dime-sync-package-and-default-directory ()
-  "Set Lisp's package and directory to the values in current buffer."
+  "Set Dylan's package and directory to the values in current buffer."
   (interactive)
   (let* ((package (dime-current-package))
          (exists-p (or (null package)
@@ -1533,7 +1533,7 @@ expansion will be added to the REPL's history.)"
     (when (and package exists-p)
       (dime-repl-set-package package))
     (dime-set-default-directory directory)
-    ;; Sync *inferior-lisp* dir
+    ;; Sync *inferior-dylan* dir
     (let* ((proc (dime-process))
            (buffer (and proc (process-buffer proc))))
       (when buffer
@@ -1541,7 +1541,7 @@ expansion will be added to the REPL's history.)"
           (setq default-directory directory))))
     (message "package: %s%s  directory: %s"
              (with-current-buffer (dime-output-buffer)
-               (dime-lisp-package))
+               (dime-dylan-package))
              (if exists-p "" (format " (package %s doesn't exist)" package))
              directory)))
 
@@ -1564,7 +1564,7 @@ expansion will be added to the REPL's history.)"
     `("REPL"
       [ "Send Input"             dime-repl-return ,C ]
       [ "Close and Send Input "  dime-repl-closing-return ,C ]
-      [ "Interrupt Lisp process" dime-interrupt ,C ]
+      [ "Interrupt Dylan process" dime-interrupt ,C ]
       "--"
       [ "Previous Input"         dime-repl-previous-input t ]
       [ "Next Input"             dime-repl-next-input t ]
@@ -1583,8 +1583,8 @@ expansion will be added to the REPL's history.)"
 
 (add-hook 'dime-repl-mode-hook 'dime-repl-add-easy-menu)
 
-(defun dime-hide-inferior-lisp-buffer ()
-  "Display the REPL buffer instead of the *inferior-lisp* buffer."
+(defun dime-hide-inferior-dylan-buffer ()
+  "Display the REPL buffer instead of the *inferior-dylan* buffer."
   (let* ((buffer (if (dime-process) 
                      (process-buffer (dime-process))))
          (window (if buffer (get-buffer-window buffer t)))
@@ -1605,9 +1605,9 @@ expansion will be added to the REPL's history.)"
   (destructuring-bind (package prompt) 
       (let ((dime-current-thread t))
 	(dime-eval '(swank:create-repl nil)))
-    (setf (dime-lisp-package) package)
-    (setf (dime-lisp-package-prompt-string) prompt))
-  (dime-hide-inferior-lisp-buffer)
+    (setf (dime-dylan-package) package)
+    (setf (dime-dylan-package-prompt-string) prompt))
+  (dime-hide-inferior-dylan-buffer)
   (dime-init-output-buffer (dime-connection)))
 
 (defun dime-repl-event-hook-function (event)
@@ -1623,11 +1623,11 @@ expansion will be added to the REPL's history.)"
      (dime-repl-abort-read thread tag)
      t)
     ((:open-dedicated-output-stream port)
-     (dime-open-stream-to-lisp port)
+     (dime-open-stream-to-dylan port)
      t)
     ((:new-package package prompt-string)
-     (setf (dime-lisp-package) package)
-     (setf (dime-lisp-package-prompt-string) prompt-string)
+     (setf (dime-dylan-package) package)
+     (setf (dime-dylan-package-prompt-string) prompt-string)
      (let ((buffer (dime-connection-output-buffer)))
        (when (buffer-live-p buffer)
 	 (with-current-buffer buffer
@@ -1637,7 +1637,7 @@ expansion will be added to the REPL's history.)"
 
 (defun dime-repl-find-buffer-package ()
   (or (dime-search-buffer-package)
-      (dime-lisp-package)))
+      (dime-dylan-package)))
 
 (defun dime-repl-remove-hooks ()
   (remove-hook 'dime-event-hooks 'dime-repl-event-hook-function)
@@ -1656,10 +1656,10 @@ expansion will be added to the REPL's history.)"
 
 (def-dime-test package-updating
     (package-name nicknames)
-    "Test if dime-lisp-package is updated."
-    '(("COMMON-LISP" ("CL"))
+    "Test if dime-dylan-package is updated."
+    '(("COMMON-DYLAN" ("CL"))
       ("KEYWORD" ("" "KEYWORD" "||"))
-      ("COMMON-LISP-USER" ("CL-USER")))
+      ("COMMON-DYLAN-USER" ("CL-USER")))
   (with-current-buffer (dime-output-buffer)
     (let ((p (dime-eval 
               `(swank:listener-eval 
@@ -1667,26 +1667,26 @@ expansion will be added to the REPL's history.)"
                   "(cl:setq cl:*print-case* :upcase)
                    (cl:setq cl:*package* (cl:find-package %S))
                    (cl:package-name cl:*package*)" package-name))
-              (dime-lisp-package))))
-      (dime-check ("dime-lisp-package is %S." package-name)
-        (equal (dime-lisp-package) package-name))
-      (dime-check ("dime-lisp-package-prompt-string is in %S." nicknames)
-        (member (dime-lisp-package-prompt-string) nicknames)))))
+              (dime-dylan-package))))
+      (dime-check ("dime-dylan-package is %S." package-name)
+        (equal (dime-dylan-package) package-name))
+      (dime-check ("dime-dylan-package-prompt-string is in %S." nicknames)
+        (member (dime-dylan-package-prompt-string) nicknames)))))
 
 (defmacro with-canonicalized-dime-repl-buffer (&rest body)
   "Evaluate BODY within a fresh REPL buffer. The REPL prompt is
 canonicalized to \"SWANK\"---we do actually switch to that
 package, though."
-  `(let ((%old-prompt% (dime-lisp-package-prompt-string)))
+  `(let ((%old-prompt% (dime-dylan-package-prompt-string)))
      (unwind-protect
           (progn (with-current-buffer (dime-output-buffer)
-                   (setf (dime-lisp-package-prompt-string) "SWANK"))
+                   (setf (dime-dylan-package-prompt-string) "SWANK"))
                  (kill-buffer (dime-output-buffer))
                  (with-current-buffer (dime-output-buffer)
                    ,@body))
-       (setf (dime-lisp-package-prompt-string) %old-prompt%))))
+       (setf (dime-dylan-package-prompt-string) %old-prompt%))))
 
-(put 'with-canonicalized-dime-repl-buffer 'lisp-indent-function 0)
+(put 'with-canonicalized-dime-repl-buffer 'dylan-indent-function 0)
 
 (def-dime-test repl-test
     (input result-contents)
@@ -1798,7 +1798,7 @@ SWANK> *[]"))
 
 (def-dime-test repl-return 
     (before after result-contents)
-    "Test if dime-repl-return sends the correct protion to Lisp even
+    "Test if dime-repl-return sends the correct protion to Dylan even
 if point is not at the end of the line."
     '(("(+ 1 2)" "" "SWANK> (+ 1 2)
 3
