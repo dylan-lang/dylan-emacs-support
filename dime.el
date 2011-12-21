@@ -94,7 +94,7 @@ Emacs Lisp package."))
   "Setup Emacs so that lisp-mode buffers always use DIME.
 CONTRIBS is a list of contrib packages to load."
   (when (member 'lisp-mode dime-lisp-modes)
-    (add-hook 'lisp-mode-hook 'dime-lisp-mode-hook))
+    (add-hook 'dylan-mode-hook 'dime-lisp-mode-hook))
   (setq dime-setup-contribs contribs)
   (dime-setup-contribs))
 
@@ -129,9 +129,7 @@ Return nil if the ChangeLog file cannot be found."
         (message "Dime ChangeLog dates %s." date))
       date)))
 
-(defvar dime-protocol-version nil)
-(setq dime-protocol-version
-      (eval-when-compile (dime-changelog-date)))
+(defvar dime-protocol-version "2011-02-13")
 
 
 ;;;; Customize groups
