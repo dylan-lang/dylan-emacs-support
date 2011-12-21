@@ -1493,10 +1493,10 @@ first line of the file."
 
 ;;; Interface
 (defun dime-net-connect (host port coding-system)
-  "Establish a connection with a CL."
+  "Establish a connection with a Dylan."
   (let* ((inhibit-quit nil)
          (proc (open-network-stream "DIME Dylan" nil host port))
-         (buffer (dime-make-net-buffer " *cl-connection*")))
+         (buffer (dime-make-net-buffer " *dime-connection*")))
     (push proc dime-net-processes)
     (set-process-buffer proc buffer)
     (set-process-filter proc 'dime-net-filter)
