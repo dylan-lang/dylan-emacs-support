@@ -369,12 +369,12 @@ the buffer should appear."
 
 ;; FIXME: dime-dylan-package should be local in a REPL buffer
 (dime-def-connection-var dime-dylan-package
-    "COMMON-DYLAN-USER"
+    "common-dylan"
   "The current package name of the Superior dylan.
 This is automatically synchronized from Dylan.")
 
 (dime-def-connection-var dime-dylan-package-prompt-string
-    "CL-USER"
+    "opendylan"
   "The current package name of the Superior dylan.
 This is automatically synchronized from Dylan.")
 
