@@ -94,11 +94,9 @@
                   (delete-overlay (car overlay))
                   (let ((over1 (make-overlay oldstart start))
                         (over2 (make-overlay end oldend)))
-;                    (message (concat "adding overlay from " (number-to-string oldstart) " to " (number-to-string start) " and " (number-to-string end) " to " (number-to-string oldend)))
                     (overlay-put over1 'face oldface)
                     (overlay-put over2 'face oldface))))
             (let ((over (make-overlay start end)))
-;              (message (concat "Color is " color))
               (if (string= color "not-all-known")
                   (overlay-put over 'face 'face-not-all-methods-known)
                 (if (string= color "failed-to-select")
@@ -117,13 +115,6 @@
                                 (overlay-put over 'face 'face-program-notes)
                               (if (string= color "bogus-upgrade")
                                   (overlay-put over 'face 'face-bogus-upgrade))))))))))))))
-;              (overlay-put over 'face color)))))
-;            (if overlay
-;                (slime-merge-note-into-overlay overlay severity message)
-;              (slime-create-note-overlay "what?" start end :warning 'color)))))
-;        (set-mark (point))
-;        (message (concat "set mark at " (number-to-string (+ sl 1)) ":" (number-to-string sc) "-" (number-to-string (+ el 1)) ":" (number-to-string ec) ":" color)))
-;        (facemenu-set-foreground color))
       (setq l (cdr l)))))
 
 (defun color-backgrounds (color l)
@@ -142,28 +133,9 @@
   "Color the current Dylan file with recorded optimization information"
   (interactive)
   (let ((file (dylan-color-file)))
-;    (setq old-buffer-read-only buffer-read-only)
-;    (setq buffer-read-only nil)
-;    (point-to-register 1)
-;    (end-of-buffer)
-;    (facemenu-set-foreground "black" 1)
-;    (facemenu-set-background "yellow" 1)
-;    (set-mark (point))
-;    (slime-create-note-overlay "fooo" 10 20 :warning "barffff")
-;    (let ((overlay (make-overlay 10 20)))
-;      (overlay-put overlay 'slime-note "foooo"))
-;    (forward-line 3)
-;    (facemenu-set-foreground "green")
-;    (register-to-point 1)
-
-;    (message "Using color file: %s" file)
+    (message "Using color file: %s" file)
     (load-file file)
-;    (message "Used color file: %s" file)
-
-    (cond
-      (old-buffer-read-only
-        (setq buffer-read-only old-buffer-read-only)
-        (set-buffer-modified-p nil))) ))
+    (message "Used color file: %s" file)))
 
 (if dylan-mode-map
     (progn
