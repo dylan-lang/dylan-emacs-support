@@ -16,39 +16,39 @@
 (defface face-not-all-methods-known
   `((t (:background "magenta")))
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-failed-to-select-where-all-known
   `((t (:background "red")))
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group  'dime-mode-faces)
 (defface face-lambda-call
   `((t (:background "lightskyblue")))
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-inlining
   `((t (:background "dimgray"))) ; should be darkgrey...
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-slot-accessor-fixed-offset
   `((t (:background "forestgreen")))
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-eliminated
   `((t (:background "pink"))) ; should be lightgrey according to documentation
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-dynamic-extent
   `((t (:background "DarkTurquoise"))) ; no documentation for this :/
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-program-notes
   `((t (:background "yellow")))
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 (defface face-bogus-upgrade
   `((t (:background "orange"))) ; no documentation for that - and according to source only relevant for dylan library?
   "Bla bla bla"
-  :group 'slime-mode-faces)
+  :group 'dime-mode-faces)
 
 (defun find-dylan-library ()
   (let ((lid-files (find-dylan-lid-files)))
