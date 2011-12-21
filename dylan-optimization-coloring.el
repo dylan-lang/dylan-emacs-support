@@ -117,28 +117,15 @@
                                   (overlay-put over 'face 'face-bogus-upgrade))))))))))))))
       (setq l (cdr l)))))
 
-(defun color-backgrounds (color l)
-  (save-excursion
-    (while (not (null l))
-      (let* ((spec (car l))
-           (sl (car spec)) (sc (car (cdr spec)))
-         (el (car (cdr (cdr spec)))) (ec (car (cdr (cdr (cdr spec))))))
-        (goto-char 1) (forward-line (1- sl)) (forward-char sc)
-        (set-mark (point))
-        (goto-char 1) (forward-line (1- el)) (forward-char ec)
-        (facemenu-set-background color))
-      (setq l (cdr l)))))
+(defun color-backgrounds (color l))
 
-(defun color-optimizations ()
-  "Color the current Dylan file with recorded optimization information"
+(defun dylan-color-optimizations ()
+  "Color the current Dylan buffer with recorded optimization information"
   (interactive)
   (let ((file (dylan-color-file)))
     (message "Using color file: %s" file)
     (load-file file)
     (message "Used color file: %s" file)))
 
-(if dylan-mode-map
-    (progn
-      (define-key dylan-mode-map [menu-bar dylan-misc dylan-color-optimizations] '("Color Optimizations" . color-optimizations))))
-
+(provide 'dylan-optimization-coloring)
 ;; eof

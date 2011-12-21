@@ -156,6 +156,8 @@
 
 ;;; Code:
 
+(require 'dylan-optimization-coloring)
+
 (defconst dylan-version "1.21"
   "Dylan Mode version number.")
 
@@ -369,7 +371,8 @@ should be highlighted by font-lock.")
   (define-key map "\M-)"    'dylan-insert-block-end)
   (define-key map "\M-\C-a" 'dylan-beginning-of-defun)
   (define-key map "\M-\C-e" 'dylan-end-of-defun)
-  (define-key map "\M-\C-h" 'dylan-mark-function))
+  (define-key map "\M-\C-h" 'dylan-mark-function)
+  (define-key map "\C-o"    'dylan-color-optimizations))
 
 (defvar dylan-mode-map ()
   "Keymap for Dylan mode.")
