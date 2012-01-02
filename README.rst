@@ -1,26 +1,55 @@
-Dylan-mode and dime
--------------------
+dylan-mode
+==========
 
-dswank is part of the release since opendylan-2011.1
+dylan-mode is a major mode for editing Dylan code in emacs.  To enable
+auto-loading of dylan-mode upon loading a .dylan file, add these lines
+to your .emacs file::
 
-Set OPEN_DYLAN_USER_REGISTRIES environment variable to point to your registry[ies]:
-
-  OPEN_DYLAN_USER_REGISTRIES=/path/to/opendylan/sources/registry
-
-To enable auto-loading of dylan-mode upon loading a .dylan file, add these
-lines to your .emacs file::
-
-  (setq load-path (cons "/path/to/dylan-mode" load-path))
+  (add-to-list 'load-path "/path/to/dylan-mode")
   (autoload 'dylan-mode "dylan-mode" "Dylan-mode" t)
-  (setq auto-mode-alist (cons '("\\.dylan\\'" . dylan-mode) auto-mode-alist))
-  (setq inferior-dylan-program "/opt/opendylan-2011.1/bin/dswank") ; your dswank binary
+  (add-to-list 'auto-mode-alist '("\\.dylan\\'" . dylan-mode))
+
+
+DIME/dswank
+===========
+
+DIME/dswank is part of the release since opendylan-2011.1.  It
+provides interactive development support in emacs.  DIME is a fork of
+`SLIME <http://common-lisp.net/project/slime/>`_ and stands for Dylan
+Interaction Mode for Emacs.
+
+To enable DIME/dswank add these lines to your .emacs file, changing
+YYYY.nn as appropriate for your installed release of Open Dylan::
+
+  (setq inferior-dylan-program "/opt/opendylan-YYYY.nn/bin/dswank") ; your dswank binary
   (require 'dime)
   (dime-setup '(dime-dylan dime-repl dime-compiler-notes-tree))
 
-dime is a fork of slime.
+You will also need to set OPEN_DYLAN_USER_REGISTRIES to your source registries
+so that the compiler can find library dependencies::
+
+  export OPEN_DYLAN_USER_REGISTRIES=/path/to/opendylan/sources/registry:/other/registry
+
+In Windows this can be set via the System control panel, and
+registries must be separated with semicolons instead of colon.
+
+
+Enscript Support
+================
+
+The file dylan.st adds Dylan support to Enscript.  This file is now included
+with Enscript (circa version 1.6.5).
+
+
+etags.regex
+===========
+
+This file may be used to create an emacs TAGS file for Dylan code.  See the
+comment in the file for usage.
+
 
 License
--------
+=======
 
 This code is distributed under the GNU GPL.
 
@@ -31,8 +60,3 @@ It originates from different sources:
  dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
 
 
-Enscript Support
-----------------
-
-The file dylan.st adds Dylan support to Enscript.  This file is now included
-with Enscript (circa version 1.6.5).
