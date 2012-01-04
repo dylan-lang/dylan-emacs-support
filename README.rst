@@ -34,13 +34,6 @@ In Windows this can be set via the System control panel, and
 registries must be separated with semicolons instead of colon.
 
 
-Enscript Support
-================
-
-The file dylan.st adds Dylan support to Enscript.  This file is now included
-with Enscript (circa version 1.6.5).
-
-
 etags.regex
 ===========
 
