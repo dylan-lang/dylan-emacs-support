@@ -194,32 +194,6 @@ maintain."
     (run-hook-with-args 'dime-open-stream-hooks stream)
     stream))
 
-(defun dime-io-speed-test (&optional profile)
-  "A simple minded benchmark for stream performance.
-If a prefix argument is given, instrument the dime package for
-profiling before running the benchmark."
-  (interactive "P")
-  (eval-and-compile
-    (require 'elp))
-  (elp-reset-all)
-  (elp-restore-all)
-  (load "dime.el")
-  ;;(byte-compile-file "dime-net.el" t)
-  ;;(setq dime-log-events nil)
-  (setq dime-enable-evaluate-in-emacs t)
-  ;;(setq dime-repl-enable-presentations nil)
-  (when profile
-    (elp-instrument-package "dime-"))
-  (kill-buffer (dime-output-buffer))
-  (switch-to-buffer (dime-output-buffer))
-  (delete-other-windows)
-  (sit-for 0)
-  (dime-repl-send-string "(swank:io-speed-test 4000 1)")
-  (let ((proc (dime-inferior-process)))
-    (when proc
-      (display-buffer (process-buffer proc) t)
-      (goto-char (point-max)))))
-
 (defvar dime-write-string-function 'dime-repl-write-string)
 
 (defun dime-write-string (string &optional target)
