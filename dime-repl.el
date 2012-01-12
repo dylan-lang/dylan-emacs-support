@@ -29,7 +29,7 @@ maintain."
   (:on-load
    (add-hook 'dime-event-hooks 'dime-repl-event-hook-function)
    (add-hook 'dime-connected-hook 'dime-repl-connected-hook-function)
-   (setq dime-find-buffer-package-function 'dime-repl-find-buffer-package))
+   (setq dime-find-buffer-project-function 'dime-repl-find-buffer-project))
   (:on-unload (dime-repl-remove-hooks)))
 
 ;;;;; dime-repl
@@ -121,7 +121,7 @@ maintain."
    "Marker for end of output. New output is inserted at this mark."))
 
 ;; dummy definitions for the compiler
-(defvar dime-repl-package-stack)
+(defvar dime-repl-project-stack)
 (defvar dime-repl-directory-stack)
 (defvar dime-repl-input-start-mark)
 (defvar dime-repl-prompt-start-mark)
@@ -136,7 +136,6 @@ maintain."
                   (unless (eq major-mode 'dime-repl-mode) 
                     (dime-repl-mode))
                   (setq dime-buffer-connection connection)
-		  (setq dime-buffer-package (dime-dylan-package connection))
                   (dime-reset-repl-markers)
                   (unless noprompt 
                     (dime-repl-insert-prompt))
@@ -161,7 +160,7 @@ maintain."
   (with-current-buffer (dime-output-buffer t)
     (setq dime-buffer-connection connection
           dime-repl-directory-stack '()
-          dime-repl-package-stack '())
+          dime-repl-project-stack '())
     (dime-repl-update-banner)))
 
 (defun dime-display-output-buffer ()
@@ -341,20 +340,14 @@ the buffer should appear."
 ;; there is no prompt between output-end and input-start.
 ;;
 
-;; FIXME: dime-dylan-package should be local in a REPL buffer
-(dime-def-connection-var dime-dylan-package
-    "common-dylan"
-  "The current package name of the Superior dylan.
-This is automatically synchronized from Dylan.")
-
-(dime-def-connection-var dime-dylan-package-prompt-string
+(dime-def-connection-var dime-dylan-project-prompt-string
     "opendylan"
-  "The current package name of the Superior dylan.
+  "The current project name of the Superior dylan.
 This is automatically synchronized from Dylan.")
 
 (dime-make-variables-buffer-local
- (defvar dime-repl-package-stack nil
-   "The stack of packages visited in this repl.")
+ (defvar dime-repl-project-stack nil
+   "The stack of projects visited in this repl.")
 
  (defvar dime-repl-directory-stack nil
    "The stack of default directories associated with this repl.")
@@ -383,10 +376,10 @@ joined together."))
 
 (dime-define-keys dime-prefix-map
   ("\C-z" 'dime-switch-to-output-buffer)
-  ("\M-p" 'dime-repl-set-package))
+  ("\M-p" 'dime-repl-set-project))
 
 (dime-define-keys dime-mode-map 
-  ("\C-c~" 'dime-sync-package-and-default-directory)
+  ("\C-c~" 'dime-sync-project-and-default-directory)
   ("\C-c\C-y" 'dime-call-defun))
 
 (dime-define-keys dime-connection-list-mode-map
@@ -495,7 +488,7 @@ joined together."))
 
 (defun dime-repl-eval-string (string)
   (dime-rex ()
-      ((list 'swank:listener-eval string) (dime-dylan-package))
+      ((list 'swank:listener-eval string) (dime-current-project))
     ((:ok result)
      (dime-repl-insert-result result))
     ((:abort condition)
@@ -534,7 +527,7 @@ Return the position of the prompt beginning."
     (dime-save-marker dime-output-end
       (unless (bolp) (insert-before-markers "\n"))
       (let ((prompt-start (point))
-            (prompt (format "%s> " (dime-dylan-package-prompt-string))))
+            (prompt (format "%s> " (dime-dylan-project-prompt-string))))
         (dime-propertize-region
             '(face dime-repl-prompt-face read-only t intangible t
                    dime-repl-prompt t
@@ -820,19 +813,16 @@ earlier in the buffer."
           (goto-char start)
           (insert ";;; output flushed"))))))
 
-(defun dime-repl-set-package (package)
-  "Set the package of the REPL buffer to PACKAGE."
-  (interactive (list (let* ((p (dime-current-package))
-                            (p (and p (dime-pretty-package-name p)))
-                            (p (and (not (equal p (dime-dylan-package))) p)))
-                       (dime-read-package-name "Package: " p))))
+(defun dime-repl-set-project (project)
+  "Set the project of the REPL buffer to PROJECT."
+  (interactive (list (let* ((p (dime-current-project)))
+                       (dime-read-project-name "Project: " p))))
   (with-current-buffer (dime-output-buffer)
     (let ((previouse-point (- (point) dime-repl-input-start-mark)))
       (destructuring-bind (name prompt-string)
-          (dime-repl-shortcut-eval `(swank:set-package ,package))
-        (setf (dime-dylan-package) name)
-        (setf (dime-dylan-package-prompt-string) prompt-string)
-        (setf dime-buffer-package name)
+          (dime-repl-shortcut-eval `(swank:set-package ,project))
+        (setf (dime-dylan-project-prompt-string) prompt-string)
+        (setf dime-buffer-project name)
         (dime-repl-insert-prompt)
         (when (plusp previouse-point)
           (goto-char (+ previouse-point dime-repl-input-start-mark)))))))
@@ -1218,21 +1208,21 @@ of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
        (push new-shortcut dime-repl-shortcut-table)
        ',edylan-name)))
 
-(defun dime-repl-shortcut-eval (sexp &optional package)
+(defun dime-repl-shortcut-eval (sexp &optional project)
   "This function should be used by REPL shortcut handlers instead
 of `dime-eval' to evaluate their final expansion. (This
 expansion will be added to the REPL's history.)"
   (when dime-within-repl-shortcut-handler-p ; were we invoked via ,foo?
     (dime-repl-add-to-input-history (prin1-to-string sexp)))
-  (dime-eval sexp package))
+  (dime-eval sexp project))
 
-(defun dime-repl-shortcut-eval-async (sexp &optional cont package)
+(defun dime-repl-shortcut-eval-async (sexp &optional cont project)
   "This function should be used by REPL shortcut handlers instead
 of `dime-eval-async' to evaluate their final expansion. (This
 expansion will be added to the REPL's history.)"
   (when dime-within-repl-shortcut-handler-p ; were we invoked via ,foo?
     (dime-repl-add-to-input-history (prin1-to-string sexp)))
-  (dime-eval-async sexp cont package))
+  (dime-eval-async sexp cont project))
 
 (defun dime-list-repl-short-cuts ()
   (interactive)
@@ -1299,25 +1289,25 @@ expansion will be added to the REPL's history.)"
                    (pop dime-repl-directory-stack)))))
   (:one-liner "Restore the last saved directory."))
 
-(defdime-repl-shortcut nil ("change-package" "!p" "in-package" "in")
-  (:handler 'dime-repl-set-package)
-  (:one-liner "Change the current package."))
+(defdime-repl-shortcut nil ("change-project" "change-package" "!p" "in-project" "in")
+  (:handler 'dime-repl-set-project)
+  (:one-liner "Change the current project."))
 
-(defdime-repl-shortcut dime-repl-push-package ("push-package" "+p")
-  (:handler (lambda (package)
-              (interactive (list (dime-read-package-name "Package: ")))
-              (push (dime-dylan-package) dime-repl-package-stack)
-              (dime-repl-set-package package)))
-  (:one-liner "Save the current package and set it to a new one."))
+(defdime-repl-shortcut dime-repl-push-project ("push-project" "+p")
+  (:handler (lambda (project)
+              (interactive (list (dime-read-project-name "Project: ")))
+              (push (dime-current-project) dime-repl-project-stack)
+              (dime-repl-set-project project)))
+  (:one-liner "Save the current project and set it to a new one."))
 
-(defdime-repl-shortcut dime-repl-pop-package ("pop-package" "-p")
+(defdime-repl-shortcut dime-repl-pop-project ("pop-project" "-p")
   (:handler (lambda ()
               (interactive)
-              (if (null dime-repl-package-stack)
-                  (message "Package stack is empty.")
-                  (dime-repl-set-package
-                   (pop dime-repl-package-stack)))))
-  (:one-liner "Restore the last saved package."))
+              (if (null dime-repl-project-stack)
+                  (message "Project stack is empty.")
+                  (dime-repl-set-project
+                   (pop dime-repl-project-stack)))))
+  (:one-liner "Restore the last saved project."))
 
 (defdime-repl-shortcut dime-repl-resend ("resend-form")
   (:handler (lambda ()
@@ -1429,7 +1419,7 @@ expansion will be added to the REPL's history.)"
                   (qualified-symbol-name (dime-qualify-cl-symbol-name symbol))
                   (symbol-name (dime-cl-symbol-name qualified-symbol-name))
                   (symbol-package (dime-cl-symbol-package qualified-symbol-name))
-                  (call (if (equalp (dime-dylan-package) symbol-package)
+                  (call (if (equalp (dime-current-project) symbol-package)
                             symbol-name
                             qualified-symbol-name)))
              (dime-switch-to-output-buffer)
@@ -1497,15 +1487,15 @@ expansion will be added to the REPL's history.)"
     (with-current-buffer (dime-output-buffer)
       (setq default-directory dir))))
 
-(defun dime-sync-package-and-default-directory ()
-  "Set Dylan's package and directory to the values in current buffer."
+(defun dime-sync-project-and-default-directory ()
+  "Set Dylan's project and directory to the values in current buffer."
   (interactive)
-  (let* ((package (dime-current-package))
-         (exists-p (or (null package)
-                       (dime-eval `(cl:packagep (swank::guess-package ,package)))))
+  (let* ((project (dime-current-project))
+         (exists-p (or (null project)
+                       (dime-eval `(cl:packagep (swank::guess-package ,project)))))
          (directory default-directory))
-    (when (and package exists-p)
-      (dime-repl-set-package package))
+    (when (and project exists-p)
+      (dime-repl-set-project project))
     (dime-set-default-directory directory)
     ;; Sync *inferior-dylan* dir
     (let* ((proc (dime-process))
@@ -1513,10 +1503,10 @@ expansion will be added to the REPL's history.)"
       (when buffer
         (with-current-buffer buffer
           (setq default-directory directory))))
-    (message "package: %s%s  directory: %s"
+    (message "project: %s%s  directory: %s"
              (with-current-buffer (dime-output-buffer)
-               (dime-dylan-package))
-             (if exists-p "" (format " (package %s doesn't exist)" package))
+               (dime-current-project))
+             (if exists-p "" (format " (project %s doesn't exist)" project))
              directory)))
 
 (defun dime-goto-connection ()
@@ -1576,11 +1566,10 @@ expansion will be added to the REPL's history.)"
            (goto-char (point-max))))))
 
 (defun dime-repl-connected-hook-function ()
-  (destructuring-bind (package prompt) 
+  (destructuring-bind (project prompt) 
       (let ((dime-current-thread t))
 	(dime-eval '(swank:create-repl nil)))
-    (setf (dime-dylan-package) package)
-    (setf (dime-dylan-package-prompt-string) prompt))
+    (setf (dime-dylan-project-prompt-string) prompt))
   (dime-hide-inferior-dylan-buffer)
   (dime-init-output-buffer (dime-connection)))
 
@@ -1599,19 +1588,17 @@ expansion will be added to the REPL's history.)"
     ((:open-dedicated-output-stream port)
      (dime-open-stream-to-dylan port)
      t)
-    ((:new-package package prompt-string)
-     (setf (dime-dylan-package) package)
-     (setf (dime-dylan-package-prompt-string) prompt-string)
+    ((:new-project project prompt-string)
+     (setf (dime-dylan-project-prompt-string) prompt-string)
      (let ((buffer (dime-connection-output-buffer)))
        (when (buffer-live-p buffer)
 	 (with-current-buffer buffer
-	   (setq dime-buffer-package package))))
+	   (setq dime-buffer-project project))))
      t)
     (t nil)))
 
-(defun dime-repl-find-buffer-package ()
-  (or (dime-search-buffer-package)
-      (dime-dylan-package)))
+(defun dime-repl-find-buffer-project ()
+  "common-dylan")
 
 (defun dime-repl-remove-hooks ()
   (remove-hook 'dime-event-hooks 'dime-repl-event-hook-function)

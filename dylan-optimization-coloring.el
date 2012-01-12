@@ -1,3 +1,5 @@
+(require 'dylan-common)
+
 ;; Interface to optimization coloring.
 
 (defvar color-not-all-methods-known            "not-all-known")
@@ -50,28 +52,11 @@
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defun find-dylan-library ()
-  (let ((lid-files (find-dylan-lid-files)))
-    (save-excursion
-      (if lid-files
-	(let ((try-lid (car lid-files)))
-	  (set-buffer (find-file-noselect try-lid))
-	  (goto-char (point-min))
-	  (let ((found 
-		  (re-search-forward "[Ll]ibrary:[ \t]*\\([-a-z0-9]*\\)")))
-	    (if found
-	      (buffer-substring 
-	        (match-beginning 1)
-		(match-end 1)))))))))
-
-(defun find-dylan-lid-files ()
-  (directory-files "." t ".*\\.lid" t))
-
 (defun dylan-color-file ()
   (let* ((path (buffer-file-name))
 	 (name (file-name-nondirectory path))
 	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
-	 (library (find-dylan-library)))
+	 (library (dylan-find-buffer-library)))
     (expand-file-name
      (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "~/Open-Dylan")
              "/build/" library "/" stem ".el"))))

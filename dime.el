@@ -78,6 +78,9 @@
   (require 'compile)
   (require 'gud))
 
+(require 'dylan-common)
+(require 'dylan-mode)
+
 (eval-and-compile 
   (defvar dime-path
     (let ((path (or (locate-library "dime") load-file-name)))
@@ -436,7 +439,7 @@ Full set of commands:
 (defun dime-modeline-string ()
   "Return the string to display in the modeline.
 \"Dime\" only appears if we aren't connected.  If connected,
-include package-name, connection-name, and possibly some state
+include project-name, connection-name, and possibly some state
 information."
   (let ((conn (dime-current-connection)))
     ;; Bail out early in case there's no connection, so we won't
@@ -444,23 +447,15 @@ information."
     (if (not conn)
         (and dime-mode " Dime")
         (let ((local (eq conn dime-buffer-connection))
-              (pkg   (dime-current-package)))
+              (pkg   (dime-current-project)))
           (concat " "
                   (if local "{" "[")
-                  (if pkg (dime-pretty-package-name pkg) "?")
+                  (if pkg pkg "?")
                   " "
                   ;; ignore errors for closed connections
                   (ignore-errors (dime-connection-name conn))
                   (dime-modeline-state-string conn)
                   (if local "}" "]"))))))
-
-(defun dime-pretty-package-name (name)
-  "Return a pretty version of a package name NAME."
-  (cond ((string-match "^#?:\\(.*\\)$" name)    
-         (match-string 1 name))
-        ((string-match "^\"\\(.*\\)\"$" name) 
-         (match-string 1 name))
-        (t name)))
 
 (defun dime-modeline-state-string (conn)
   "Return a string possibly describing CONN's state."
@@ -585,7 +580,7 @@ edit s-exprs, e.g. for source buffers and the REPL.")
 (defvar dime-doc-bindings
   '((?a dime-apropos)
     (?z dime-apropos-all)
-    (?p dime-apropos-package)
+    (?p dime-apropos-project)
     (?d dime-describe-symbol)
     (?f dime-describe-function)
     (?h dime-documentation-lookup)
@@ -782,8 +777,8 @@ It should be used for \"background\" messages such as argument lists."
     (set (make-local-variable 'truncate-lines) t)))
 
 ;; Interface
-(defun dime-read-package-name (prompt &optional initial-value)
-  "Read a package name from the minibuffer, prompting with PROMPT."
+(defun dime-read-project-name (prompt &optional initial-value)
+  "Read a project name from the minibuffer, prompting with PROMPT."
   (let ((completion-ignore-case t))
     (completing-read prompt (dime-bogus-completion-alist 
                              (dime-eval 
@@ -881,24 +876,26 @@ OLD-BUFFER is nil if POPUP-WINDOW was newly created.
 See `view-return-to-alist' for a similar idea.")
 
 ;; keep compiler quiet
-(defvar dime-buffer-package)
+(defvar dime-buffer-module)
+(defvar dime-buffer-library)
+(defvar dime-buffer-project)
 (defvar dime-buffer-connection)
 
 ;; Interface
-(defmacro* dime-with-popup-buffer ((name &key package connection select mode)
+(defmacro* dime-with-popup-buffer ((name &key project connection select mode)
                                     &body body)
   "Similar to `with-output-to-temp-buffer'.
 Bind standard-output and initialize some buffer-local variables.
 Restore window configuration when closed.
 
 NAME is the name of the buffer to be created.
-PACKAGE is the value `dime-buffer-package'.
+PROJECT is the value `dime-buffer-project'.
 CONNECTION is the value for `dime-buffer-connection',
  if nil, no explicit connection is associated with
  the buffer.  If t, the current connection is taken.
 MODE is the name of a major mode which will be enabled.
 "
-  `(let* ((vars% (list ,(if (eq package t) '(dime-current-package) package)
+  `(let* ((vars% (list ,(if (eq project t) '(dime-current-project) project)
                        ,(if (eq connection t) '(dime-connection) connection)))
           (standard-output (dime-make-popup-buffer ,name vars% ,mode)))
      (with-current-buffer standard-output
@@ -925,7 +922,7 @@ The buffer also uses the minor-mode `dime-popup-buffer-mode'."
 
 (defun dime-init-popup-buffer (buffer-vars)
   (dime-popup-buffer-mode 1)
-  (multiple-value-setq (dime-buffer-package dime-buffer-connection)
+  (multiple-value-setq (dime-buffer-project dime-buffer-connection)
     buffer-vars))
 
 (defun dime-display-popup-buffer (select)
@@ -1719,6 +1716,14 @@ overrides `dime-buffer-connection' and `dime-default-connection'.")
    "Network connection to use in the current buffer.
 This overrides `dime-default-connection'."))
 
+(make-variable-buffer-local
+ (defvar dime-buffer-module nil
+   "Module of the current buffer."))
+
+(make-variable-buffer-local
+ (defvar dime-buffer-library nil
+   "Library of the current buffer."))
+
 (defvar dime-default-connection nil
   "Network connection to use by default.
 Used for all Dylan communication, except when overridden by
@@ -1854,11 +1859,14 @@ This is automatically synchronized from Dylan.")
 (dime-def-connection-var dime-pid nil
   "The process id of the Dylan process.")
 
+(dime-def-connection-var dime-dylan-version nil
+  "The version of the Dylan process.")
+
 (dime-def-connection-var dime-dylan-implementation-type nil
   "The implementation type of the Dylan process.")
 
 (dime-def-connection-var dime-dylan-implementation-version nil
-  "The implementation type of the Dylan process.")
+  "The implementation version of the Dylan process.")
 
 (dime-def-connection-var dime-dylan-implementation-name nil
   "The short name for the Dylan implementation.")
@@ -1912,15 +1920,16 @@ This is automatically synchronized from Dylan.")
   "Initialize CONNECTION with INFO received from Dylan."
   (let ((dime-dispatching-connection connection)
         (dime-current-thread t))
-    (destructuring-bind (&key pid style dylan-implementation machine
-                              features package version modules
+    (destructuring-bind (&key pid style lisp-implementation machine
+                              features project version modules
                               &allow-other-keys) info
       (dime-check-version version connection)
+      (setf (dime-dylan-version) version)
       (setf (dime-pid) pid
             (dime-communication-style) style
             (dime-dylan-features) features
             (dime-dylan-modules) modules)
-      (destructuring-bind (&key type name version program) dylan-implementation
+      (destructuring-bind (&key type name version program) lisp-implementation
         (setf (dime-dylan-implementation-type) type
               (dime-dylan-implementation-version) version
               (dime-dylan-implementation-name) name
@@ -2034,13 +2043,12 @@ Return nil if there's no process object for the connection."
 ;;; completion) and that shouldn't trigger errors (e.g. not evaluate
 ;;; user-entered code).
 ;;;
-;;; We have the concept of the "current Dylan package". RPC requests
-;;; always say what package the user is making them from and the Dylan
-;;; side binds that package to *BUFFER-PACKAGE* to use as it sees
-;;; fit. The current package is defined as the buffer-local value of
-;;; `dime-buffer-package' if set, and otherwise the package named by
-;;; the nearest IN-PACKAGE as found by text search (first backwards,
-;;; then forwards).
+;;; We have the concept of the "current Dylan project". RPC requests
+;;; always say what project the user is making them from and the Dylan
+;;; side binds that project to *BUFFER-PROJECT* to use as it sees
+;;; fit. The current project is defined as the buffer-local value of
+;;; `dime-buffer-project' if set, and otherwise the project found in
+;;;; a local lid file.
 ;;;
 ;;; Similarly we have the concept of the current thread, i.e. which
 ;;; thread in the Dylan process should handle the request. The current
@@ -2057,10 +2065,9 @@ t means the \"current\" thread;
 :repl-thread the thread that executes REPL requests;
 fixnum a specific thread."))
 
-(make-variable-buffer-local
- (defvar dime-buffer-package nil
-   "The Dylan package associated with the current buffer.
-This is set only in buffers bound to specific packages."))
+(defvar dime-buffer-project nil
+  "The Dylan project associated with the current buffer.
+This is set only in buffers bound to specific projects.")
 
 ;;; `dime-rex' is the RPC primitive which is used to implement both
 ;;; `dime-eval' and `dime-eval-async'. You can use it directly if
@@ -2068,10 +2075,10 @@ This is set only in buffers bound to specific packages."))
 
 (defmacro* dime-rex ((&rest saved-vars)
                       (sexp &optional 
-                            (package '(dime-current-package))
+                            (project dime-buffer-module)
                             (thread 'dime-current-thread))
                       &rest continuations)
-  "(dime-rex (VAR ...) (SEXP &optional PACKAGE THREAD) CLAUSES ...)
+  "(dime-rex (VAR ...) (SEXP &optional PROJECT THREAD) CLAUSES ...)
 
 Remote EXecute SEXP.
 
@@ -2080,8 +2087,8 @@ VAR is either a symbol or a list (VAR INIT-VALUE).
 
 SEXP is evaluated and the princed version is sent to Dylan.
 
-PACKAGE is evaluated and Dylan binds *BUFFER-PACKAGE* to this package.
-The default value is (dime-current-package).
+PROJECT is evaluated and Dylan binds *BUFFER-PROJECT* to this project.
+The default value is dime-buffer-module.
 
 CLAUSES is a list of patterns with same syntax as
 `destructure-case'.  The result of the evaluation of SEXP is
@@ -2097,7 +2104,7 @@ versions cannot deal with that."
                                    (symbol (list var var))
                                    (cons var)))
        (dime-dispatch-event 
-        (list :emacs-rex ,sexp ,package ,thread
+        (list :emacs-rex ,sexp ,project ,thread
               (lambda (,result)
                 (destructure-case ,result
                   ,@continuations)))))))
@@ -2105,44 +2112,23 @@ versions cannot deal with that."
 (put 'dime-rex 'dylan-indent-function 2)
 
 ;;; Interface
-(defun dime-current-package ()
-  "Return the Common Dylan package in the current context.
-If `dime-buffer-package' has a value then return that, otherwise
-search for and read an `in-package' form."
-  (or dime-buffer-package
+(defun dime-current-project ()
+  "Return the Common Dylan project in the current context.
+If `dime-buffer-project' has a value then return that, otherwise
+search for a lid file."
+  (or dime-buffer-project
       (save-restriction
         (widen)
-        (dime-find-buffer-package))))
+        (dime-find-buffer-project))))
 
-(defvar dime-find-buffer-package-function 'dime-search-buffer-package
-  "*Function to use for `dime-find-buffer-package'.  
-The result should be the package-name (a string)
+(defvar dime-find-buffer-project-function 'dylan-find-buffer-library
+  "*Function to use for `dime-find-buffer-project'.  
+The result should be the project-name (a string)
 or nil if nothing suitable can be found.")
 
-(defun dime-find-buffer-package ()
-  "Figure out which Dylan package the current buffer is associated with."
-  (funcall dime-find-buffer-package-function))
-
-(make-variable-buffer-local
- (defvar dime-package-cache nil
-   "Cons of the form (buffer-modified-tick . package)"))
-
-;; When modifing this code consider cases like:
-;;  (in-package #.*foo*)
-;;  (in-package #:cl)
-;;  (in-package :cl)
-;;  (in-package "CL")
-;;  (in-package |CL|)
-;;  (in-package #+ansi-cl :cl #-ansi-cl 'dylan)
-
-(defun dime-search-buffer-package ()
-  (let ((case-fold-search t)
-        (regexp (concat "^(\\(cl:\\|common-dylan:\\)?in-package\\>[ \t']*"
-                        "\\([^)]+\\)[ \t]*)")))
-    (save-excursion
-      (when (or (re-search-backward regexp nil t)
-                (re-search-forward regexp nil t))
-        (match-string-no-properties 2)))))
+(defun dime-find-buffer-project ()
+  "Figure out which Dylan project the current buffer is associated with."
+  (funcall dime-find-buffer-project-function))
 
 ;;; Synchronous requests are implemented in terms of asynchronous
 ;;; ones. We make an asynchronous request with a continuation function
@@ -2152,9 +2138,9 @@ or nil if nothing suitable can be found.")
 (defvar dime-stack-eval-tags nil
   "List of stack-tags of continuations waiting on the stack.")
 
-(defun dime-eval (sexp &optional package)
+(defun dime-eval (sexp &optional project)
   "Evaluate EXPR on the superior Dylan and return the result."
-  (when (null package) (setq package (dime-current-package)))
+  (when (null project) (setq project dime-buffer-module))
   (let* ((tag (gensym (format "dime-result-%d-" 
                               (1+ (dime-continuation-counter)))))
 	 (dime-stack-eval-tags (cons tag dime-stack-eval-tags)))
@@ -2162,7 +2148,7 @@ or nil if nothing suitable can be found.")
      #'funcall 
      (catch tag
        (dime-rex (tag sexp)
-           (sexp package)
+           (sexp project)
          ((:ok value)
           (unless (member tag dime-stack-eval-tags)
             (error "Reply to canceled synchronous eval request tag=%S sexp=%S"
@@ -2178,10 +2164,10 @@ or nil if nothing suitable can be found.")
              (error "Dylan connection closed unexpectedly"))
            (dime-accept-process-output nil 0.01)))))))
 
-(defun dime-eval-async (sexp &optional cont package)
+(defun dime-eval-async (sexp &optional cont project)
   "Evaluate EXPR on the superior Dylan and call CONT with the result."
   (dime-rex (cont (buffer (current-buffer)))
-      (sexp (or package (dime-current-package)))
+      (sexp (or project dime-buffer-module))
     ((:ok result)
      (when cont
        (set-buffer buffer)
@@ -2261,11 +2247,11 @@ Debugged requests are ignored."
   (let ((dime-dispatching-connection (or process (dime-connection))))
     (or (run-hook-with-args-until-success 'dime-event-hooks event)
         (destructure-case event
-          ((:emacs-rex form package thread continuation)
+          ((:emacs-rex form project thread continuation)
            (when (and (dime-use-sigint-for-interrupt) (dime-busy-p))
              (dime-display-oneliner "; pipelined request... %S" form))
            (let ((id (incf (dime-continuation-counter))))
-             (dime-send `(:emacs-rex ,form ,package ,thread ,id))
+             (dime-send `(:emacs-rex ,form ,project ,thread ,id))
              (push (cons id continuation) (dime-rex-continuations))
              (dime-recompute-modelines)))
           ((:return value id)
@@ -2739,7 +2725,7 @@ PREDICATE is executed in the buffer to test."
                    (dime-region-for-defun-at-point)
                  (list (buffer-substring-no-properties start end)
                        (buffer-name)
-                       (dime-current-package)
+                       (dime-current-project)
                        start
                        (if (buffer-file-name)
                            (file-name-directory (buffer-file-name))
@@ -2804,7 +2790,7 @@ Each newlines and following indentation is replaced by a single space."
   (let ((xrefs (dime-xrefs-for-notes notes)))
     (when (dime-length> xrefs 1)          ; >1 file
       (dime-show-xrefs
-       xrefs 'definition "Compiler notes" (dime-current-package)))))
+       xrefs 'definition "Compiler notes" (dime-current-project)))))
 
 (defun dime-note-has-location-p (note)
   (not (eq ':error (car (dime-note.location note)))))
@@ -3036,7 +3022,7 @@ Return nil if there's no useful source location."
     (save-excursion
       (goto-char pos)
       (cond ((dime-symbol-at-point)
-             ;; package not found, &c.
+             ;; project not found, &c.
              (values (dime-symbol-start-pos) (dime-symbol-end-pos)))
             (t
              (values pos (1+ pos)))))))
@@ -3554,7 +3540,7 @@ more than one space."
 (defun dime-show-arglist ()
   (let ((op (dime-operator-before-point)))
     (when op 
-      (dime-eval-async `(swank:operator-arglist ,op ,(dime-current-package))
+      (dime-eval-async `(swank:operator-arglist ,op ,dime-buffer-module)
 			(lambda (arglist)
 			  (when arglist
 			    (dime-message "%s" arglist)))))))
@@ -3749,10 +3735,10 @@ for the most recently enclosed macro or function."
   "History list of expressions read from the minibuffer.")
  
 (defun dime-minibuffer-setup-hook ()
-  (cons (lexical-let ((package (dime-current-package))
+  (cons (lexical-let ((project (dime-current-project))
                       (connection (dime-connection)))
           (lambda ()
-            (setq dime-buffer-package package)
+            (setq dime-buffer-project project)
             (setq dime-buffer-connection connection)
             (set-syntax-table lisp-mode-syntax-table)))
         minibuffer-setup-hook))
@@ -3775,7 +3761,7 @@ alist but ignores CDRs."
 (defun dime-simple-completions (prefix)
   (let ((dime-current-thread t))
     (dime-eval
-     `(swank:simple-completions ,prefix ',(dime-current-package)))))
+     `(swank:simple-completions ,prefix ',(dime-current-project)))))
 
 
 ;;;; Edit definition
@@ -3834,7 +3820,7 @@ function name is prompted."
   (destructuring-bind (1loc file-alist) (dime-analyze-xrefs xrefs)
     (cond ((null xrefs) 
            (error "No known definition for: %s (in %s)"
-                  name (dime-current-package)))
+                  name dime-buffer-module))
           (1loc
            (dime-push-definition-stack)
            (dime-pop-to-location (dime-xref.location (car xrefs)) where))
@@ -3843,19 +3829,19 @@ function name is prompted."
           (t
            (dime-push-definition-stack)
            (dime-show-xrefs file-alist 'definition name
-                             (dime-current-package))))))
+                             dime-buffer-module)))))
 
 (defvar dime-edit-uses-xrefs 
   '(:calls :macroexpands :binds :references :sets :specializes))
 
 ;;; FIXME. TODO: Would be nice to group the symbols (in each
-;;;              type-group) by their home-package.
+;;;              type-group) by their home-project.
 (defun dime-edit-uses (symbol)
   "Lookup all the uses of SYMBOL."
   (interactive (list (dime-read-symbol-name "Edit Uses of: ")))
   (dime-xrefs dime-edit-uses-xrefs
                symbol
-               (lambda (xrefs type symbol package)
+               (lambda (xrefs type symbol project)
                  (cond
                   ((null xrefs)
                    (message "No xref information found for %s." symbol))
@@ -3866,7 +3852,7 @@ function name is prompted."
                      (dime-pop-to-location loc)))
                   (t
                    (dime-push-definition-stack)
-                   (dime-show-xref-buffer xrefs type symbol package))))))
+                   (dime-show-xref-buffer xrefs type symbol project))))))
 
 (defun dime-analyze-xrefs (xrefs)
   "Find common filenames in XREFS.
@@ -4153,17 +4139,17 @@ inserted in the current buffer."
 (defun dime-eval-describe (form)
   "Evaluate FORM in Dylan and display the result in a new buffer."
   (dime-eval-async form (dime-rcurry #'dime-show-description
-                                       (dime-current-package))))
+                                       dime-buffer-module)))
 
 (defvar dime-description-autofocus nil
   "If non-nil select description windows on display.")
 
-(defun dime-show-description (string package)
+(defun dime-show-description (string project)
   ;; So we can have one description buffer open per connection. Useful
   ;; for comparing the output of DISASSEMBLE across implementations.
   ;; FIXME: could easily be achieved with M-x rename-buffer
   (let ((bufname (dime-buffer-name :description)))
-    (dime-with-popup-buffer (bufname :package package
+    (dime-with-popup-buffer (bufname :project project
                                       :connection t
                                       :select dime-description-autofocus)
       (princ string)
@@ -4232,10 +4218,10 @@ in Dylan when committed with \\[dime-edit-value-commit]."
 				     (dime-sexp-at-point))))
   (dime-eval-async `(swank:value-for-editing ,form-string)
                     (lexical-let ((form-string form-string)
-                                  (package (dime-current-package)))
+                                  (project (dime-current-project)))
                       (lambda (result)
                         (dime-edit-value-callback form-string result 
-                                                   package)))))
+                                                   project)))))
 
 (make-variable-buffer-local
  (defvar dime-edit-form-string nil
@@ -4247,9 +4233,9 @@ in Dylan when committed with \\[dime-edit-value-commit]."
   " Edit-Value"
   '(("\C-c\C-c" . dime-edit-value-commit)))
 
-(defun dime-edit-value-callback (form-string current-value package)
+(defun dime-edit-value-callback (form-string current-value project)
   (let* ((name (generate-new-buffer-name (format "*Edit %s*" form-string)))
-         (buffer (dime-with-popup-buffer (name :package package
+         (buffer (dime-with-popup-buffer (name :project project
                                                 :connection t
                                                 :select t
                                                 :mode 'dylan-mode)
@@ -4371,28 +4357,28 @@ Return whatever swank:set-default-directory returns."
   (dime-eval-async `(swank:profiled-functions)
                     (lambda (r) (message "%s" r))))
 
-(defun dime-profile-package (package callers methods)
-  "Profile all functions in PACKAGE.  
+(defun dime-profile-project (project callers methods)
+  "Profile all functions in PROJECT.
 If CALLER is non-nil names have counts of the most common calling
 functions recorded. 
 If METHODS is non-nil, profile all methods of all generic function
-having names in the given package."
-  (interactive (list (dime-read-package-name "Package: ")
+having names in the given project."
+  (interactive (list (dime-read-project-name "Project: ")
                      (y-or-n-p "Record the most common callers? ")
                      (y-or-n-p "Profile methods? ")))
-  (dime-eval-async `(swank:profile-package ,package ,callers ,methods)
+  (dime-eval-async `(swank:profile-project ,project ,callers ,methods)
                     (lambda (r) (message "%s" r))))
 
-(defun dime-profile-by-substring (substring &optional package)
+(defun dime-profile-by-substring (substring &optional project)
   "Profile all functions which names contain SUBSTRING.
-If PACKAGE is NIL, then search in all packages."
+If PROJECT is NIL, then search in all projects."
   (interactive (list
                 (dime-read-from-minibuffer 
                  "Profile by matching substring: "
                  (dime-symbol-at-point))
-                (dime-read-package-name "Package (RET for all packages): ")))
-  (let ((package (unless (equal package "") package)))
-    (dime-eval-async `(swank:profile-by-substring ,substring ,package)
+                (dime-read-project-name "Project (RET for all projects): ")))
+  (let ((project (unless (equal project "") project)))
+    (dime-eval-async `(swank:profile-by-substring ,substring ,project)
                       (lambda (r) (message "%s" r)) )))
 
 ;;;; Documentation
@@ -4411,7 +4397,7 @@ If PACKAGE is NIL, then search in all packages."
                             (stripped-symbol 
                              (and symbol-at-point
                                   (downcase
-                                   (common-dylan-hyperspec-strip-cl-package 
+                                   (common-lisp-hyperspec-strip-cl-package
                                     symbol-at-point)))))
                        (if (and stripped-symbol
                                 (intern-soft stripped-symbol
@@ -4445,15 +4431,15 @@ If PACKAGE is NIL, then search in all packages."
     (error "No symbol given"))
   (dime-eval-describe `(swank:describe-function ,symbol-name)))
 
-(defun dime-apropos-summary (string case-sensitive-p package only-external-p)
+(defun dime-apropos-summary (string case-sensitive-p project only-external-p)
   "Return a short description for the performed apropos search."
   (concat (if case-sensitive-p "Case-sensitive " "")
           "Apropos for "
           (format "%S" string)
-          (if package (format " in package %S" package) "")
+          (if project (format " in project %S" project) "")
           (if only-external-p " (external symbols only)" "")))
 
-(defun dime-apropos (string &optional only-external-p package 
+(defun dime-apropos (string &optional only-external-p project
                              case-sensitive-p)
   "Show all bound symbols whose names match STRING. With prefix
 arg, you're interactively asked for parameters of the search."
@@ -4461,36 +4447,36 @@ arg, you're interactively asked for parameters of the search."
    (if current-prefix-arg
        (list (read-string "DIME Apropos: ")
              (y-or-n-p "External symbols only? ")
-             (let ((pkg (dime-read-package-name "Package: ")))
+             (let ((pkg (dime-read-project-name "Project: ")))
                (if (string= pkg "") nil pkg))
              (y-or-n-p "Case-sensitive? "))
      (list (read-string "DIME Apropos: ") t nil nil)))
-  (let ((buffer-package (or package (dime-current-package))))
+  (let ((buffer-project (or project dime-buffer-module)))
     (dime-eval-async
      `(swank:apropos-list-for-emacs ,string ,only-external-p
-                                    ,case-sensitive-p ',package)
-     (dime-rcurry #'dime-show-apropos string buffer-package
+                                    ,case-sensitive-p ',project)
+     (dime-rcurry #'dime-show-apropos string buffer-project
                    (dime-apropos-summary string case-sensitive-p
-                                          package only-external-p)))))
+                                          project only-external-p)))))
 
 (defun dime-apropos-all ()
   "Shortcut for (dime-apropos <string> nil nil)"
   (interactive)
   (dime-apropos (read-string "DIME Apropos: ") nil nil))
 
-(defun dime-apropos-package (package &optional internal)
-  "Show apropos listing for symbols in PACKAGE.
+(defun dime-apropos-project (project &optional internal)
+  "Show apropos listing for symbols in PROJECT.
 With prefix argument include internal symbols."
-  (interactive (list (let ((pkg (dime-read-package-name "Package: ")))
-                       (if (string= pkg "") (dime-current-package) pkg))
+  (interactive (list (let ((pkg (dime-read-project-name "Project: ")))
+                       (if (string= pkg "") (dime-current-project) pkg))
                      current-prefix-arg))
-  (dime-apropos "" (not internal) package))
+  (dime-apropos "" (not internal) project))
 
-(defun dime-show-apropos (plists string package summary)
+(defun dime-show-apropos (plists string project summary)
   (if (null plists)
       (message "No apropos matches for %S" string)
       (dime-with-popup-buffer ((dime-buffer-name :apropos)
-                                :package package :connection t
+                                :project project :connection t
                                 :mode 'apropos-mode)
         (if (boundp 'header-line-format)
             (setq header-line-format summary)
@@ -4608,12 +4594,12 @@ The most important commands:
 
 ;;;;; XREF results buffer and window management
 
-(defmacro* dime-with-xref-buffer ((xref-type symbol &optional package)
+(defmacro* dime-with-xref-buffer ((xref-type symbol &optional project)
                                    &body body)
   "Execute BODY in a xref buffer, then show that buffer."
   `(let ((xref-buffer-name% (dime-buffer-name :xref)))
      (dime-with-popup-buffer (xref-buffer-name%
-                               :package ,package
+                               :project ,project
                                :connection t
                                :select t
                                :mode 'dime-xref-mode)
@@ -4660,19 +4646,19 @@ source-location."
   "The most recent XREF results buffer.
 This is used by `dime-goto-next-xref'")
 
-(defun dime-show-xref-buffer (xrefs type symbol package)
-  (dime-with-xref-buffer (type symbol package)
+(defun dime-show-xref-buffer (xrefs type symbol project)
+  (dime-with-xref-buffer (type symbol project)
     (dime-insert-xrefs xrefs)
     (setq dime-next-location-function 'dime-goto-next-xref)
     (setq dime-previous-location-function 'dime-goto-previous-xref)
     (setq dime-xref-last-buffer (current-buffer))
     (goto-char (point-min))))
 
-(defun dime-show-xrefs (xrefs type symbol package)
+(defun dime-show-xrefs (xrefs type symbol project)
   "Show the results of an XREF query."
   (if (null xrefs)
       (message "No references found for %s." symbol)
-      (dime-show-xref-buffer xrefs type symbol package)))
+      (dime-show-xref-buffer xrefs type symbol project)))
 
 
 ;;;;; XREF commands
@@ -4726,15 +4712,15 @@ This is used by `dime-goto-next-xref'")
   "Make an XREF request to Dylan."
   (dime-eval-async
    `(swank:xref ',type ',symbol)
-   (dime-rcurry (lambda (result type symbol package cont)
+   (dime-rcurry (lambda (result type symbol project cont)
                    (dime-check-xref-implemented type result)
                    (let* ((xrefs (dime-postprocess-xrefs result))
                           (file-alist (cadr (dime-analyze-xrefs result))))
                      (funcall (or cont 'dime-show-xrefs)
-                              file-alist type symbol package)))
+                              file-alist type symbol project)))
                  type 
                  symbol 
-                 (dime-current-package)
+                 dime-buffer-module
                  continuation)))
 
 (defun dime-check-xref-implemented (type xrefs)
@@ -4750,15 +4736,15 @@ This is used by `dime-goto-next-xref'")
   "Make multiple XREF requests at once."
   (dime-eval-async
    `(swank:xrefs ',types ',symbol)
-   (dime-rcurry (lambda (result types symbol package cont)
+   (dime-rcurry (lambda (result types symbol project cont)
                    (funcall (or cont 'dime-show-xrefs)
                             (dime-map-alist #'dime-xref-type 
                                              #'identity 
                                              result)
-                            types symbol package))
+                            types symbol project))
                  types 
                  symbol 
-                 (dime-current-package)
+                 dime-buffer-module
                  continuation)))
 
 
@@ -5010,7 +4996,7 @@ This variable specifies both what was expanded and how.")
 
 (defun dime-create-macroexpansion-buffer ()
   (let ((name (dime-buffer-name :macroexpansion)))
-    (dime-with-popup-buffer (name :package t :connection t
+    (dime-with-popup-buffer (name :project t :connection t
                                    :mode 'dylan-mode)
       (dime-mode 1)
       (dime-macroexpansion-minor-mode 1)
@@ -5027,7 +5013,7 @@ NB: Does not affect dime-eval-macroexpand-expression"
     (lexical-let* ((start (car bounds))
                    (end (cdr bounds))
                    (point (point))
-                   (package (dime-current-package))
+                   (project dime-buffer-module)
                    (buffer (current-buffer)))
       (dime-eval-async 
        `(,expander ,string)
@@ -7081,7 +7067,7 @@ is setup, unless the user already set one explicitly."
        [ "Select Buffer"           dime-selector t])
       ("Profiling"
        [ "Toggle Profiling..."     dime-toggle-profile-fdefinition ,C ]
-       [ "Profile Package"         dime-profile-package ,C]
+       [ "Profile Project"         dime-profile-project ,C]
        [ "Profile by Substring"    dime-profile-by-substring ,C ]
        [ "Unprofile All"           dime-unprofile-all ,C ]
        [ "Show Profiled"           dime-profiled-functions ,C ]
@@ -7093,12 +7079,12 @@ is setup, unless the user already set one explicitly."
        [ "Lookup Documentation..." dime-documentation-lookup t ]
        [ "Apropos..."              dime-apropos ,C ]
        [ "Apropos all..."          dime-apropos-all ,C ]
-       [ "Apropos Package..."      dime-apropos-package ,C ]
+       [ "Apropos Project..."      dime-apropos-project ,C ]
        [ "Hyperspec..."            dime-hyperspec-lookup t ])
       "--"
       [ "Interrupt Command"        dime-interrupt ,C ]
       [ "Abort Async. Command"     dime-quit ,C ]
-      [ "Sync Package & Directory" dime-sync-package-and-default-directory ,C]
+      [ "Sync Project & Directory" dime-sync-project-and-default-directory ,C]
       )))
 
 (defvar dime-sldb-easy-menu
@@ -7153,7 +7139,7 @@ is setup, unless the user already set one explicitly."
                 (dime-compile-defun "Compile current top level form")
                 (dime-interactive-eval "Prompt for form and eval it")
                 (dime-compile-and-load-file "Compile and load current file")
-                (dime-sync-package-and-default-directory "Synch default package and directory with current buffer")
+                (dime-sync-project-and-default-directory "Synch default project and directory with current buffer")
                 (dime-next-note "Next compiler note")
                 (dime-previous-note "Previous compiler note")
                 (dime-remove-notes "Remove notes")
@@ -7330,27 +7316,24 @@ keys."
               symbol-part))
       n)))
 
-(defun dime-cl-symbol-package (symbol &optional default)
+(defun dime-cl-symbol-project (symbol &optional default)
   (let ((n (if (stringp symbol) symbol (symbol-name symbol))))
     (if (string-match "^\\([^:]*\\):" n)
 	(match-string 1 n)
       default)))
 
 (defun dime-qualify-cl-symbol-name (symbol-or-name)
-  "Return a package-qualified string for SYMBOL-OR-NAME.
-If SYMBOL-OR-NAME doesn't already have a package prefix the
-current package is used."
+  "Return a project-qualified string for SYMBOL-OR-NAME.
+If SYMBOL-OR-NAME doesn't already have a project prefix the
+current project is used."
   (let ((s (if (stringp symbol-or-name)
                symbol-or-name
              (symbol-name symbol-or-name))))
-    (if (dime-cl-symbol-package s)
+    (if (dime-cl-symbol-project s)
         s
       (format "%s::%s"
-              (let* ((package (dime-current-package)))
-                ;; package is a string like ":cl-user" or "CL-USER", or "\"CL-USER\"".
-                (if package
-                    (dime-pretty-package-name package)
-                  "CL-USER"))
+              (let* ((project dime-buffer-module))
+                (if project project "common-dylan"))
               (dime-cl-symbol-name s)))))
 
 ;;;;; Moving, CL idiosyncracies aware (reader conditionals &c.)

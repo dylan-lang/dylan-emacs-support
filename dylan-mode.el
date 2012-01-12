@@ -156,6 +156,7 @@
 
 ;;; Code:
 
+(require 'dylan-common)
 (require 'dylan-optimization-coloring)
 
 (defconst dylan-version "1.21"
@@ -1580,15 +1581,6 @@ treat code in the file body as the interior of a string*.
 	      (font-lock-default-fontify-region beg end loudly)
 	    (setq font-lock-dont-widen save-font-lock-dont-widen)))))))
 
-(defun dylan-find-slime-buffer-package ()
-  (let ((case-fold-search t)
-        (regexp "^module:[ \t]*\\([^ \n\r\t]+\\)"))
-    (save-excursion
-      (when (or (re-search-backward regexp nil t)
-                (re-search-forward regexp nil t))
-        (match-string-no-properties 1)))))
-
-
 (defun dylan-mode-init-variables ()
   ;; Use value appropriate for font-lock mode now.  Reset after running hooks.
   ;; 
@@ -1645,10 +1637,8 @@ treat code in the file body as the interior of a string*.
 	     . dylan-font-lock-fontify-region)
 	    (font-lock-syntax-table
 	      . ,dylan-indent-syntax-table))))
-  (make-local-variable 'slime-buffer-package)
-  (setq slime-buffer-package (dylan-find-slime-buffer-package))
-  (if (fboundp 'slime-mode)
-      (slime-mode))
+  (setq dime-buffer-module (dylan-find-buffer-module))
+  (setq dime-buffer-library (dylan-find-buffer-library))
   (if (fboundp 'run-mode-hooks)
       (run-mode-hooks 'dylan-mode-hook)
     (run-hooks 'dylan-mode-hook))	; For compatibility with older Emacsen,
