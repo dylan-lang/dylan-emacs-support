@@ -5111,7 +5111,7 @@ argument is given, with CL:MACROEXPAND."
 
 (defun dime-quit-dylan-internal (connection sentinel kill)
   (let ((dime-dispatching-connection connection))
-    (dime-eval-async '(swank:quit-dylan))
+    (dime-eval-async '(swank:quit-lisp))
     (let* ((process (dime-inferior-process connection)))
       (set-process-filter connection  nil)
       (set-process-sentinel connection sentinel)
