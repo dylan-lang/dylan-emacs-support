@@ -3984,7 +3984,9 @@ The result is a (possibly empty) list of definitions."
   (add-hook (make-local-variable 'first-change-hook)
             'dime-first-change-hook))
 
-(add-hook 'dime-mode-hook 'dime-setup-first-change-hook)
+; disable for now, not sure whether this is useful for us in
+; the future, thus only commenting out -- hannes (Jan 2012)
+;(add-hook 'dime-mode-hook 'dime-setup-first-change-hook)
 
 
 ;;;; Eval for Dylan
