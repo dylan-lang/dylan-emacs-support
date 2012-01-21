@@ -2140,7 +2140,6 @@ or nil if nothing suitable can be found.")
 
 (defun dime-eval (sexp &optional project)
   "Evaluate EXPR on the superior Dylan and return the result."
-  (when (null project) (setq project dime-buffer-module))
   (let* ((tag (gensym (format "dime-result-%d-" 
                               (1+ (dime-continuation-counter)))))
 	 (dime-stack-eval-tags (cons tag dime-stack-eval-tags)))
@@ -2148,7 +2147,7 @@ or nil if nothing suitable can be found.")
      #'funcall 
      (catch tag
        (dime-rex (tag sexp)
-           (sexp project)
+           (sexp (or project dime-buffer-module))
          ((:ok value)
           (unless (member tag dime-stack-eval-tags)
             (error "Reply to canceled synchronous eval request tag=%S sexp=%S"

@@ -60,7 +60,7 @@ more than one space."
   "Read the name of a class and show its subclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-call-with-browser-setup 
-   "*dime class browser*" (dime-current-project) "Class Browser"
+   "*dime class browser*" (dime-current-project) dime-buffer-module "Class Browser"
    (lambda ()
      (widget-create 'tree-widget :tag name 
                     :expander 'dime-expand-subclass-node 
@@ -70,7 +70,7 @@ more than one space."
   "Read the name of a class and show its superclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-call-with-browser-setup 
-   "*dime class browser*" (dime-current-project) "Class Browser"
+   "*dime class browser*" (dime-current-project) dime-buffer-module "Class Browser"
    (lambda ()
      (widget-create 'tree-widget :tag name 
                     :expander 'dime-expand-superclass-node 
@@ -85,10 +85,11 @@ more than one space."
   (set-keymap-parent dime-browser-map widget-keymap)
   (define-key dime-browser-map "q" 'bury-buffer))
 
-(defun dime-call-with-browser-setup (buffer project title fn)
+(defun dime-call-with-browser-setup (buffer project module title fn)
   (switch-to-buffer buffer)
   (kill-all-local-variables)
   (setq dime-buffer-project project)
+  (setq dime-buffer-module module)
   (let ((inhibit-read-only t)) (erase-buffer))
   (widget-insert title "\n\n")
   (save-excursion
