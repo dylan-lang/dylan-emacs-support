@@ -3809,7 +3809,7 @@ alist but ignores CDRs."
   "Lookup the definition of the name at point.  
 If there's no name at point, or a prefix argument is given, then the
 function name is prompted."
-  (interactive (list (dime-read-symbol-name "Edit Definition of: ")))
+  (interactive (list (dime-read-symbol-name "Edit Definition of: " t)))
   (or (run-hook-with-args-until-success 'dime-edit-definition-hooks 
                                         name where)
       (dime-edit-definition-cont (dime-find-definitions name)
@@ -3921,16 +3921,16 @@ locations."
  
 (defun dime-edit-definition-other-window (name)
   "Like `dime-edit-definition' but switch to the other window."
-  (interactive (list (dime-read-symbol-name "Symbol: ")))
+  (interactive (list (dime-read-symbol-name "Symbol: " t)))
   (dime-edit-definition name 'window))
 
 (defun dime-edit-definition-other-frame (name)
   "Like `dime-edit-definition' but switch to the other window."
-  (interactive (list (dime-read-symbol-name "Symbol: ")))
+  (interactive (list (dime-read-symbol-name "Symbol: " t)))
   (dime-edit-definition name 'frame))
 
 (defun dime-edit-definition-with-etags (name)
-  (interactive (list (dime-read-symbol-name "Symbol: ")))
+  (interactive (list (dime-read-symbol-name "Symbol: " t)))
   (let ((xrefs (dime-etags-definitions name)))
     (cond (xrefs 
            (message "Using tag file...")
