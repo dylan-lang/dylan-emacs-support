@@ -104,13 +104,18 @@
 
 (defun color-backgrounds (color l))
 
-(defun dylan-color-optimizations ()
+(defun dylan-color-optimizations (file)
   "Color the current Dylan buffer with recorded optimization information"
-  (interactive)
-  (let ((file (dylan-color-file)))
-    (message "Using color file: %s" file)
-    (load-file file)
-    (message "Used color file: %s" file)))
+  (interactive (list
+                (let ((color-file (dylan-color-file)))
+                  (read-file-name "Color optimization file: "
+                                  (file-name-directory color-file)
+                                  (file-name-nondirectory color-file)
+                                  t
+                                  color-file))))
+  (message "Using color file: %s" file)
+  (load-file file)
+  (message "Used color file: %s" file))
 
 (provide 'dylan-optimization-coloring)
 ;; eof
