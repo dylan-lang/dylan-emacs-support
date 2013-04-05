@@ -1,3 +1,5 @@
+(require 'dime)
+
 ;;;; Arglist Display
 
 (defun dime-dylan-arglist-magic (n)
@@ -22,7 +24,7 @@ more than one space."
     (save-excursion
       (backward-up-list 1)
       (backward-sexp 1)
-      (dime-symbol-at-point))))
+      (thing-at-point 'dime-symbol))))
 
 (defun dime-dylan-init ()
   (add-hook 'dylan-mode-hook 'dime-dylan-bind-keys))
@@ -60,7 +62,7 @@ more than one space."
   "Read the name of a class and show its subclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-call-with-browser-setup 
-   "*dime class browser*" (dime-current-project) dime-buffer-module "Class Browser"
+   "*dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
    (lambda ()
      (widget-create 'tree-widget :tag name 
                     :expander 'dime-expand-subclass-node 
@@ -70,7 +72,7 @@ more than one space."
   "Read the name of a class and show its superclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-call-with-browser-setup 
-   "*dime class browser*" (dime-current-project) dime-buffer-module "Class Browser"
+   "*dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
    (lambda ()
      (widget-create 'tree-widget :tag name 
                     :expander 'dime-expand-superclass-node 
@@ -89,7 +91,7 @@ more than one space."
   (switch-to-buffer buffer)
   (kill-all-local-variables)
   (setq dime-buffer-project project)
-  (setq dime-buffer-module module)
+  (setq dylan-buffer-module module)
   (let ((inhibit-read-only t)) (erase-buffer))
   (widget-insert title "\n\n")
   (save-excursion
