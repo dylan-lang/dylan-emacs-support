@@ -701,7 +701,7 @@ corresponding values in the CDR of VALUE."
 		   patterns)
 	 ,@(if (eq (caar (last patterns)) t)
 	       '()
-	     `((t (error "Edylan destructure-case failed: %S" ,tmp))))))))
+	     `((t (error "ELISP destructure-case failed: %S" ,tmp))))))))
 
 (put 'destructure-case 'dylan-indent-function 1)
 

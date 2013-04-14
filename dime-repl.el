@@ -16,7 +16,7 @@
 ;;
 
 (define-dime-contrib dime-repl
-  "Read-Eval-Print Loop written in Emacs Dylan.
+  "Read-Eval-Print Loop written in Emacs Lisp.
 
 This contrib implements a Dylan Listener along with some niceties like
 a persistent history and various \"shortcut\" commands.  Nothing here
