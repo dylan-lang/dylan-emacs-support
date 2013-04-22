@@ -1,5 +1,3 @@
-(require 'dylan-common)
-
 ;; Interface to optimization coloring.
 
 (defvar color-not-all-methods-known            "not-all-known")
@@ -118,4 +116,3 @@
   (message "Used color file: %s" file))
 
 (provide 'dylan-optimization-coloring)
-;; eof
