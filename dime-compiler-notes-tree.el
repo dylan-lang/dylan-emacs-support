@@ -1,3 +1,4 @@
+(require 'dime)
 
 (define-dime-contrib dime-compiler-notes-tree
   "Display compiler messages in tree layout.
@@ -15,7 +16,7 @@ grouped by severity.
   "Show the compiler notes if appropriate."
   ;; don't pop up a buffer if all notes are already annotated in the
   ;; buffer itself
-  (unless (every #'dime-note-has-location-p notes)
+  (unless (cl-every #'dime-note-has-location-p notes)
     (dime-list-compiler-notes notes)))
 
 (defun dime-list-compiler-notes (notes)
@@ -41,7 +42,7 @@ grouped by severity.
                   :print-fn dime-tree-printer))
 
 (defun dime-tree-for-severity (severity notes collapsed-p)
-  (make-dime-tree :item (format "%s (%d)" 
+  (make-dime-tree :item (format "%s (%d)"
                                  (dime-severity-label severity)
                                  (length notes))
                   :kids (mapcar #'dime-tree-for-note notes)
@@ -51,12 +52,12 @@ grouped by severity.
   (let* ((alist (dime-alistify notes #'dime-note.severity #'eq))
          (collapsed-p (dime-length> alist 1)))
     (loop for (severity . notes) in alist
-          collect (dime-tree-for-severity severity notes 
+          collect (dime-tree-for-severity severity notes
                                            collapsed-p))))
 
 (defvar dime-compiler-notes-mode-map)
 
-(define-derived-mode dime-compiler-notes-mode fundamental-mode 
+(define-derived-mode dime-compiler-notes-mode fundamental-mode
   "Compiler-Notes"
   "\\<dime-compiler-notes-mode-map>\
 \\{dime-compiler-notes-mode-map}
@@ -75,7 +76,7 @@ grouped by severity.
   (destructuring-bind (mouse-2 (w pos &rest _) &rest __) event
     (save-excursion
       (goto-char pos)
-      (let ((fn (get-text-property (point) 
+      (let ((fn (get-text-property (point)
                                    'dime-compiler-notes-default-action)))
 	(if fn (funcall fn) (dime-compiler-notes-show-details))))))
 
@@ -98,7 +99,7 @@ grouped by severity.
 
 ;;;;;; Tree Widget
 
-(defstruct (dime-tree (:conc-name dime-tree.))
+(cl-defstruct (dime-tree (:conc-name dime-tree.))
   item
   (print-fn #'dime-tree-default-printer :type function)
   (kids '() :type list)
@@ -121,7 +122,7 @@ grouped by severity.
 
 (defun dime-tree-insert-list (list prefix)
   "Insert a list of trees."
-  (loop for (elt . rest) on list 
+  (loop for (elt . rest) on list
 	do (cond (rest
 		  (insert prefix " |")
 		  (dime-tree-insert elt (concat prefix " |"))

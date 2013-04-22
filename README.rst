@@ -1,44 +1,47 @@
 dylan-mode
 ==========
 
-dylan-mode is a major mode for editing Dylan code in emacs.  To enable
-auto-loading of dylan-mode upon loading a .dylan file, add these lines
-to your .emacs file::
+dylan-mode is a major mode for editing Dylan code in emacs.
+
+If you've installed dylan-mode through a package manager, the mode should be
+activated for `.dylan` files. Otherwise, add the following to your .emacs file::
 
   (add-to-list 'load-path "/path/to/dylan-mode")
-  (autoload 'dylan-mode "dylan-mode" "Dylan-mode" t)
-  (add-to-list 'auto-mode-alist '("\\.dylan\\'" . dylan-mode))
+  (require 'dime)
 
 
 DIME/dswank
 ===========
 
-DIME/dswank is part of the release since opendylan-2011.1.  It
-provides interactive development support in emacs.  DIME is a fork of
+DIME/dswank is part of the release since opendylan-2011.1. It
+provides interactive development support in emacs. DIME is a fork of
 `SLIME <http://common-lisp.net/project/slime/>`_ and stands for Dylan
 Interaction Mode for Emacs.
 
-To enable DIME/dswank add these lines to your .emacs file, changing
+If you did not install dylan-mode through a package manager, add the following
+to your .emacs file::
+
+  (require 'dime)
+
+To configure DIME/dswank add these lines to your .emacs file, changing
 YYYY.nn as appropriate for your installed release of Open Dylan::
 
-  (setq inferior-dylan-program "/opt/opendylan-YYYY.nn/bin/dswank") ; your dswank binary
-  (require 'dime)
   (dime-setup '(dime-dylan dime-repl dime-compiler-notes-tree))
+  (setq dime-dylan-implementations
+        '((opendylan ("/opt/opendylan-YYYY.nn/bin/dswank")
+                     :env ("OPEN_DYLAN_USER_REGISTRIES=/opt/opendylan-YYYY.nn/sources/registry"))))
 
-You will also need to set OPEN_DYLAN_USER_REGISTRIES to your source registries
-so that the compiler can find library dependencies::
-
-  export OPEN_DYLAN_USER_REGISTRIES=/path/to/opendylan/sources/registry:/other/registry
-
-In Windows this can be set via the System control panel, and
-registries must be separated with semicolons instead of colon.
+You will also want to add your own source registries to the
+`OPEN_DYLAN_USER_REGISTRIES` environment variable. Registry paths are separated
+by semicolons on Windows and colons elsewhere.
 
 
 etags.regex
 ===========
 
-This file may be used to create an emacs TAGS file for Dylan code.  See the
+This file may be used to create an emacs TAGS file for Dylan code. See the
 comment in the file for usage.
+
 
 dtags
 =====
@@ -55,7 +58,6 @@ This code is distributed under the GNU GPL.
 It originates from different sources:
  dylan-mode.el is from CMU
  dylan-optimization-coloring.el from Harlequin
- dylan-dime.el, dylan-common.el from Dylan Hackers
+ dylan-dime.el from Dylan Hackers
  dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
-
 
