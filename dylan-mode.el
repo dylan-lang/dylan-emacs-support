@@ -524,9 +524,9 @@ using the values of the various keyword list variables."
   ;; and, optionally, all function calls.
   (setq dylan-font-lock-keywords-2
 	(append dylan-font-lock-keywords-1
-		'(("slot[ \t\n]+\\(\\w+\\)" 1 font-lock-function-name-face)
+		'(("slot[ \t\n]+\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-variable-name-face)
 		  ("block[ \t\n]+(\\([^)]+\\)" 1 font-lock-function-name-face)
-		  ("let[ \t\n]+\\(\\w+\\)" 1 font-lock-variable-name-face)
+		  ("let[ \t\n]+\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-variable-name-face)
 		  ;; This highlights commas and whitespace separating the
                   ;; variable names. Try to find a way to highlight only the
                   ;; variable names.
