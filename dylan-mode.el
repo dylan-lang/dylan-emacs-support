@@ -52,12 +52,12 @@ When called interactively, displays the version."
   "Major mode for editing Dylan source."
   :group 'languages)
 
-(defcustom dylan-indent standard-indent
+(defcustom dylan-indent 2
   "*Number of spaces to indent each sub-block."
   :type  'integer
   :group 'dylan)
 
-(defcustom dylan-continuation-indent (* 2 standard-indent)
+(defcustom dylan-continuation-indent 2
   "*Number of spaces to indent each continued line."
   :type  'integer
   :group 'dylan)
