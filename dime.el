@@ -52,9 +52,10 @@
 
 ;;;; Dependencies and setup
 
-(when (and (< emacs-major-version 24)
-           (< emacs-minor-version 3))
-  (error "Dime requires an Emacs version of 24.3, or above"))
+;; check that we have at least Emacs 24... full DIME support is only
+;; available in 24.3, but dime-compat lets dylan-mode work in 24.1.
+(when (< emacs-major-version 24)
+  (error "Dime requires an Emacs version of 24, or above"))
 
 (eval-when-compile
   (require 'cl))
@@ -72,6 +73,7 @@
 (require 'compile)
 (require 'gud)
 
+(require 'dime-compat)
 (require 'dylan-mode)
 
 (defvar dime-buffer-project nil)
