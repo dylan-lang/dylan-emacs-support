@@ -52,8 +52,9 @@
 
 ;;;; Dependencies and setup
 
-(when (< emacs-major-version 24)
-  (error "Dime requires an Emacs version of 24, or above"))
+(when (and (< emacs-major-version 24)
+           (< emacs-minor-version 3))
+  (error "Dime requires an Emacs version of 24.3, or above"))
 
 (eval-when-compile
   (require 'cl))
