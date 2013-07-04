@@ -9,6 +9,8 @@ activated for `.dylan` files. Otherwise, add the following to your .emacs file::
   (add-to-list 'load-path "/path/to/dylan-mode")
   (require 'dime)
 
+This requires GNU Emacs 24.3 or later.
+
 
 DIME/dswank
 ===========
