@@ -58,8 +58,8 @@ License
 This code is distributed under the GNU GPL.
 
 It originates from different sources:
- dylan-mode.el is from CMU
- dylan-optimization-coloring.el from Harlequin
- dylan-dime.el from Dylan Hackers
- dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
 
+* dylan-mode.el is from CMU
+* dylan-optimization-coloring.el from Harlequin
+* dylan-dime.el from Dylan Hackers
+* dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
