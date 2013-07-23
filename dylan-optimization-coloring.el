@@ -59,6 +59,9 @@
      (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
              "/build/" library "/" stem ".el"))))
 
+(defvar-local dylan-buffer-highlighting-overlays '()
+  "Highlighting overlays of current buffer.")
+
 (defun color-foregrounds (color l)
   (save-excursion
     (while (not (null l))
@@ -73,12 +76,19 @@
             (if overlay
                 (let ((oldstart (overlay-start (car overlay)))
                       (oldend (overlay-end (car overlay)))
-                      (oldface (overlay-get (car overlay) 'face)))
+                      (oldface (overlay-get (car overlay) 'face))
+                      (oldmsg (overlay-get (car overlay) 'help-echo)))
                   (delete-overlay (car overlay))
+                  (setq dylan-buffer-highlighting-overlays (remove (car overlay) dylan-buffer-highlighting-overlays))
+                  ; remove from
                   (let ((over1 (make-overlay oldstart start))
                         (over2 (make-overlay end oldend)))
                     (overlay-put over1 'face oldface)
-                    (overlay-put over2 'face oldface))))
+                    (overlay-put over2 'face oldface)
+                    (overlay-put over1 'help-echo oldmsg)
+                    (overlay-put over2 'help-echo oldmsg)
+                    (push over1 dylan-buffer-highlighting-overlays)
+                    (push over2 dylan-buffer-highlighting-overlays))))
             (let ((over (make-overlay start end)))
               (if (string= color "not-all-known")
                   (overlay-put over 'face 'face-not-all-methods-known)
@@ -97,12 +107,13 @@
                             (if (string= color "program-note")
                                 (overlay-put over 'face 'face-program-notes)
                               (if (string= color "bogus-upgrade")
-                                  (overlay-put over 'face 'face-bogus-upgrade))))))))))))))
+                                  (overlay-put over 'face 'face-bogus-upgrade))))))))))
+              (overlay-put over 'help-echo color)
+              (push over dylan-buffer-highlighting-overlays)))))
       (setq l (cdr l)))))
 
 (defun color-backgrounds (color l))
 
-;;;###autoload
 (defun dylan-color-optimizations (file)
   "Color the current Dylan buffer with recorded optimization information"
   (interactive (list
@@ -114,7 +125,17 @@
                                   (file-name-nondirectory color-file)
                                   (lambda (x) (string-match ".*\\.el" x))))))
   (message "Using color file: %s" file)
+  (dylan-color-optimizations-reset)
   (load-file file)
   (message "Used color file: %s" file))
+
+(defun dylan-uncolor-optimizations ()
+  "Uncolor the current Dylan buffer of optimization information"
+  (interactive)
+  (dylan-color-optimizations-reset))
+
+(defun dylan-color-optimizations-reset ()
+  (mapc #'delete-overlay dylan-buffer-highlighting-overlays)
+  (setq dylan-buffer-highlighting-overlays '()))
 
 (provide 'dylan-optimization-coloring)
