@@ -185,7 +185,7 @@ may include any general pattern that must be indented specially.")
 (defvar dylan-other-words
   '(;; Dylan
     "above" "below" "by" "from"
-    "handler" "in" "instance" "let" "local" "otherwise"
+    "handler" "in" "instance\\?" "let" "local" "otherwise"
     "slot" "subclass" "then" "to"
     ;; Extensions
     "keyed-by" "virtual")
