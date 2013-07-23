@@ -1172,14 +1172,14 @@ treat code in the file body as the interior of a string."
     (save-excursion
       (if lid-files
 	(let ((try-lid (car lid-files)))
-	  (set-buffer (find-file-noselect try-lid))
-	  (goto-char (point-min))
-	  (let ((found
-		  (re-search-forward "[Ll]ibrary:[ \t]*\\([^ \n\r\t]+\\)")))
-	    (if found
-	      (buffer-substring
-	        (match-beginning 1)
-		(match-end 1)))))))))
+	  (with-current-buffer (find-file-noselect try-lid)
+            (goto-char (point-min))
+            (let ((found
+                   (re-search-forward "[Ll]ibrary:[ \t]*\\([^ \n\r\t]+\\)")))
+              (if found
+                  (buffer-substring
+                   (match-beginning 1)
+                   (match-end 1))))))))))
 
 
 ;;; dylan-mode:
