@@ -52,6 +52,8 @@
 
 ;;;; Dependencies and setup
 
+;; check that we have at least Emacs 24... full DIME support is only
+;; available in 24.3, but dime-compat lets dylan-mode work in 24.1.
 (when (< emacs-major-version 24)
   (error "Dime requires an Emacs version of 24, or above"))
 
@@ -71,6 +73,7 @@
 (require 'compile)
 (require 'gud)
 
+(require 'dime-compat)
 (require 'dylan-mode)
 (require 'dylan-optimization-coloring)
 
