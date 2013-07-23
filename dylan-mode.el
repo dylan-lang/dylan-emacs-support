@@ -1167,19 +1167,19 @@ treat code in the file body as the interior of a string."
                 (re-search-forward regexp nil t))
         (match-string-no-properties 1)))))
 
-(defun dylan-find-buffer-library ()
-  (let ((lid-files (directory-files "." t ".*\\.lid" t)))
-    (save-excursion
-      (if lid-files
-	(let ((try-lid (car lid-files)))
-	  (with-current-buffer (find-file-noselect try-lid)
-            (goto-char (point-min))
-            (let ((found
-                   (re-search-forward "[Ll]ibrary:[ \t]*\\([^ \n\r\t]+\\)")))
-              (if found
-                  (buffer-substring
-                   (match-beginning 1)
-                   (match-end 1))))))))))
+(defun dylan-find-buffer-library (path)
+  (let ((lid-files (directory-files path t ".*\\.lid" t)))
+    (if lid-files
+      (let ((try-lid (car lid-files)))
+        (with-current-buffer (find-file-noselect try-lid)
+          (goto-char (point-min))
+          (let ((found
+                 (re-search-forward "[Ll]ibrary:[ \t]*\\([^ \n\r\t]+\\)")))
+            (if found
+                (buffer-substring
+                 (match-beginning 1)
+                 (match-end 1))))))
+      (dylan-find-buffer-library (concat path "/..")))))
 
 
 ;;; dylan-mode:
@@ -1233,9 +1233,6 @@ during initialization.
   (setq-local parse-sexp-ignore-comments t)
   (setq-local parse-sexp-lookup-properties t)
 
-  (setq dylan-buffer-library (dylan-find-buffer-library))
-  (setq dylan-buffer-module (dylan-find-buffer-module))
-
   (setq-local beginning-of-defun-function 'dylan-beginning-of-defun)
   (setq-local end-of-defun-function 'dylan-end-of-defun)
 
@@ -1245,7 +1242,9 @@ during initialization.
                  dylan-font-lock-keywords-2)
                 nil t nil nil
                 (font-lock-fontify-region-function
-                 . dylan-font-lock-fontify-region))))
+                 . dylan-font-lock-fontify-region)))
+  (setq dylan-buffer-library (dylan-find-buffer-library "."))
+  (setq dylan-buffer-module (dylan-find-buffer-module)))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dylan\\'" . dylan-mode))
