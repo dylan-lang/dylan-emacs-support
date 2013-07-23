@@ -102,15 +102,17 @@
 
 (defun color-backgrounds (color l))
 
+;;;###autoload
 (defun dylan-color-optimizations (file)
   "Color the current Dylan buffer with recorded optimization information"
   (interactive (list
                 (let ((color-file (dylan-color-file)))
                   (read-file-name "Color optimization file: "
                                   (file-name-directory color-file)
-                                  (file-name-nondirectory color-file)
+                                  nil
                                   t
-                                  color-file))))
+                                  (file-name-nondirectory color-file)
+                                  (lambda (x) (string-match ".*\\.el" x))))))
   (message "Using color file: %s" file)
   (load-file file)
   (message "Used color file: %s" file))

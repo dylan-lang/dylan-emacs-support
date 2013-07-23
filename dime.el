@@ -72,6 +72,7 @@
 (require 'gud)
 
 (require 'dylan-mode)
+(require 'dylan-optimization-coloring)
 
 (defvar dime-buffer-project nil)
 (defvar dime-buffer-connection nil)
