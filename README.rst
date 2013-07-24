@@ -9,6 +9,8 @@ activated for `.dylan` files. Otherwise, add the following to your .emacs file::
   (add-to-list 'load-path "/path/to/dylan-mode")
   (require 'dime)
 
+This requires GNU Emacs 24.3 or later.
+
 
 DIME/dswank
 ===========
@@ -56,8 +58,8 @@ License
 This code is distributed under the GNU GPL.
 
 It originates from different sources:
- dylan-mode.el is from CMU
- dylan-optimization-coloring.el from Harlequin
- dylan-dime.el from Dylan Hackers
- dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
 
+* dylan-mode.el is from CMU
+* dylan-optimization-coloring.el from Harlequin
+* dylan-dime.el from Dylan Hackers
+* dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
