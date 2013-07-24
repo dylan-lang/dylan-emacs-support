@@ -5,8 +5,8 @@
 
 ;; This file defines compatibility mappings between cl-* functions that
 ;; were introduced in Emacs 24.3. When required in dime.el these allow
-;; dylan-mode/DIME to load/compile in Emacs 24.1, but there are still
-;; issues with the dwank communication.
+;; dylan-mode and DIME to load/compile in Emacs 24.1, but there are
+;; still issues with the dswank communication.
 
 (unless (fboundp 'defvar-local)
   (defmacro defvar-local (var val &optional docstring)
