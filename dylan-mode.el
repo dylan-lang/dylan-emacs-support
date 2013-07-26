@@ -1167,7 +1167,7 @@ treat code in the file body as the interior of a string."
                 (re-search-forward regexp nil t))
         (match-string-no-properties 1)))))
 
-(defun dylan-find-buffer-library (path)
+(defun dylan-find-buffer-library (path inc)
   (let ((lid-files (directory-files path t ".*\\.lid" t)))
     (if lid-files
       (let ((try-lid (car lid-files)))
@@ -1179,7 +1179,8 @@ treat code in the file body as the interior of a string."
                 (buffer-substring
                  (match-beginning 1)
                  (match-end 1))))))
-      (dylan-find-buffer-library (concat path "/..")))))
+      (when (< inc 5)
+        (dylan-find-buffer-library (concat path "/..") (1+ inc))))))
 
 
 ;;; dylan-mode:
@@ -1243,7 +1244,7 @@ during initialization.
                 nil t nil nil
                 (font-lock-fontify-region-function
                  . dylan-font-lock-fontify-region)))
-  (setq dylan-buffer-library (dylan-find-buffer-library "."))
+  (setq dylan-buffer-library (dylan-find-buffer-library "." 0))
   (setq dylan-buffer-module (dylan-find-buffer-module)))
 
 ;;;###autoload
