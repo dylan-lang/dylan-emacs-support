@@ -4,7 +4,7 @@
 
 	Invoke with: etags --language=none --regex=@thisfile `find . -name '*.dylan'`
 
-/[ \t]*define[ \t]+.*\(class\|generic\|method\|function\|variable\|constant\|macro\|domain\|module\|library\|test\|suite\)[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\2/i
+/[ \t]*define[ \t]+.*\(class\|generic\|method\|function\|variable\|constant\|macro\|domain\|module\|library\|test\|suite\|table\)[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\2/i
 
 	Two separate entries for local methods to avoid matching "  end method foo".
 /[ \t]+local[ \t]+method[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\1/i
