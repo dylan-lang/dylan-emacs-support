@@ -1228,7 +1228,7 @@ Return the created process."
   "Start a Swank server in the inferior Dylan and connect."
   (dime-delete-swank-port-file 'quiet)
   (dime-start-swank-server process args)
-  (dime-read-port-and-connect process nil))
+  (dime-read-port-and-connect process))
 
 (defvar dime-inferior-dylan-args nil
   "A buffer local variable in the inferior proccess.
@@ -1283,30 +1283,27 @@ See `dime-start'."
        (message (message "Unable to delete swank port file %S"
                          (dime-swank-port-file)))))))
 
-(defun dime-read-port-and-connect (inferior-process retries)
-  (dime-cancel-connect-retry-timer)
-  (dime-attempt-connection inferior-process retries 1))
+(defun dime-read-port-and-connect (inferior-process)
+  (dime-attempt-connection inferior-process nil 1))
 
 (defun dime-attempt-connection (process retries attempt)
   ;; A small one-state machine to attempt a connection with
   ;; timer-based retries.
+  (dime-cancel-connect-retry-timer)
   (let ((file (dime-swank-port-file)))
     (unless (active-minibuffer-window)
       (message "Polling %S.. (Abort with `M-x dime-abort-connection'.)" file))
     (cond ((and (file-exists-p file)
                 (> (nth 7 (file-attributes file)) 0)) ; file size
-           (dime-cancel-connect-retry-timer)
            (let ((port (dime-read-swank-port))
                  (args (dime-inferior-dylan-args process)))
              (dime-delete-swank-port-file 'message)
              (let ((c (dime-connect dime-dylan-host port
-                                     (plist-get args :coding-system))))
+                                    (plist-get args :coding-system))))
                (dime-set-inferior-process c process))))
           ((and retries (zerop retries))
-           (dime-cancel-connect-retry-timer)
            (message "Gave up connecting to Swank after %d attempts." attempt))
           ((eq (process-status process) 'exit)
-           (dime-cancel-connect-retry-timer)
            (message "Failed to connect to Swank: inferior process exited."))
           (t
            (when (and (file-exists-p file)
@@ -1317,7 +1314,7 @@ See `dime-start'."
            (unless dime-connect-retry-timer
              (setq dime-connect-retry-timer
                    (run-with-timer
-                    0.3 0.3
+                    0.3 nil
                     #'dime-timer-call #'dime-attempt-connection
                     process (and retries (1- retries))
                     (1+ attempt))))))))
@@ -6034,7 +6031,7 @@ was called originally."
   (let ((id (get-text-property (point) 'thread-id))
         (file (dime-swank-port-file)))
     (dime-eval-async `(swank:start-swank-server-in-thread ,id ,file)))
-  (dime-read-port-and-connect nil nil))
+  (dime-read-port-and-connect nil))
 
 (defun dime-thread-debug ()
   (interactive)
