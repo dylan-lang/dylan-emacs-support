@@ -25,20 +25,20 @@
 
 ;;;; Commentary
 ;;
-;; This file contains extensions for programming in Common Dylan. The
+;; This file contains extensions for programming in Open Dylan. The
 ;; main features are:
 ;;
 ;;   A socket-based communication/RPC interface between Emacs and
 ;;   Dylan, enabling introspection and remote development.
 ;;
 ;;   The `dime-mode' minor-mode complementing `dylan-mode'. This new
-;;   mode includes many commands for interacting with the Common Dylan
+;;   mode includes many commands for interacting with the Open Dylan
 ;;   process.
 ;;
-;;   A Common Dylan debugger written in Emacs Dylan. The debugger pops up
-;;   an Emacs buffer similar to the Emacs/Edylan debugger.
+;;   A Dylan debugger written in Emacs Lisp. The debugger pops up
+;;   an Emacs buffer similar to the Emacs/Elisp debugger.
 ;;
-;;   A Common Dylan inspector to interactively look at run-time data.
+;;   A Open Dylan inspector to interactively look at run-time data.
 ;;
 ;;   Trapping compiler messages and creating annotations in the source
 ;;   file on the appropriate forms.
@@ -85,9 +85,9 @@
     (let ((path (or (locate-library "dime") load-file-name)))
       (and path (file-name-directory path)))
     "Directory containing the Dime package.
-This is used to load the supporting Common Dylan library, Swank.
+This is used to load the supporting Open Dylan library, Swank.
 The default value is automatically computed from the location of the
-Emacs Dylan package."))
+Emacs Lisp package."))
 
 (defvar dime-dylan-modes '(dylan-mode))
 (defvar dime-setup-contribs nil)
@@ -1383,7 +1383,7 @@ The default condition handler for timer functions (see
 ;;;
 ;;; Each DIME protocol message beings with a 3-byte length header
 ;;; followed by an S-expression as text. The sexp must be readable
-;;; both by Emacs and by Common Dylan, so if it contains any embedded
+;;; both by Emacs and by Open Dylan, so if it contains any embedded
 ;;; code fragments they should be sent as strings.
 ;;;
 ;;; The set of meaningful protocol messages are not specified
@@ -1918,7 +1918,7 @@ Return nil if there's no process object for the connection."
 
 ;;;; Communication protocol
 
-;;;;; Emacs Dylan programming interface
+;;;;; Emacs Lisp programming interface
 ;;;
 ;;; The programming interface for writing Emacs commands is based on
 ;;; remote procedure calls (RPCs). The basic operation is to ask Dylan
@@ -2005,7 +2005,7 @@ versions cannot deal with that."
 
 ;;; Interface
 (defun dime-current-project ()
-  "Return the Common Dylan project in the current context.
+  "Return the Open Dylan project in the current context.
 If `dime-buffer-project' has a value then return that, otherwise
 search for a lid file."
   (or dime-buffer-project
@@ -4657,7 +4657,7 @@ When displaying XREF information, this goes to the previous reference."
 
 (defun dime-xref-recompilation-cont (results dspecs buffer)
   ;; Extreme long-windedness to insert status of recompilation;
-  ;; sometimes Edylan resembles more of an Ewwdylan.
+  ;; sometimes Elisp resembles more of an Ewwlisp.
 
   ;; FIXME: Should probably throw out the whole recompilation cruft
   ;; anyway.  -- helmut
@@ -7031,7 +7031,7 @@ keys."
           until (= (point) (point-max))
           maximizing column)))
 
-;;;;; CL symbols vs. Edylan symbols.
+;;;;; CL symbols vs. Elisp symbols.
 
 (defun dime-cl-symbol-name (symbol)
   (let ((n (if (stringp symbol) symbol (symbol-name symbol))))
