@@ -4360,6 +4360,7 @@ The most important commands:
 (dime-define-keys dime-xref-mode-map
   ((kbd "RET") 'dime-goto-xref)
   ((kbd "SPC") 'dime-goto-xref)
+  ([mouse-1] 'dime-goto-xref)
   ("v" 'dime-show-xref)
   ("n" (lambda () (forward-line 1)))
   ("p" (lambda () (forward-line -1)))
@@ -4399,8 +4400,11 @@ source-location."
         (dime-insert-propertized '(face bold) group "\n")
         (loop for (label location) in refs do
               (dime-insert-propertized
-               (list 'dime-location location 'face 'font-lock-keyword-face)
-               "  " (dime-one-line-ify label) "\n")))
+               (list 'dime-location location
+                     'face 'font-lock-keyword-face
+                     'mouse-face 'highlight)
+               "  " (dime-one-line-ify label))
+              (dime-insert-propertized '() "\n")))
   ;; Remove the final newline to prevent accidental window-scrolling
   (backward-delete-char 1))
 
