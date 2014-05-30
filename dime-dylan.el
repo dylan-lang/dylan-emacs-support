@@ -13,14 +13,14 @@ more than one space."
 
 (defun dime-dylan-show-arglist ()
   (let ((op (dime-dylan-operator-before-point)))
-    (when op 
+    (when op
       (dime-eval-async `(swank:operator-arglist ,op ,(dime-current-project))
                        (lambda (arglist)
                          (when arglist
                            (dime-message "%s" arglist)))))))
 
 (defun dime-dylan-operator-before-point ()
-  (ignore-errors 
+  (ignore-errors
     (save-excursion
       (backward-up-list 1)
       (backward-sexp 1)
@@ -61,21 +61,21 @@ more than one space."
 (defun dime-dylan-browse-subclasses (name)
   "Read the name of a class and show its subclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
-  (dime-call-with-browser-setup 
+  (dime-call-with-browser-setup
    "*dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
    (lambda ()
-     (widget-create 'tree-widget :tag name 
-                    :expander 'dime-expand-subclass-node 
+     (widget-create 'tree-widget :tag name
+                    :expander 'dime-expand-subclass-node
                     :has-echildren t))))
 
 (defun dime-dylan-browse-superclasses (name)
   "Read the name of a class and show its superclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
-  (dime-call-with-browser-setup 
+  (dime-call-with-browser-setup
    "*dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
    (lambda ()
-     (widget-create 'tree-widget :tag name 
-                    :expander 'dime-expand-superclass-node 
+     (widget-create 'tree-widget :tag name
+                    :expander 'dime-expand-superclass-node
                     :has-echildren t))))
 
 (defvar dime-browser-map nil
