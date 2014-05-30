@@ -1100,8 +1100,9 @@ DIRECTORY change to this directory before starting the process.
       (dime-urge-bytecode-recompile))
     (let ((proc (dime-maybe-start-dylan program program-args env
                                         directory buffer)))
-      (dime-inferior-connect proc args)
-      (pop-to-buffer (process-buffer proc)))))
+      (when (processp proc)
+        (dime-inferior-connect proc args)
+        (pop-to-buffer (process-buffer proc))))))
 
 (defun dime-start* (options)
   (apply #'dime-start options))
@@ -1214,15 +1215,17 @@ Return the created process."
   (with-current-buffer (get-buffer-create buffer)
     (when directory
       (cd (expand-file-name directory)))
-    (comint-mode)
-    (let ((process-environment (append env process-environment))
-          (process-connection-type nil))
-      (comint-exec (current-buffer) "inferior-dylan" program nil program-args))
-    (lisp-mode-variables t)
-    (let ((proc (get-buffer-process (current-buffer))))
-      (dime-set-query-on-exit-flag proc)
-      (run-hooks 'dime-inferior-process-start-hook)
-      proc)))
+    (if (not (file-exists-p program))
+        (message "please specify either 'inferior-dylan-program' or 'dime-dylan-implementations' in your .emacs!")
+      (comint-mode)
+      (let ((process-environment (append env process-environment))
+            (process-connection-type nil))
+        (comint-exec (current-buffer) "inferior-dylan" program nil program-args))
+      (lisp-mode-variables t)
+      (let ((proc (get-buffer-process (current-buffer))))
+        (dime-set-query-on-exit-flag proc)
+        (run-hooks 'dime-inferior-process-start-hook)
+        proc))))
 
 (defun dime-inferior-connect (process args)
   "Start a Swank server in the inferior Dylan and connect."
@@ -2326,10 +2329,11 @@ Also rearrange windows."
                                      (plist-get args :env)
                                      nil
                                      buffer)))
-    (dime-net-close process)
-    (dime-inferior-connect new-proc args)
-    (switch-to-buffer buffer)
-    (goto-char (point-max))))
+    (when (processp new-proc)
+      (dime-net-close process)
+      (dime-inferior-connect new-proc args)
+      (switch-to-buffer buffer)
+      (goto-char (point-max)))))
 
 ;; FIXME: move to dime-repl
 (defun dime-kill-all-buffers ()
