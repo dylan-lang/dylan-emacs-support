@@ -75,6 +75,7 @@
 
 (require 'dime-compat)
 (require 'dylan-mode)
+(require 'dylanlid-mode)
 (require 'dylan-optimization-coloring)
 
 (defvar dime-buffer-project nil)
