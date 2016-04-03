@@ -1040,9 +1040,9 @@ context (e.g. \"end method foo;\"). Makes educated guesses about whether
 newlines and closing punctuation are needed."
   (interactive)
   (let* ((here (point))
-	 (terminator)
-	 (need-newline)
-	 (str
+         (terminator)
+         (need-newline)
+         (str
           (save-excursion
             (if (not (dylan-find-keyword))
                 (error "No nesting block"))
@@ -1080,7 +1080,7 @@ newlines and closing punctuation are needed."
         (end-of-line)
         (newline)))
     (let* ((start (point))
-	   (end (progn (insert str) (point))))
+           (end (progn (insert str) (point))))
       (goto-char start)
       (while (re-search-forward "[ \t\n]+" end t)
 	(replace-match " "))
