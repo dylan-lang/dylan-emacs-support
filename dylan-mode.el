@@ -1065,8 +1065,8 @@ newlines and closing punctuation are needed."
                   ((looking-at "\\[") "]")
                   ((looking-at "(") ")")
                   ((looking-at "{") "}")
-                  ((or (looking-at "\\(method\\|function\\|class\\|C-subtype\\|C-mapped-subtype\\)\\([ \t]+\\w+\\)?")
-                       (looking-at "\\(library\\|module\\)[ \t]+\\w+")
+                  ((or (looking-at "\\(method\\|function\\|class\\|C-subtype\\|C-mapped-subtype\\)\\([ \t]+\\(\\s_\\|\\w\\)+\\)?")
+                       (looking-at "\\(library\\|module\\)[ \t]+\\(\\s_\\|\\w\\)+")
                        (looking-at "\\w+"))
                    (concat " end "
                            (buffer-substring (match-beginning 0)
