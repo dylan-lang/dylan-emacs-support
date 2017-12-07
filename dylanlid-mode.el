@@ -161,6 +161,11 @@ fontifying Dylan LID files in Dylan LID Mode.")
           (beginning-of-line)
           (re-search-forward "\\s-*" nil t))))))
 
+(defun dylanlid-make-lid-files-clickable ()
+  "Apply modifications only to .lid files and avoid marking the file as changed."
+    (if (derived-mode-p 'dylanlid-mode)
+        (with-silent-modifications
+          (dylanlid-make-files-clickable))))
 
 ;;; dylanlid-mode:
 
@@ -190,7 +195,7 @@ during initialization."
                 (font-lock-fontify-region-function
                  . dylanlid-font-lock-fontify-region)))
 
-  (run-with-idle-timer 1 t 'dylanlid-make-files-clickable))
+  (run-with-idle-timer 1 t 'dylanlid-make-lid-files-clickable))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.lid\\'" . dylanlid-mode))
