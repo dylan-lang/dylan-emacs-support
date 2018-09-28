@@ -147,18 +147,19 @@ fontifying Dylan LID files in Dylan LID Mode.")
                                   '(keymap mouse-face help-echo))
   (save-excursion
     (goto-char (point-min))
-    (when (re-search-forward "^Files:\\s-*" nil t)
-      (lexical-let ((bound nil))
-        (save-excursion
-          (when (re-search-forward "^[a-zA-Z0-9\\-]+\\s-*:" nil t)
-            (setq bound (match-beginning 0))))
-        (while (re-search-forward "[a-zA-Z0-9\\/\\.\\-]+" bound t)
-          (let ((beg (match-beginning 0))
-                (end (match-end 0))
-                (src-dir (file-name-directory (buffer-file-name))))
-            (dylanlid-make-file-link beg end src-dir))
-          (forward-line)
-          (re-search-forward "\\s-*" nil t))))))
+    (save-match-data
+      (when (re-search-forward "^Files:\\s-*" nil t)
+	(lexical-let ((bound nil))
+          (save-excursion
+            (when (re-search-forward "^[a-zA-Z0-9\\-]+\\s-*:" nil t)
+              (setq bound (match-beginning 0))))
+          (while (re-search-forward "[a-zA-Z0-9\\/\\.\\-]+" bound t)
+            (let ((beg (match-beginning 0))
+                  (end (match-end 0))
+                  (src-dir (file-name-directory (buffer-file-name))))
+              (dylanlid-make-file-link beg end src-dir))
+            (forward-line)
+            (re-search-forward "\\s-*" nil t)))))))
 
 (defun dylanlid-make-lid-files-clickable ()
   "Apply modifications only to .lid files and avoid marking the file as changed."
