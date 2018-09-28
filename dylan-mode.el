@@ -273,9 +273,12 @@ This is designed to be called from your `dylan-mode-hook'."
   (if (fboundp 'font-lock-mode)
       (setq font-lock-keywords dylan-font-lock-keywords)))
 
+;; Why are these considered unnamed? -cgay
 (defvar dyl-unnamed-definition-words
   '(;; Melange/C-FFI
-    "interface")
+    "interface"
+    ;; Testworks
+    "suite" "test")
   "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dyl-named-definition-words
