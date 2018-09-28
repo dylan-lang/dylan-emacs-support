@@ -166,6 +166,9 @@ fontifying Dylan LID files in Dylan LID Mode.")
     (if (derived-mode-p 'dylanlid-mode)
         (with-silent-modifications
           (dylanlid-make-files-clickable))))
+
+(defvar dylanlid-timer-id nil "ID of the one-and-only timer")
+
 
 ;;; dylanlid-mode:
 
@@ -194,8 +197,8 @@ during initialization."
                 nil t nil nil
                 (font-lock-fontify-region-function
                  . dylanlid-font-lock-fontify-region)))
-
-  (run-with-idle-timer 1 t 'dylanlid-make-lid-files-clickable))
+  (unless dylanlid-timer-id
+    (setq dylanlid-timer-id (run-with-idle-timer 1 t 'dylanlid-make-lid-files-clickable))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.lid\\'" . dylanlid-mode))
