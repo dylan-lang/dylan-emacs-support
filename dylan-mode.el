@@ -600,7 +600,10 @@ success and nil otherwise."
 				   dylan-beginning-of-form-pattern
 				 dylan-find-keyword-pattern) header-end t)
 	   (cond (;; Skip backwards over eol comments.
-		  (dylan-look-back dylan-comment-pattern)
+		  (and (dylan-look-back dylan-comment-pattern)
+		       (not (save-excursion
+			      (dylan-look-back
+			       (concat "\"[^\"]*" dylan-comment-pattern)))))
 		  (goto-char (match-beginning 0))
 		  'not-found)
 		 ;; If point is inside a block comment, keep searching. Since
