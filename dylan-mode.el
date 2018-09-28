@@ -115,7 +115,9 @@ whitespace prefix."
 
 (defvar dylan-unnamed-definition-words
   '(;; Melange/C-FFI
-    "interface")
+    "interface"
+    ;; Testworks
+    "suite" "test")
   "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dylan-named-definition-words
