@@ -1,4 +1,4 @@
-;;; dylan-mode.el --- Major mode for editing Dylan programs.
+;;; dylan-mode.el --- Major mode for the Dylan programming language.
 
 ;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
 ;; Copyright (C) 2004, 2005, 2007  Chris Page
@@ -115,6 +115,8 @@ whitespace prefix."
   '(;; Melange/C-FFI
     "interface"
     ;; Testworks
+    ;; TODO(cgay): these probably don't belong here but adding them here "worked".
+    ;; They should more naturally be in dylan-other-parameterized-definition-words.
     "suite" "test")
   "Words that introduce unnamed definitions like \"define interface\".")
 
@@ -131,6 +133,8 @@ whitespace prefix."
     "class"
     ;; C-FFI
     "C-subtype" "C-mapped-subtype")
+  ;; TODO(cgay): It seems like a lie that these are parameterized "like 'define method'".
+  ;; The superclass is a type spec only, without a variable name.
   "Words that introduce type definitions like \"define class\". These are
 also parameterized like \"define method\" and are appended to
 `dylan-other-parameterized-definition-words'.")
@@ -141,7 +145,7 @@ also parameterized like \"define method\" and are appended to
     ;; C-FFI
     "C-variable" "C-address")
   "Words that introduce trickier definitions like \"define method\". These
-require special definitions to be added to `dylan-start-expressions'.")
+require special definitions to be added to `dylan-body-start-expressions'.")
 
 (defvar dylan-constant-simple-definition-words
   '(;; Dylan
@@ -178,7 +182,7 @@ simple definitions and are appended to `dylan-other-simple-definition-words'.")
   (concat "\\|\\_<" dylan-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
 
 (defvar dylan-separator-words
-  '("finally" "exception" "cleanup" "else" "elseif" "afterwards")
+  '("afterwards" "cleanup" "exception" "else" "elseif" "finally")
   "These are the patterns that act as separators in compound statements. This
 may include any general pattern that must be indented specially.")
 
@@ -190,7 +194,7 @@ may include any general pattern that must be indented specially.")
     ;; Extensions
     "keyed-by" "virtual")
   "Keywords that do not require special indentation handling, but which
-should be highlighted by font-lock.")
+should be highlighted.")
 
 (defvar dylan-comment-pattern "//.*$"
   "Internal pattern for finding comments in Dylan code. Currently only
@@ -205,8 +209,8 @@ Makes sure that it doesn't match partial words."
       (setq list (cdr list)))
     str))
 
-(defvar dylan-start-expressions '()
-  "Patterns that match that portion of a compound statement that
+(defvar dylan-body-start-expressions '()
+  "Patterns that match the portion of a compound statement that
 precedes the body. This is used to determine where the first
 statement begins for indentation purposes.
 
@@ -376,7 +380,7 @@ Dylan Mode, for Font Lock decoration level 2.")
 (defvar dylan-beginning-of-form-pattern nil)
 
 (defun dylan-mode-init-keyword-patterns ()
-  "Construct Dylan Mode keyword patterns (used for indenting and font-lock),
+  "Construct Dylan Mode keyword patterns (used for indenting and highlighting),
 using the values of the various keyword list variables."
   ;; Define regular expression patterns using the word lists.
   (setq dylan-keyword-pattern
@@ -402,7 +406,7 @@ using the values of the various keyword list variables."
 	       (concat "define\\([ \t\n]+\\w+\\)*[ \t\n]+"
 		       dylan-simple-definition-pattern)
 	       dylan-other-words))
-  (setq dylan-start-expressions
+  (setq dylan-body-start-expressions
 	;; cpage 2007-04-06: Why are these listed here? Shouldn't we build these
 	;; patterns from dylan-statement-words?
 	`(("if[ \t\n]*" "")
@@ -810,7 +814,7 @@ end of enclosing \"/*\" comment. Deals properly with nested
 		  (dylan-aux-find-body-start (cdr clauses))))))))
 
 (defun dylan-find-body-start (exprs)
-  "When passed `dylan-start-expressions', processes it to find the
+  "When passed `dylan-body-start-expressions', processes it to find the
 beginning of the first statement in the compound statement that
 starts at the current point."
   (cond ((null exprs) (point-max))
@@ -863,7 +867,7 @@ more."
               (t
                ;; check whether we were already at the first "form" in an
                ;; enclosing block
-               (let ((first (dylan-find-body-start dylan-start-expressions)))
+               (let ((first (dylan-find-body-start dylan-body-start-expressions)))
                  (if (< first dot)
                      (goto-char first)
                    (if (dylan-look-back "\\(define\\|local\\)[ \t]+") ; hack
@@ -974,7 +978,7 @@ at the current point."
                            (setq paren-indent (- (point) dot 1)))))
                   (and (looking-at "select\\|case") (setq in-case t))
                   (setq body-start (dylan-find-body-start
-                                    dylan-start-expressions))
+                                    dylan-body-start-expressions))
                   (current-column))))
              (indent		; correct indentation for this line
               (cond ((not block-indent)
@@ -1190,20 +1194,21 @@ treat code in the file body as the interior of a string."
 
 (defvar dylan-mode-syntax-table
   (let ((table (make-syntax-table prog-mode-syntax-table)))
-    (modify-syntax-entry ?_ "_" table)
-    (modify-syntax-entry ?- "_" table)
-    (modify-syntax-entry ?< "_" table)
-    (modify-syntax-entry ?> "_" table)
-    (modify-syntax-entry ?? "_" table)
-    (modify-syntax-entry ?! "_" table)
-    (modify-syntax-entry ?= "_" table)
-    (modify-syntax-entry ?: "_" table)
-    (modify-syntax-entry ?' "\"" table)
-    (modify-syntax-entry ?\f " " table)
-    (modify-syntax-entry ?# "'" table)
-    (modify-syntax-entry ?\n "> b" table)
-    (modify-syntax-entry ?/ "_ 124b" table)
-    (modify-syntax-entry ?\* "_ 23n" table)
+    (modify-syntax-entry ?_ "_" table)  ; symbol constituent
+    (modify-syntax-entry ?- "_" table)  ; symbol constituent
+    (modify-syntax-entry ?< "_" table)  ; symbol constituent
+    (modify-syntax-entry ?> "_" table)  ; symbol constituent
+    (modify-syntax-entry ?? "_" table)  ; symbol constituent
+    (modify-syntax-entry ?! "_" table)  ; symbol constituent
+    (modify-syntax-entry ?= "_" table)  ; symbol constituent
+    (modify-syntax-entry ?: "_" table)  ; symbol constituent
+    (modify-syntax-entry ?' "\"" table) ; string quote
+    (modify-syntax-entry ?\f " " table) ; whitespace
+    (modify-syntax-entry ?# "'" table)  ; expression quote or prefix operator
+    ;; Doc is not clear on what a, b, and c mean. Anyone understand it? --cgay May 2019
+    (modify-syntax-entry ?\n "> b" table) ; comment ender
+    (modify-syntax-entry ?/ "_ 124b" table) ; symbol constituent, comment 1 start, comment 2 start, comment 2 end
+    (modify-syntax-entry ?\* "_ 23n" table) ; symbol constituent, comment 2 start, comment 1 end, nestable
     table))
 
 ;;;###autoload
