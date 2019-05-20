@@ -27,29 +27,27 @@
 ;;; Commentary:
 
 ;; Dylan mode is a major mode for editing Dylan programs. It provides
-;; indenting and font-lock support.
+;; indenting and syntax highlighting support.
 ;;
-;; This code requires Emacs 24.
+;; This code requires Emacs 24 or newer.
 
 
-;;; Code:
-
-(defconst dylan-version "1.22"
+(defconst dylan-mode-version "2.0"
   "Dylan Mode version number.")
 
-(defun dylan-version ()
-  "Return string describing the version of Dylan mode.
+(defun dylan-mode-version ()
+  "Returns a string describing the version of Dylan mode.
 When called interactively, displays the version."
   (interactive)
   (if (called-interactively-p 'interactive)
-      (message (dylan-version))
-    (format "Dylan Mode version %s" dylan-version)))
+      (message "dylan-mode version %s" dylan-mode-version)
+    dylan-mode-version))
 
 
 ;;; Customization:
 
 (defgroup dylan nil
-  "Major mode for editing Dylan source."
+  "Major mode for editing Dylan source code."
   :group 'languages)
 
 (defcustom dylan-indent 2
@@ -1212,14 +1210,11 @@ treat code in the file body as the interior of a string."
 (define-derived-mode dylan-mode prog-mode "Dylan"
   "Major mode for editing Dylan programs.
 
-May be customized with the options in the `dylan' customization
-group.
+This mode may be customized with the options in the `dylan'
+customization group.
 
-Indentation is controlled by the `dylan-indent' customizable
-variable. The default is two spaces.
-
-To see the current version of Dylan Mode, enter
-`\\[dylan-version]'.
+Indentation width is controlled by the `dylan-indent'
+customizable variable. The default is two spaces.
 
 This mode runs the hook `dylan-mode-hook', as the final step
 during initialization.
