@@ -1094,6 +1094,7 @@ newlines and closing punctuation are needed."
       (goto-char end)
       (dylan-indent-line))))
 
+;;; TODO(cgay): why are "module:" and "interface " in this? Document it.
 (defvar dylan-defun-regexp "^ *\\(define \\|module:\\|interface \\)"
   "Regular expression identifying the beginning of a definition.")
 
@@ -1103,7 +1104,7 @@ newlines and closing punctuation are needed."
   (let ((header-end (dylan-header-end)))
     (dotimes (i (or arg 1))
       (unless (< (point) header-end)
-        (when (re-search-backward dylan-defun-regexp header-end t (or arg 1))
+        (when (re-search-backward dylan-defun-regexp header-end t 1)
           (beginning-of-line))))))
 
 (defun dylan-end-of-defun (&optional arg)
