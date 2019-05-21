@@ -31,6 +31,12 @@
 ;;
 ;; This code requires Emacs 24 or newer.
 
+;; TODO(cgay):
+;; * don't highlight macro variables (e.g., "?x:" in ?x:name) as keywords.
+;;   Just highlight the "x" as a variable binding.
+;; * Provide an option to highlight adjectives (e.g., primary, open)
+;;   differently.
+
 
 (defconst dylan-mode-version "2.0"
   "Dylan Mode version number.")
@@ -456,6 +462,21 @@ using the values of the various keyword list variables."
   ;; for testing. Think about how to best differentiate between 0 and 1 by
   ;; moving some keyword patterns from 1 to 0, or by moving 2 to 3 and moving
   ;; some from 1 to 2.
+
+  ;; TODO(cgay): For me personally, I don't want most Dylan reserved words,
+  ;; like "define", "method", "macro", to be highlighted specially. Those are
+  ;; the necessary background noise of the language and don't need calling out.
+  ;; I like
+  ;;   * Newly introduced bindings
+  ;;     - let bindings
+  ;;     - define function|method|class|etc names
+  ;;     - parameter names, maybe
+  ;;     - macro variable bindings, "x" in ?x:name
+  ;;   * return, signal, and error
+  ;;   * keyword symbols (foo: but not #"foo")
+  ;;   * strings, maybe
+  ;;   * comments
+  ;; Maybe that could be level 0.
   (setq dylan-font-lock-keywords nil)
 
   ;; Decoration level 1: Most Dylan keywords
@@ -941,6 +962,98 @@ at the current point."
                (- (match-end 0) (match-beginning 0)))
               (t dylan-continuation-indent))))))
 
+(defun dylan-indent-header-line ()
+  "Indent a line in the file header."
+  ;; TODO(cgay): Tab at the beginning of a non-keyword line in the file header
+  ;; section should indent, probably like this:
+  ;;     Synopsis: blah blah
+  ;;               blah blah
+  (when (called-interactively-p 'interactive) ; TODO: this is strongly discouraged
+    (when (<= (current-column) (current-indentation))
+      (back-to-indentation))
+    (insert-char ?\  dylan-indent)))
+
+(defun dylan-indent-code-line ()
+  "Indent a code line (i.e. not a header line)."
+  (save-excursion
+    ;; Move point to the end of the current indentation. This allows us to
+    ;; use looking-at to examine the start of the current line of code
+    ;; without having to put whitespace at the start of all the patterns.
+    (back-to-indentation)
+    (let* ((body-start)  ; Beginning of "body" of enclosing compound statement.
+           (in-paren)    ; t if in parenthesized expression.
+           (paren-indent 0)  ; Indentation of first non-space after open paren.
+           (in-case)         ; t if in "case" or "select" statement.
+           (block-indent     ; Indentation of enclosing compound statement.
+            (save-excursion
+              (if (not (dylan-find-keyword))
+                  nil
+                (and (looking-at "method")
+                     (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
+                     (goto-char (match-beginning 0)))
+                (and (looking-at "[[({]")
+                     (setq in-paren t)
+                     (save-excursion
+                       (let ((dot (point)))
+                         (forward-char)
+                         (re-search-forward "[^ \t]")
+                         (setq paren-indent (- (point) dot 1)))))
+                (and (looking-at "select\\|case") (setq in-case t))
+                (setq body-start (dylan-find-body-start
+                                  dylan-body-start-expressions))
+                (current-column))))
+           (indent                      ; correct indentation for this line
+            (cond ((not block-indent)
+                   (dylan-indent-if-continuation ";" (point) 0))
+                  ;; some keywords line up with start of comp. stmt
+                  ((looking-at dylan-separator-word-pattern) block-indent)
+                  ;; end keywords line up with start of comp. stmt
+                  ((looking-at dylan-end-keyword-pattern) block-indent)
+                  ;; parenthesized expressions (separated by commas)
+                  (in-case
+                   ;; if the line is blank, we pick an arbitrary
+                   ;; indentation for now. We judge the "proper"
+                   ;; indentation by how the statement is punctuated once
+                   ;; it is finished
+                   (cond ((looking-at "^$")
+                          (if (save-excursion
+                                ;; Look for end of prev statement. This
+                                ;; is hairier than it should be because
+                                ;; we may be at the end of the buffer
+                                (let ((dot (point)))
+                                  (dylan-forward-statement t)
+                                  (dylan-skip-whitespace-backward)
+                                  (if (> (point) dot)
+                                      (dylan-backward-statement t))
+                                  (dylan-look-back ";$\\|=>$")))
+                              (+ block-indent dylan-indent dylan-indent
+                                 (dylan-indent-if-continuation
+                                  "," (point) body-start t))
+                            (+ block-indent dylan-indent
+                               (dylan-indent-if-continuation
+                                "," (point) body-start t))))
+                         ((save-excursion
+                            (dylan-forward-statement t)
+                            (dylan-look-back ",$\\|=>$"))
+                          (+ block-indent dylan-indent
+                             (dylan-indent-if-continuation "," (point)
+                                                           body-start t)))
+                         (t (+ block-indent dylan-indent dylan-indent
+                               (dylan-indent-if-continuation
+                                "," (point) body-start t)))))
+                  (in-paren (+ block-indent paren-indent
+                               (dylan-indent-if-continuation "," (point)
+                                                             body-start)))
+                  ;; statements (separated by semi-colons)
+                  (t (+ block-indent dylan-indent
+                        (dylan-indent-if-continuation ";" (point)
+                                                      body-start))))))
+      (unless (= indent (current-indentation))
+        (save-excursion
+          (beginning-of-line)
+          (delete-horizontal-space)
+          (indent-to-column indent))))))
+
 (defun dylan-indent-line ()
   "Indents a line of dylan code according to its nesting."
   (interactive)
@@ -949,92 +1062,12 @@ at the current point."
   ;; they please. If we're indenting a region (i.e., if this function wasn't
   ;; called interactively), leave the header indenting as-is.
   (if (< (point) (dylan-header-end))
-      (when (called-interactively-p 'interactive)
-        (when (<= (current-column) (current-indentation))
-          (back-to-indentation))
-        (insert-char ?\  dylan-indent))
-    (save-excursion
-      ;; Move point to the end of the current indentation. This allows us to
-      ;; use looking-at to examine the start of the current line of code
-      ;; without having to put whitespace at the start of all the patterns.
-      (back-to-indentation)
-      (let* ((body-start)     ; Beginning of "body" of enclosing compound statement.
-             (in-paren)       ; t if in parenthesized expression.
-             (paren-indent 0) ; Indentation of first non-space after open paren.
-             (in-case)        ; t if in "case" or "select" statement.
-             (block-indent    ; Indentation of enclosing compound statement.
-              (save-excursion
-                (if (not (dylan-find-keyword))
-                    nil
-                  (and (looking-at "method")
-                       (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
-                       (goto-char (match-beginning 0)))
-                  (and (looking-at "[[({]")
-                       (setq in-paren t)
-                       (save-excursion
-                         (let ((dot (point)))
-                           (forward-char)
-                           (re-search-forward "[^ \t]")
-                           (setq paren-indent (- (point) dot 1)))))
-                  (and (looking-at "select\\|case") (setq in-case t))
-                  (setq body-start (dylan-find-body-start
-                                    dylan-body-start-expressions))
-                  (current-column))))
-             (indent		; correct indentation for this line
-              (cond ((not block-indent)
-                     (dylan-indent-if-continuation ";" (point) 0))
-                    ;; some keywords line up with start of comp. stmt
-                    ((looking-at dylan-separator-word-pattern) block-indent)
-                    ;; end keywords line up with start of comp. stmt
-                    ((looking-at dylan-end-keyword-pattern) block-indent)
-                    ;; parenthesized expressions (separated by commas)
-                    (in-case
-                     ;; if the line is blank, we pick an arbitrary
-                     ;; indentation for now. We judge the "proper"
-                     ;; indentation by how the statement is punctuated once
-                     ;; it is finished
-                     (cond ((looking-at "^$")
-                            (if (save-excursion
-                                  ;; Look for end of prev statement. This
-                                  ;; is hairier than it should be because
-                                  ;; we may be at the end of the buffer
-                                  (let ((dot (point)))
-                                    (dylan-forward-statement t)
-                                    (dylan-skip-whitespace-backward)
-                                    (if (> (point) dot)
-                                        (dylan-backward-statement t))
-                                    (dylan-look-back ";$\\|=>$")))
-                                (+ block-indent dylan-indent dylan-indent
-                                   (dylan-indent-if-continuation
-                                    "," (point) body-start t))
-                              (+ block-indent dylan-indent
-                                 (dylan-indent-if-continuation
-                                  "," (point) body-start t))))
-                           ((save-excursion
-                              (dylan-forward-statement t)
-                              (dylan-look-back ",$\\|=>$"))
-                            (+ block-indent dylan-indent
-                               (dylan-indent-if-continuation "," (point)
-                                                             body-start t)))
-                           (t (+ block-indent dylan-indent dylan-indent
-                                 (dylan-indent-if-continuation
-                                  "," (point) body-start t)))))
-                    (in-paren (+ block-indent paren-indent
-                                 (dylan-indent-if-continuation "," (point)
-                                                               body-start)))
-                    ;; statements (separated by semi-colons)
-                    (t (+ block-indent dylan-indent
-                          (dylan-indent-if-continuation ";" (point)
-                                                        body-start))))))
-        (unless (= indent (current-indentation))
-          (save-excursion
-            (beginning-of-line)
-            (delete-horizontal-space)
-            (indent-to-column indent))))))
-  ;; put the cursor where the user is likely to want it.
-  (let ((col (current-indentation)))
-    (when (< (current-column) col)
-      (move-to-column col))))
+      (dylan-indent-header-line)
+    (dylan-indent-code-line))
+
+  ;; Move forward to this line's indentation level if cursor is to the left of it.
+  (when (< (current-column) (current-indentation))
+    (back-to-indentation)))
 
 
 ;;; Motion:
@@ -1112,7 +1145,7 @@ newlines and closing punctuation are needed."
   (interactive "p")
   (dotimes (i (or arg 1))
     (let ((dot (point)))
-      (dylan-skip-whitespace-forward)
+      (dylan-skip-whitespace-forward)   ; why?
       (end-of-line)
       (let ((next-begin (or (re-search-forward dylan-defun-regexp nil 'move 1)
                             (point-max))))
@@ -1214,6 +1247,8 @@ treat code in the file body as the interior of a string."
 
 ;;;###autoload
 (define-derived-mode dylan-mode prog-mode "Dylan"
+  ;; TODO(cgay): document how to make indentation work correctly by adding your
+  ;; macro names to the appropriate variables.
   "Major mode for editing Dylan programs.
 
 This mode may be customized with the options in the `dylan'
@@ -1247,7 +1282,10 @@ during initialization.
               `((dylan-font-lock-keywords
                  dylan-font-lock-keywords-1
                  dylan-font-lock-keywords-2)
-                nil t nil nil
+                nil                     ; keywords only?
+                t                       ; case fold?
+                nil                     ; syntax alist
+                nil
                 (font-lock-fontify-region-function
                  . dylan-font-lock-fontify-region)))
   (setq dylan-buffer-library (dylan-find-buffer-library "." 0))
@@ -1258,5 +1296,3 @@ during initialization.
 
 
 (provide 'dylan-mode)
-
-;;; dylan-mode.el ends here
