@@ -34,9 +34,6 @@
 ;; TODO(cgay):
 ;; * don't highlight macro variables (e.g., "?x:" in ?x:name) as keywords.
 ;;   Just highlight the "x" as a variable binding.
-;; * Provide an option to highlight adjectives (e.g., primary, open)
-;;   differently.
-
 
 (defconst dylan-mode-version "2.0"
   "Dylan Mode version number.")
@@ -61,8 +58,9 @@ When called interactively, displays the version."
   :type  'integer
   :group 'dylan)
 
+;;; TODO(cgay): this needs much better documentation. What does it *really* mean?
 (defcustom dylan-continuation-indent 2
-  "*Number of spaces to indent each continued line."
+  "*Number of additional spaces to indent each continued line."
   :type  'integer
   :group 'dylan)
 
@@ -237,17 +235,17 @@ parens will be matched between each list element.")
   `(
     ;; The "module:" header line. Highlight the module name.
     (,(concat "^"
-	      "module:"			; keyword
-	      "[ \t]*"			; space
-	      "\\(\\("
-	      "[-_a-zA-Z0-9?!*@<>$%]+"	; module name...
-	      "\\)\\|"
-	      "[^ \t\n][^\n]*?"		; ...or invalid value
-	      "\\)"
-	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+              "module:"                 ; keyword
+              "[ \t]*"                  ; space
+              "\\(\\("
+              "[-_a-zA-Z0-9?!*@<>$%]+"  ; module name...
+              "\\)\\|"
+              "[^ \t\n][^\n]*?"         ; ...or invalid value
+              "\\)"
+              "[ \t]*\\(\n\\|\\'\\)")   ; tail space
      (1 (if (match-beginning 2)
-	    'dylan-header-module-name
-	  'dylan-header-error)))
+            'dylan-header-module-name
+          'dylan-header-error)))
 
     ;; The "language:" header line. Highlight the language name. This is a bit
     ;; of pedantry on my part -- this header is rarely used, except perhaps in
@@ -256,31 +254,31 @@ parens will be matched between each list element.")
     ;; be more generic). "infix-dylan" is the only portable value, so let's warn
     ;; about other values.
     (,(concat "^"
-	      "language:"		; keyword
-	      "[ \t]*"			; space
-	      "\\(\\("
-	      "infix-dylan"		; language name...
-	      "\\)\\|"
-	      "[^ \t\n][^\n]*?"		; ...or invalid value
-	      "\\)"
-	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+              "language:"               ; keyword
+              "[ \t]*"                  ; space
+              "\\(\\("
+              "infix-dylan"             ; language name...
+              "\\)\\|"
+              "[^ \t\n][^\n]*?"         ; ...or invalid value
+              "\\)"
+              "[ \t]*\\(\n\\|\\'\\)")   ; tail space
      (1 (if (match-beginning 2)
-	    'dylan-header-module-name
-	  'dylan-header-error)))
+            'dylan-header-module-name
+          'dylan-header-error)))
 
     ;; Header lines with keywords, and lines with value continuations.
     (,(concat "^"
-	      "\\(?:\\("
-	      "[a-zA-Z][-a-zA-Z0-9]*:"	; keyword...
-	      "\\)\\|"
-	      "[ \t]"			; ...or continuation prefix
-	      "\\)"
-	      "[ \t]*"			; space
-	      "\\("
-	      ;; Can keyword lines have empty values?
-	      "[^ \t\n][^\n]*?"		; value
-	      "\\)"
-	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+              "\\(?:\\("
+              "[a-zA-Z][-a-zA-Z0-9]*:"  ; keyword...
+              "\\)\\|"
+              "[ \t]"                   ; ...or continuation prefix
+              "\\)"
+              "[ \t]*"                  ; space
+              "\\("
+              ;; Can keyword lines have empty values?
+              "[^ \t\n][^\n]*?"         ; value
+              "\\)"
+              "[ \t]*\\(\n\\|\\'\\)")   ; tail space
      (1 'dylan-header-keyword nil t)
      (2 'dylan-header-value))
 
@@ -290,21 +288,21 @@ parens will be matched between each list element.")
     ;; Note: Ideally, we'd mark any subsequent continuation lines invalid,
     ;; too. Look into a way to do that.
     (,(concat "^"
-	      "[^ \t\n]"		; any invalid prefix character
-	      "[^\n]*\n")		; rest of line
+              "[^ \t\n]"                ; any invalid prefix character
+              "[^\n]*\n")               ; rest of line
      . 'dylan-header-error)
 
     ;; Mark all lines in the header with the header background face (except for
     ;; the final, blank line).
     (,(concat "^"
-	      "[ \t]*"			; possible continuation prefix
-	      "[^ \t\n]+"		; any non-whitespace in line
-	      "[^\n]*\n")		; rest of line
+              "[ \t]*"                  ; possible continuation prefix
+              "[^ \t\n]+"               ; any non-whitespace in line
+              "[^\n]*\n")               ; rest of line
      (0 'dylan-header-background append))
 
     ;; Mark the final, blank line with the header separator face.
     (,(concat "^"
-	      "[ \t]*\n")		; tail space
+              "[ \t]*\n")               ; tail space
      . 'dylan-header-separator))
  "Value to which `font-lock-keywords' should be set when
 fontifying Dylan interchange file headers in Dylan Mode.")
@@ -319,10 +317,10 @@ Dylan Mode, for Font Lock decoration level 1.")
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 2.")
 
-;; Regexp pattern that matches `define' and adjectives. A sub-pattern designed
-;; to be followed by patterns that match the define word or other parts of the
-;; definition macro call.
-(defconst dylan-define-pattern "define\\([ \t]+\\w+\\)*[ \t]+")
+(defconst dylan-define-pattern "define\\([ \t]+\\w+\\)*[ \t]+"
+  "Pattern that matches `define' and adjectives. A sub-pattern
+designed to be followed by patterns that match the define word or
+other parts of the definition macro call.")
 
 (defvar dylan-other-definition-words
   (append dylan-unnamed-definition-words
@@ -390,65 +388,66 @@ Dylan Mode, for Font Lock decoration level 2.")
 using the values of the various keyword list variables."
   ;; Define regular expression patterns using the word lists.
   (setq dylan-keyword-pattern
-	;; We disallow newlines in "define foo" patterns because it allows the
-	;; actual keyword to be confused for a qualifier if another definition
-	;; follows closely.
-	(concat
-	 (apply 'dylan-make-pattern
-		(concat dylan-define-pattern dylan-definition-pattern)
-		dylan-statement-words)
-	 dylan-statement-prefixes))
+        ;; We disallow newlines in "define foo" patterns because it allows the
+        ;; actual keyword to be confused for a qualifier if another definition
+        ;; follows closely.
+        (concat
+         (apply 'dylan-make-pattern
+                (concat dylan-define-pattern dylan-definition-pattern)
+                dylan-statement-words)
+         dylan-statement-prefixes))
   (setq dylan-end-keyword-pattern
-	;; We intentionally disallow newlines in "end foo" constructs, because
-	;; doing so makes it very difficult to deal with the keyword "end" in
-	;; comments.
-	(concat "\\_<end\\_>[ \t]*\\("
-		(apply 'dylan-make-pattern
-		       (append dylan-definition-words dylan-statement-words))
-		dylan-statement-prefixes
-		"\\)?"))
+        ;; We intentionally disallow newlines in "end foo" constructs, because
+        ;; doing so makes it very difficult to deal with the keyword "end" in
+        ;; comments.
+        (concat "\\_<end\\_>[ \t]*\\("
+                (apply 'dylan-make-pattern
+                       (append dylan-definition-words dylan-statement-words))
+                dylan-statement-prefixes
+                "\\)?"))
   (setq dylan-other-pattern
-	(apply 'dylan-make-pattern
-	       (concat "define\\([ \t\n]+\\w+\\)*[ \t\n]+"
-		       dylan-simple-definition-pattern)
-	       dylan-other-words))
+        (apply 'dylan-make-pattern
+               (concat "define\\([ \t\n]+\\w+\\)*[ \t\n]+"
+                       dylan-simple-definition-pattern)
+               dylan-other-words))
   (setq dylan-body-start-expressions
-	;; cpage 2007-04-06: Why are these listed here? Shouldn't we build these
-	;; patterns from dylan-statement-words?
-	`(("if[ \t\n]*" "")
-	  ("block[ \t\n]*" "")
-	  ("for[ \t\n]*" "")
-	  ("select[ \t\n]*" "")
-	  ("when[ \t\n]*" "")
-	  ("unless[ \t\n]*" "")
-	  ("until[ \t\n]*" "")
-	  ("while[ \t\n]*" "")
-	  ("iterate[ \t\n]+\\w+[ \t\n]*" "")
-	  ("profiling[ \t\n]*" "")
-	  ;; special patterns for "define method", which is funky
-	  (,(concat "\\(" dylan-define-pattern "\\)?"
-		    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
-	   "[ \t\n]*=>[^;)]+;?")
-	  (,(concat "\\(" dylan-define-pattern "\\)?"
-		    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
-	   "[ \t\n]*;")
-	  ,(concat "define[ \t]+" dylan-named-definition-pattern
-		   "[ \t\n]+[^ \t\n]+")
-	  ,(concat "define[ \t]+" dylan-unnamed-definition-pattern)
-	  (,(concat "\\(" dylan-define-pattern "\\)?"
-		    dylan-parameterized-definition-pattern
-		    "[ \t\n]+[^\( ]*[ \t\n]*")
-	   "")
-	  "begin"
-	  "case"
-	  ;; Since we don't know the syntax of all the "with(out)-" macros,
-	  ;; just assume that the user has already split the line at
-	  ;; the end of the header.
-	  ,(concat dylan-with-statement-prefix "[^\n]*")
-	  "[[({]"))
+        ;; cpage 2007-04-06: Why are these listed here? Shouldn't we build these
+        ;; patterns from dylan-statement-words?
+        `(("if[ \t\n]*" "")
+          ("block[ \t\n]*" "")
+          ("for[ \t\n]*" "")
+          ("select[ \t\n]*" "")
+          ("when[ \t\n]*" "")
+          ("unless[ \t\n]*" "")
+          ("until[ \t\n]*" "")
+          ("while[ \t\n]*" "")
+          ("iterate[ \t\n]+\\w+[ \t\n]*" "")
+          ("profiling[ \t\n]*" "")
+          ;; Special patterns for "define method" and "define function", which
+          ;; have a return value spec.
+          (,(concat "\\(" dylan-define-pattern "\\)?"
+                    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+           "[ \t\n]*=>[^;)]+;?")
+          (,(concat "\\(" dylan-define-pattern "\\)?"
+                    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+           "[ \t\n]*;")
+          ,(concat "define[ \t]+" dylan-named-definition-pattern
+                   "[ \t\n]+[^ \t\n]+")
+          ,(concat "define[ \t]+" dylan-unnamed-definition-pattern)
+          (,(concat "\\(" dylan-define-pattern "\\)?"
+                    dylan-parameterized-definition-pattern
+                    "[ \t\n]+[^\( ]*[ \t\n]*")
+           "")
+          "begin"
+          "case"
+          ;; Since we don't know the syntax of all the "with(out)-" macros,
+          ;; just assume that the user has already split the line at
+          ;; the end of the header.
+          ,(concat dylan-with-statement-prefix "[^\n]*")
+          "[[({]"))
   (setq dylan-find-keyword-pattern (concat "[][)(}{\"']\\|\\_<define\\_>\\|"
-				     dylan-end-keyword-pattern
-				     "\\|" dylan-keyword-pattern))
+                                     dylan-end-keyword-pattern
+                                     "\\|" dylan-keyword-pattern))
   (setq dylan-beginning-of-form-pattern
         (concat "[;,]\\|=>\\|"
                 dylan-find-keyword-pattern
@@ -481,89 +480,89 @@ using the values of the various keyword list variables."
 
   ;; Decoration level 1: Most Dylan keywords
   (setq dylan-font-lock-keywords-1
-	(append dylan-font-lock-keywords
-		`(,dylan-end-keyword-pattern
-		  ,dylan-keyword-pattern
-		  ,dylan-separator-word-pattern
-		  ;; Symbols with keyword syntax
-		  "[-_a-zA-Z?!*@<>$%]+:"
-		  ;; Symbols with string syntax
-		  ;;
-		  ;; Is there a better way to fontify these symbols? Using
-		  ;; font-lock syntactic keywords, perhaps?
-		  ("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
-		  ;; Logical negation operator
-		  ("\\W\\(~\\)" 1 font-lock-negation-char-face)
-		  ;; Function signature keywords
-		  ;;
-		  ;; "#" does not have symbol or word syntax, so we can't
-		  ;; match for "\\<" at the start of #-words. Match for "not
-		  ;; a word constituent" instead. This highlights some
-		  ;; patterns that aren't valid Dylan, but it's close
-		  ;; enough. (e.g., it highlights "#key" within "##key".)
-		  (,(concat "\\W"
-			    (regexp-opt
-			     '("#rest" "#key" "#all-keys" "#next")
-			     t)
-			    "\\>")
-		   1 font-lock-keyword-face)
-		  ,dylan-other-pattern
-		  ;; Condition signaling function calls
-		  (,(concat (regexp-opt
-			     '("signal" "error" "cerror"
-			       "break" "check-type" "abort")
-			     'words)
-			    "[ \t]*(")
-		   1 font-lock-warning-face)
-		  ;; Definition starts
-		  (,(concat "\\_<\\(" dylan-define-pattern
-			    "\\(" dylan-constant-simple-definition-pattern "\\|"
-			    dylan-variable-simple-definition-pattern "\\|"
-			    dylan-other-simple-definition-pattern "\\)"
-			    "\\)\\_>[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-		   (7 (cond ((match-beginning 4) 'font-lock-constant-face)
-			    ((match-beginning 5) 'font-lock-variable-name-face)
-			    (t 'font-lock-function-name-face))))
-		  (,(concat "\\_<\\(" dylan-define-pattern
-			    dylan-definition-pattern "\\)")
-		   1 font-lock-keyword-face)
-		  (,(concat "\\_<\\(" dylan-define-pattern
-			    "\\(" dylan-type-definition-pattern "\\|"
-			    dylan-other-definition-pattern "\\)"
-			    "\\)\\_>[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-		   (6 (cond ((match-beginning 4) 'font-lock-type-face)
-			    (t 'font-lock-function-name-face))))
-		  ;; Local methods
-		  ("method[ \t\n]+\\(\\(\\s_\\|\\sw\\)+\\)"
+        (append dylan-font-lock-keywords
+                `(,dylan-end-keyword-pattern
+                  ,dylan-keyword-pattern
+                  ,dylan-separator-word-pattern
+                  ;; Symbols with keyword syntax
+                  "[-_a-zA-Z?!*@<>$%]+:"
+                  ;; Symbols with string syntax
+                  ;;
+                  ;; Is there a better way to fontify these symbols? Using
+                  ;; font-lock syntactic keywords, perhaps?
+                  ("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
+                  ;; Logical negation operator
+                  ("\\W\\(~\\)" 1 font-lock-negation-char-face)
+                  ;; Function signature keywords
+                  ;;
+                  ;; "#" does not have symbol or word syntax, so we can't
+                  ;; match for "\\<" at the start of #-words. Match for "not
+                  ;; a word constituent" instead. This highlights some
+                  ;; patterns that aren't valid Dylan, but it's close
+                  ;; enough. (e.g., it highlights "#key" within "##key".)
+                  (,(concat "\\W"
+                            (regexp-opt
+                             '("#rest" "#key" "#all-keys" "#next")
+                             t)
+                            "\\>")
+                   1 font-lock-keyword-face)
+                  ,dylan-other-pattern
+                  ;; Condition signaling function calls
+                  (,(concat (regexp-opt
+                             '("signal" "error" "cerror"
+                               "break" "check-type" "abort")
+                             'words)
+                            "[ \t]*(")
+                   1 font-lock-warning-face)
+                  ;; Definition starts
+                  (,(concat "\\_<\\(" dylan-define-pattern
+                            "\\(" dylan-constant-simple-definition-pattern "\\|"
+                            dylan-variable-simple-definition-pattern "\\|"
+                            dylan-other-simple-definition-pattern "\\)"
+                            "\\)\\_>[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+                   (7 (cond ((match-beginning 4) 'font-lock-constant-face)
+                            ((match-beginning 5) 'font-lock-variable-name-face)
+                            (t 'font-lock-function-name-face))))
+                  (,(concat "\\_<\\(" dylan-define-pattern
+                            dylan-definition-pattern "\\)")
+                   1 font-lock-keyword-face)
+                  (,(concat "\\_<\\(" dylan-define-pattern
+                            "\\(" dylan-type-definition-pattern "\\|"
+                            dylan-other-definition-pattern "\\)"
+                            "\\)\\_>[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+                   (6 (cond ((match-beginning 4) 'font-lock-type-face)
+                            (t 'font-lock-function-name-face))))
+                  ;; Local methods
+                  ("method[ \t\n]+\\(\\(\\s_\\|\\sw\\)+\\)"
                    1 font-lock-function-name-face)
                   ("\\(\\_<\\(\\s_\\|\\sw\\)+\\)\\_>\\s-+::"
                    1 font-lock-variable-name-face)
                   ("::\\s-+\\(\\_<\\(\\s_\\|\\sw\\)+\\)\\_>"
                    1 font-lock-type-face)
-		  ;; Definition ends
-		  (,(concat "\\_<end[ \t]+\\("
-			    dylan-type-definition-pattern
-			    "\\|\\w*\\)\\_>[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
-		   (3 (cond ((match-beginning 2) 'font-lock-type-face)
-			    (t 'font-lock-function-name-face)))))))
+                  ;; Definition ends
+                  (,(concat "\\_<end[ \t]+\\("
+                            dylan-type-definition-pattern
+                            "\\|\\w*\\)\\_>[ \t]+\\(\\(\\s_\\|\\w\\)+\\)")
+                   (3 (cond ((match-beginning 2) 'font-lock-type-face)
+                            (t 'font-lock-function-name-face)))))))
 
   ;; Decoration level 2: Highlight all function and local variable definitions,
   ;; and, optionally, all function calls.
   (setq dylan-font-lock-keywords-2
-	(append dylan-font-lock-keywords-1
-		'(("slot[ \t\n]+\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-variable-name-face)
-		  ("block[ \t\n]+(\\([^)]+\\)" 1 font-lock-function-name-face)
-		  ("let[ \t\n]+\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-variable-name-face)
-		  ;; This highlights commas and whitespace separating the
+        (append dylan-font-lock-keywords-1
+                '(("slot[ \t\n]+\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-variable-name-face)
+                  ("block[ \t\n]+(\\([^)]+\\)" 1 font-lock-function-name-face)
+                  ("let[ \t\n]+\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-variable-name-face)
+                  ;; This highlights commas and whitespace separating the
                   ;; variable names. Try to find a way to highlight only the
                   ;; variable names.
-		  ("let[ \t\n]+(\\([^)]+\\)" 1 font-lock-variable-name-face))))
+                  ("let[ \t\n]+(\\([^)]+\\)" 1 font-lock-variable-name-face))))
   (when dylan-highlight-function-calls
     (setq dylan-font-lock-keywords-2
-	  (append dylan-font-lock-keywords-2
-		  ;; Function calls
-		  '(("\\_<\\(\\(\\s_\\|\\w\\)+\\)("
-		     1 font-lock-function-name-face))))))
+          (append dylan-font-lock-keywords-2
+                  ;; Function calls
+                  '(("\\_<\\(\\(\\s_\\|\\w\\)+\\)("
+                     1 font-lock-function-name-face))))))
 
 (defun dylan-look-back (regexp)
   "Attempt to find a match for REGEXP immediately preceding the
@@ -600,18 +599,18 @@ so we can handle them separately, whether they are well-formed or not."
       (widen)
       (goto-char 1)
       (or (and (re-search-forward "^[ \t]*\\(\n\\|\\'\\)" nil t)
-	       ;; in Emacs 18, the search just returns `t', not the point.
-	       (point))
-	  (point-max)))))
+               ;; in Emacs 18, the search just returns `t', not the point.
+               (point))
+          (point-max)))))
 
 (defun dylan-find-keyword (&optional match-statement-end in-case no-commas
-				     start)
+                                     start)
   "Move the point backward to the beginning of the innermost
 enclosing compound statement or set of parentheses. Return t on
 success and nil otherwise."
   ;; don't go back into the interchange file header
   (let ((header-end (dylan-header-end))
-	(result 'not-found))
+        (result 'not-found))
     (while (and (>= (point) header-end) (eq result 'not-found))
       ;; cpage 2007-04-14: This could handle block comments better. The
       ;; re-search-backward pattern doesn't skip over them, and
@@ -620,84 +619,84 @@ success and nil otherwise."
       (setq
        result
        (if (re-search-backward (if match-statement-end
-				   dylan-beginning-of-form-pattern
-				 dylan-find-keyword-pattern) header-end t)
-	   (cond (;; Skip backwards over eol comments.
-		  (and (dylan-look-back dylan-comment-pattern)
-		       (not (save-excursion
-			      (dylan-look-back
-			       (concat "\"[^\"]*" dylan-comment-pattern)))))
-		  (goto-char (match-beginning 0))
-		  'not-found)
-		 ;; If point is inside a block comment, keep searching. Since
-		 ;; we've just tested (above) for an eol comment, if the text
-		 ;; has the comment face applied it must be the interior of a
-		 ;; block comment. This isn't a complete solution for handling
-		 ;; block comments, but it provides much better behavior than
-		 ;; not performing this test at all -- in which case, the
-		 ;; interior of block comments are treated like code.
-		 ((equal (get-text-property (point) 'face)
-			 font-lock-comment-face)
-		  'not-found)
-		 ;; Skip backwards over balanced parens.
-		 ((looking-at "[])}'\"]")
-		  (condition-case nil
-		      (progn
-			(forward-char 1)
-			(backward-sexp 1)
-			'not-found)
-		    (error nil)))
-		 ;; At start of unrecognized definition. Stop searching.
-		 ((and (looking-at "define") ; non-nesting top level form
-		       (not (looking-at dylan-keyword-pattern)))
-		  nil)
-		 ;; Skip backward over blocks/statements that end with "end".
-		 ((or (looking-at "end")	    ; Point is either before or
-		      (and (dylan-look-back "\\_<end[ \t]*$") ; after "end".
-			   (backward-word 1)))
-		  (dylan-find-keyword)	; Search for the start of the block.
-		  ;; cpage 2007-05-17: Why does this check for "method" and
-		  ;; "define"? Should it also check for "define...function"?
-		  ;; What about "define...class", etc.?
-		  (if (or (and (looking-at "method")
-			       (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$"))
-			  (looking-at "define"))
-		      nil
-		    'not-found))
-		 ;; cpage 2007-05-17: What is this for? Does it handle `until:'
-		 ;; and `while:' within `for' iteration clauses? Shouldn't it
-		 ;; test for the keywords with the colon?
-		 ;;
-		 ;; hack for overloaded uses of "while" and "until" words
-		 ((or (looking-at "until") (looking-at "while"))
-		  (if (save-excursion
-			(condition-case nil
-			    (progn
-			      (backward-up-list 1)
-			      (backward-sexp 1)
-			      (looking-at "for\\_<")) (error nil)))
-		      (backward-up-list 1))
-		  t)
-		 ;; Statement macro separator words.
-		 ((and (looking-at dylan-separator-word-pattern)
-		       (not match-statement-end))
-		  'not-found)
-		 ;; cpage 2007-05-17: What do the following three clauses look
-		 ;; for?
-		 ((and (looking-at ";")
-		       (not match-statement-end))
-		  'not-found)
-		 ((and (looking-at ",")
-		       (or (not match-statement-end) no-commas))
-		  'not-found)
-		 ((and (looking-at "=>")
-		       (not (and match-statement-end in-case)))
-		  'not-found)
-		 (t t))
-	 (goto-char (point-min))
-	 nil)))
+                                   dylan-beginning-of-form-pattern
+                                 dylan-find-keyword-pattern) header-end t)
+           (cond (;; Skip backwards over eol comments.
+                  (and (dylan-look-back dylan-comment-pattern)
+                       (not (save-excursion
+                              (dylan-look-back
+                               (concat "\"[^\"]*" dylan-comment-pattern)))))
+                  (goto-char (match-beginning 0))
+                  'not-found)
+                 ;; If point is inside a block comment, keep searching. Since
+                 ;; we've just tested (above) for an eol comment, if the text
+                 ;; has the comment face applied it must be the interior of a
+                 ;; block comment. This isn't a complete solution for handling
+                 ;; block comments, but it provides much better behavior than
+                 ;; not performing this test at all -- in which case, the
+                 ;; interior of block comments are treated like code.
+                 ((equal (get-text-property (point) 'face)
+                         font-lock-comment-face)
+                  'not-found)
+                 ;; Skip backwards over balanced parens.
+                 ((looking-at "[])}'\"]")
+                  (condition-case nil
+                      (progn
+                        (forward-char 1)
+                        (backward-sexp 1)
+                        'not-found)
+                    (error nil)))
+                 ;; At start of unrecognized definition. Stop searching.
+                 ((and (looking-at "define") ; non-nesting top level form
+                       (not (looking-at dylan-keyword-pattern)))
+                  nil)
+                 ;; Skip backward over blocks/statements that end with "end".
+                 ((or (looking-at "end")            ; Point is either before or
+                      (and (dylan-look-back "\\_<end[ \t]*$") ; after "end".
+                           (backward-word 1)))
+                  (dylan-find-keyword)  ; Search for the start of the block.
+                  ;; cpage 2007-05-17: Why does this check for "method" and
+                  ;; "define"? Should it also check for "define...function"?
+                  ;; What about "define...class", etc.?
+                  (if (or (and (looking-at "method")
+                               (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$"))
+                          (looking-at "define"))
+                      nil
+                    'not-found))
+                 ;; cpage 2007-05-17: What is this for? Does it handle `until:'
+                 ;; and `while:' within `for' iteration clauses? Shouldn't it
+                 ;; test for the keywords with the colon?
+                 ;;
+                 ;; hack for overloaded uses of "while" and "until" words
+                 ((or (looking-at "until") (looking-at "while"))
+                  (if (save-excursion
+                        (condition-case nil
+                            (progn
+                              (backward-up-list 1)
+                              (backward-sexp 1)
+                              (looking-at "for\\_<")) (error nil)))
+                      (backward-up-list 1))
+                  t)
+                 ;; Statement macro separator words.
+                 ((and (looking-at dylan-separator-word-pattern)
+                       (not match-statement-end))
+                  'not-found)
+                 ;; cpage 2007-05-17: What do the following three clauses look
+                 ;; for?
+                 ((and (looking-at ";")
+                       (not match-statement-end))
+                  'not-found)
+                 ((and (looking-at ",")
+                       (or (not match-statement-end) no-commas))
+                  'not-found)
+                 ((and (looking-at "=>")
+                       (not (and match-statement-end in-case)))
+                  'not-found)
+                 (t t))
+         (goto-char (point-min))
+         nil)))
     (and (equal t result)
-	 (>= (point) header-end))))
+         (>= (point) header-end))))
 
 (defun dylan-find-end (&optional match-statement-end in-case no-commas)
   "Move the point forward to the end of the innermost enclosing
@@ -708,62 +707,62 @@ and nil otherwise."
       (setq
        result
        (if (re-search-forward (if match-statement-end
-				  dylan-beginning-of-form-pattern
-				dylan-find-keyword-pattern) nil t)
-	   (let ((match-start (match-beginning 0)))
-	     (cond ((dylan-look-back dylan-comment-pattern)
-		    (forward-line)
-		    'not-found)
-		   ((dylan-look-back "[[({'\"]$")
-		    (condition-case nil
-			(progn
-			  (backward-char 1)
-			  (forward-sexp 1)
-			  'not-found)
-		      (error nil)))
-		   ((dylan-look-back "[])}]$") t)
-		   ((dylan-look-back "define$") ; top-level form special case
-		    (dylan-find-end t nil nil)
-		    nil)
-		   ((dylan-look-back "\\_<end\\([ \t]+\\w+\\)?$")
-		    (if (and (not (looking-at "[ \t]+\\(end\\|=>\\)\\_>"))
-			     (looking-at "[ \t]+\\w+"))
-			(goto-char (match-end 0)))
-		    t)
-		   ;; hack for overloaded uses of "while" and "until" reserved
-		   ;; words
-		   ((dylan-look-back "until$\\|while$")
-		    (if (save-excursion
-			  (condition-case nil
-			      (progn
-				(backward-up-list 1)
-				(backward-sexp 1)
-				(looking-at "for\\_<")) (error nil)))
-			(up-list 1))
-		    t)
-		   ((save-excursion (goto-char match-start)
-				    (looking-at dylan-separator-word-pattern))
-		    t)
-		   ((dylan-look-back ";$")
-		    (if (not match-statement-end)
-			'not-found
-		      t))
-		   ((dylan-look-back ",$")
-		    (if (or (not match-statement-end) no-commas)
-			'not-found
-		      t))
-		   ((dylan-look-back "=>$")
-		    (if (not (and match-statement-end in-case))
-			'not-found
-		      t))
-		   (t				; start compound statement
-		    (if (save-excursion (goto-char match-start)
-					(looking-at "define"))
-			(progn (dylan-find-end) nil)
-		      (dylan-find-end)
-		      'not-found))))
-	 (goto-char (point-max))
-	 nil)))
+                                  dylan-beginning-of-form-pattern
+                                dylan-find-keyword-pattern) nil t)
+           (let ((match-start (match-beginning 0)))
+             (cond ((dylan-look-back dylan-comment-pattern)
+                    (forward-line)
+                    'not-found)
+                   ((dylan-look-back "[[({'\"]$")
+                    (condition-case nil
+                        (progn
+                          (backward-char 1)
+                          (forward-sexp 1)
+                          'not-found)
+                      (error nil)))
+                   ((dylan-look-back "[])}]$") t)
+                   ((dylan-look-back "define$") ; top-level form special case
+                    (dylan-find-end t nil nil)
+                    nil)
+                   ((dylan-look-back "\\_<end\\([ \t]+\\w+\\)?$")
+                    (if (and (not (looking-at "[ \t]+\\(end\\|=>\\)\\_>"))
+                             (looking-at "[ \t]+\\w+"))
+                        (goto-char (match-end 0)))
+                    t)
+                   ;; hack for overloaded uses of "while" and "until" reserved
+                   ;; words
+                   ((dylan-look-back "until$\\|while$")
+                    (if (save-excursion
+                          (condition-case nil
+                              (progn
+                                (backward-up-list 1)
+                                (backward-sexp 1)
+                                (looking-at "for\\_<")) (error nil)))
+                        (up-list 1))
+                    t)
+                   ((save-excursion (goto-char match-start)
+                                    (looking-at dylan-separator-word-pattern))
+                    t)
+                   ((dylan-look-back ";$")
+                    (if (not match-statement-end)
+                        'not-found
+                      t))
+                   ((dylan-look-back ",$")
+                    (if (or (not match-statement-end) no-commas)
+                        'not-found
+                      t))
+                   ((dylan-look-back "=>$")
+                    (if (not (and match-statement-end in-case))
+                        'not-found
+                      t))
+                   (t                           ; start compound statement
+                    (if (save-excursion (goto-char match-start)
+                                        (looking-at "define"))
+                        (progn (dylan-find-end) nil)
+                      (dylan-find-end)
+                      'not-found))))
+         (goto-char (point-max))
+         nil)))
     result))
 
 (defun dylan-skip-star-comment-backward ()
@@ -772,10 +771,10 @@ beginning of enclosing \"/*\" comment. Deals properly with
 nested \"/*\" and with \"//\"."
   (re-search-backward "/\\*\\|\\*/")
   (while (cond ((dylan-look-back dylan-comment-pattern)
-		(goto-char (match-beginning 0)))
-	       ((looking-at "\\*/")
-		(dylan-skip-star-comment-backward))
-	       (t nil))
+                (goto-char (match-beginning 0)))
+               ((looking-at "\\*/")
+                (dylan-skip-star-comment-backward))
+               (t nil))
     (re-search-backward "/\\*\\|\\*/"))
   t)
 
@@ -785,10 +784,10 @@ end of enclosing \"/*\" comment. Deals properly with nested
 \"/*\" and with \"//\"."
   (re-search-forward "/\\*\\|\\*/")
   (while (cond ((dylan-look-back dylan-comment-pattern)
-		(end-of-line))
-	       ((dylan-look-back "/\\*$")
-		(dylan-skip-star-comment-forward))
-	       (t nil))
+                (end-of-line))
+               ((dylan-look-back "/\\*$")
+                (dylan-skip-star-comment-forward))
+               (t nil))
     (re-search-forward "/\\*\\|\\*/"))
   t)
 
@@ -801,11 +800,11 @@ end of enclosing \"/*\" comment. Deals properly with nested
       (skip-syntax-backward " >" header-end)
       ;; skip comments
       (while (cond ((dylan-look-back dylan-comment-pattern)
-		    (goto-char (match-beginning 0)))
-		   ((dylan-look-back "\\*/$")
-		    (goto-char (match-beginning 0))
-		    (dylan-skip-star-comment-backward))
-		   (t nil))
+                    (goto-char (match-beginning 0)))
+                   ((dylan-look-back "\\*/$")
+                    (goto-char (match-beginning 0))
+                    (dylan-skip-star-comment-backward))
+                   (t nil))
         (skip-syntax-backward " >" header-end)))))
 
 (defun dylan-skip-whitespace-forward ()
@@ -814,37 +813,37 @@ end of enclosing \"/*\" comment. Deals properly with nested
   (skip-syntax-forward " >")
   ;; skip comments
   (while (cond ((looking-at dylan-comment-pattern)
-		(goto-char (match-end 0))
-		t)
-	       ((looking-at "/\\*")
-		(goto-char (match-end 0))
-		(dylan-skip-star-comment-forward))
-	       (t nil))
+                (goto-char (match-end 0))
+                t)
+               ((looking-at "/\\*")
+                (goto-char (match-end 0))
+                (dylan-skip-star-comment-forward))
+               (t nil))
     (skip-syntax-forward " >")))
 
 (defun dylan-aux-find-body-start (clauses)
   "Helper function for `dylan-find-body-start'."
   (save-excursion
     (cond ((null clauses) (point))
-	  ((looking-at (car clauses))
-	   (if (null (cdr clauses))
-	       (match-end 0)
-	     (goto-char (match-end 0))
-	     (and (looking-at "[[({]")
-		  (condition-case nil (forward-list) (error nil))
-		  (dylan-aux-find-body-start (cdr clauses))))))))
+          ((looking-at (car clauses))
+           (if (null (cdr clauses))
+               (match-end 0)
+             (goto-char (match-end 0))
+             (and (looking-at "[[({]")
+                  (condition-case nil (forward-list) (error nil))
+                  (dylan-aux-find-body-start (cdr clauses))))))))
 
 (defun dylan-find-body-start (exprs)
   "When passed `dylan-body-start-expressions', processes it to find the
 beginning of the first statement in the compound statement that
 starts at the current point."
   (cond ((null exprs) (point-max))
-	((listp (car exprs))
-	 (or (dylan-aux-find-body-start (car exprs))
+        ((listp (car exprs))
+         (or (dylan-aux-find-body-start (car exprs))
              (dylan-find-body-start (cdr exprs))))
-	(t (if (looking-at (car exprs))
-	       (match-end 0)
-	     (dylan-find-body-start (cdr exprs))))))
+        (t (if (looking-at (car exprs))
+               (match-end 0)
+             (dylan-find-body-start (cdr exprs))))))
 
 (defun dylan-backward-statement (&optional in-case no-commas)
   "Moves the cursor to some undefined point between the previous statement
@@ -855,7 +854,7 @@ more."
     (unless (< (point) header-end)
       (dylan-skip-whitespace-backward)
       (let* ((dot (point)))
-        ;; skip over "separator words"
+        ;; Skip over words like "else" that separate statements inside a body.
         (when (save-excursion
                 (and (re-search-backward dylan-separator-word-pattern
                                          header-end t)
@@ -915,7 +914,7 @@ more."
           (condition-case nil (forward-list 1)
             (error nil))))
     (cond ((not (dylan-find-end t in-case no-commas))
-           (if (dylan-look-back "\\(define\\|local\\)[ \t]+")	; hack
+           (if (dylan-look-back "\\(define\\|local\\)[ \t]+")   ; hack
                (goto-char (match-beginning 0))))
           (t)))
   (cond ((looking-at "[,;]$") (forward-char))
@@ -930,20 +929,22 @@ at the current point."
 
 ;;; Indentation:
 
-(defun dylan-indent-if-continuation (term-char line-start block-start
-                                               &optional in-case)
+(defun dylan-indent-if-continuation (term-char line-start block-start &optional in-case)
+  "The amount of extra indent (possibly negative) when in an unfinished construct?"
   (save-excursion
     (goto-char line-start)
     (dylan-skip-whitespace-backward)
-    (if (dylan-look-back "finally$")	; special case -- this one is tricky
-        0				; because "for" can have empty bodies
+    (if (dylan-look-back "finally$")    ; special case -- this one is tricky
+        0                               ; because "for" can have empty bodies
       (let ((real-start (point)))
         (dylan-backward-statement in-case)
         (unless (= (point) real-start) ; make sure we went back a statement
           (dylan-skip-whitespace-forward))
-        (cond ((and (= block-start 0) (not (looking-at "define")))
-               0)			; special case for beginning of file
-              ((= real-start block-start) 0)
+        (cond ((and (= block-start 0)
+                    (not (looking-at "define")))
+               0)                       ; special case for beginning of file
+              ((= real-start block-start)
+               0)
               ((< (point) block-start)
                (- dylan-continuation-indent dylan-indent))
               ;; Indent keyword args to line up with the first arg after #key.
@@ -953,11 +954,13 @@ at the current point."
               ((< (save-excursion
                     (dylan-forward-statement in-case
                                              (equal term-char ";"))
-                    (point)) line-start)
+                    (point))
+                  line-start)
                0)
               ;; Comma-separated lists of local methods should be indented to
-              ;; line up with the first method when it begins on the same line
-              ;; as "local".
+              ;; line up with the first method.
+              ((looking-at "local[ \t]*$")
+               dylan-indent)
               ((looking-at "local[ \t]+")
                (- (match-end 0) (match-beginning 0)))
               (t dylan-continuation-indent))))))
@@ -980,25 +983,28 @@ at the current point."
     ;; use looking-at to examine the start of the current line of code
     ;; without having to put whitespace at the start of all the patterns.
     (back-to-indentation)
-    (let* ((body-start)  ; Beginning of "body" of enclosing compound statement.
-           (in-paren)    ; t if in parenthesized expression.
+    (let* (;; Beginning of "body" of enclosing compound statement.  Note that (point) may
+           ;; *precede* this, for example if the cursor is in the method parameter list
+           ;; or inside "block ()" somewhere.
+           (body-start)
+           (in-paren)    ; t if in expression parenthesized with (), [], or {}.
            (paren-indent 0)  ; Indentation of first non-space after open paren.
            (in-case)         ; t if in "case" or "select" statement.
            (block-indent     ; Indentation of enclosing compound statement.
             (save-excursion
-              (if (not (dylan-find-keyword))
-                  nil
+              (when (dylan-find-keyword)
                 (and (looking-at "method")
                      (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
                      (goto-char (match-beginning 0)))
-                (and (looking-at "[[({]")
-                     (setq in-paren t)
-                     (save-excursion
-                       (let ((dot (point)))
-                         (forward-char)
-                         (re-search-forward "[^ \t]")
-                         (setq paren-indent (- (point) dot 1)))))
-                (and (looking-at "select\\|case") (setq in-case t))
+                (when (looking-at "[[({]")
+                  (setq in-paren t)
+                  (save-excursion
+                    (let ((dot (point)))
+                      (forward-char)
+                      (re-search-forward "[^ \t]")
+                      (setq paren-indent (- (point) dot 1)))))
+                (when (looking-at "select\\|case")
+                  (setq in-case t))
                 (setq body-start (dylan-find-body-start
                                   dylan-body-start-expressions))
                 (current-column))))
@@ -1006,20 +1012,21 @@ at the current point."
             (cond ((not block-indent)
                    (dylan-indent-if-continuation ";" (point) 0))
                   ;; some keywords line up with start of comp. stmt
-                  ((looking-at dylan-separator-word-pattern) block-indent)
+                  ((looking-at dylan-separator-word-pattern)
+                   block-indent)
                   ;; end keywords line up with start of comp. stmt
-                  ((looking-at dylan-end-keyword-pattern) block-indent)
+                  ((looking-at dylan-end-keyword-pattern)
+                   block-indent)
                   ;; parenthesized expressions (separated by commas)
                   (in-case
-                   ;; if the line is blank, we pick an arbitrary
-                   ;; indentation for now. We judge the "proper"
-                   ;; indentation by how the statement is punctuated once
-                   ;; it is finished
+                   ;; If the line is blank, we pick an arbitrary indentation
+                   ;; for now. We judge the "proper" indentation by how the
+                   ;; statement is punctuated once it is finished.
                    (cond ((looking-at "^$")
                           (if (save-excursion
-                                ;; Look for end of prev statement. This
-                                ;; is hairier than it should be because
-                                ;; we may be at the end of the buffer
+                                ;; Look for end of prev statement. This is
+                                ;; hairier than it should be because we may be
+                                ;; at the end of the buffer.
                                 (let ((dot (point)))
                                   (dylan-forward-statement t)
                                   (dylan-skip-whitespace-backward)
@@ -1041,13 +1048,13 @@ at the current point."
                          (t (+ block-indent dylan-indent dylan-indent
                                (dylan-indent-if-continuation
                                 "," (point) body-start t)))))
-                  (in-paren (+ block-indent paren-indent
-                               (dylan-indent-if-continuation "," (point)
-                                                             body-start)))
+                  (in-paren
+                   (+ block-indent paren-indent
+                      (dylan-indent-if-continuation "," (point) body-start)))
                   ;; statements (separated by semi-colons)
-                  (t (+ block-indent dylan-indent
-                        (dylan-indent-if-continuation ";" (point)
-                                                      body-start))))))
+                  (t
+                   (+ block-indent dylan-indent
+                      (dylan-indent-if-continuation ";" (point) body-start))))))
       (unless (= indent (current-indentation))
         (save-excursion
           (beginning-of-line)
@@ -1099,7 +1106,7 @@ newlines and closing punctuation are needed."
             ;; foo" because it can cause undue confusion.
             (if (looking-at
                  (concat "define\\([ \t]+\\w+\\)*[ \t]*"
-                         dylan-definition-pattern))	; find the actual word
+                         dylan-definition-pattern))     ; find the actual word
                 (goto-char (match-beginning 2)))
             (cond ((looking-at "begin") (concat " end" terminator))
                   ((looking-at "\\[") "]")
@@ -1123,7 +1130,7 @@ newlines and closing punctuation are needed."
            (end (progn (insert str) (point))))
       (goto-char start)
       (while (re-search-forward "[ \t\n]+" end t)
-	(replace-match " "))
+        (replace-match " "))
       (goto-char end)
       (dylan-indent-line))))
 
@@ -1176,19 +1183,19 @@ treat code in the file body as the interior of a string."
     ;; appropriate keyword patterns and character syntax table.
     (when (< beg header-end)
       (let ((end (min end header-end))
-	    (font-lock-dont-widen t)
-	    (font-lock-keywords dylan-font-lock-header-keywords)
-	    (font-lock-keywords-only t))
-	(save-restriction
-	  (narrow-to-region 1 end)
+            (font-lock-dont-widen t)
+            (font-lock-keywords dylan-font-lock-header-keywords)
+            (font-lock-keywords-only t))
+        (save-restriction
+          (narrow-to-region 1 end)
           (font-lock-default-fontify-region beg end loudly))))
     ;; Fontify the Dylan code. We narrow the buffer to exclude the header from
     ;; character syntactic fontification.
     (when (> end header-end)
       (let ((beg (max beg header-end))
-	    (font-lock-dont-widen t))
-	(save-restriction
-	  (narrow-to-region header-end (point-max))
+            (font-lock-dont-widen t))
+        (save-restriction
+          (narrow-to-region header-end (point-max))
           (font-lock-default-fontify-region beg end loudly))))))
 
 
