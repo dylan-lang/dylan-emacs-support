@@ -426,17 +426,17 @@ using the values of the various keyword list variables."
           ;; Special patterns for "define method" and "define function", which
           ;; have a return value spec.
           (,(concat "\\(" dylan-define-pattern "\\)?"
-                    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+                    "\\(method\\|function\\)[ \t\n]+[^( ]*[ \t\n]*")
            "[ \t\n]*=>[^;)]+;?")
           (,(concat "\\(" dylan-define-pattern "\\)?"
-                    "\\(method\\|function\\)[ \t\n]+[^\( ]*[ \t\n]*")
+                    "\\(method\\|function\\)[ \t\n]+[^( ]*[ \t\n]*")
            "[ \t\n]*;")
           ,(concat "define[ \t]+" dylan-named-definition-pattern
                    "[ \t\n]+[^ \t\n]+")
           ,(concat "define[ \t]+" dylan-unnamed-definition-pattern)
           (,(concat "\\(" dylan-define-pattern "\\)?"
                     dylan-parameterized-definition-pattern
-                    "[ \t\n]+[^\( ]*[ \t\n]*")
+                    "[ \t\n]+[^( ]*[ \t\n]*")
            "")
           "begin"
           "case"
