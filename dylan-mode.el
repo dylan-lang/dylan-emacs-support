@@ -425,9 +425,12 @@ using the values of the various keyword list variables."
           ("profiling[ \t\n]*" "")
           ;; Special patterns for "define method" and "define function", which
           ;; have a return value spec.
+          ;; TODO(cgay): there's no way this can work. The method signature can be
+          ;; multiple lines, with comments on any line. I think we need to handle
+          ;; it specially, in particular for indentation after #key. 
           (,(concat "\\(" dylan-define-pattern "\\)?"
                     "\\(method\\|function\\)[ \t\n]+[^( ]*[ \t\n]*")
-           "[ \t\n]*=>[^;)]+;?")
+           "[ \t\n]*=>[^;)]+)?;?")
           (,(concat "\\(" dylan-define-pattern "\\)?"
                     "\\(method\\|function\\)[ \t\n]+[^( ]*[ \t\n]*")
            "[ \t\n]*;")
@@ -837,13 +840,22 @@ end of enclosing \"/*\" comment. Deals properly with nested
   "When passed `dylan-body-start-expressions', processes it to find the
 beginning of the first statement in the compound statement that
 starts at the current point."
-  (cond ((null exprs) (point-max))
-        ((listp (car exprs))
-         (or (dylan-aux-find-body-start (car exprs))
-             (dylan-find-body-start (cdr exprs))))
-        (t (if (looking-at (car exprs))
-               (match-end 0)
-             (dylan-find-body-start (cdr exprs))))))
+  (let ((start (cond ((null exprs) (point-max))
+                     ((listp (car exprs))
+                      (or (dylan-aux-find-body-start (car exprs))
+                          (dylan-find-body-start (cdr exprs))))
+                     (t (if (looking-at (car exprs))
+                            (match-end 0)
+                          (dylan-find-body-start (cdr exprs)))))))
+    ;; Skip end-of-line comments that occur immediately after a start expression.
+    ;; Example: method foo () => () // here
+    ;; Example: method foo () // here
+    ;;                  => ()
+    (save-excursion
+      (goto-char start)
+      (when (looking-at (concat "[ \t]*" dylan-comment-pattern))
+        (end-of-line))
+      (point))))
 
 (defun dylan-backward-statement (&optional in-case no-commas)
   "Moves the cursor to some undefined point between the previous statement
@@ -1051,6 +1063,15 @@ at the current point."
                   (in-paren
                    (+ block-indent paren-indent
                       (dylan-indent-if-continuation "," (point) body-start)))
+                  ;; Cursor is (for example) before the end of the parameter
+                  ;; list that is on a new line in a "define function" or
+                  ;; before the parens in "block\n()".
+                  ((< (point) body-start)
+                   (+ block-indent
+                      (if (save-excursion (back-to-indentation) (looking-at "=>"))
+                          ;; Outdent return value spec to align with parameters.
+                          (- dylan-continuation-indent 1)
+                        (+ dylan-continuation-indent 2))))
                   ;; statements (separated by semi-colons)
                   (t
                    (+ block-indent dylan-indent
