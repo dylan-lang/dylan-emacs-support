@@ -7,12 +7,12 @@ Synopsis: This file can be used to test dylan-mode indentation, and to some exte
 // *** Pressing Tab on the previous line (i.e., at the end of the header) should indent
 //     to just below "a bug."
 
-// Lines marked with *** currently have known problems, i.e., they change when tabbed.
-// Note that in some cases adding this comment may itself have impact on the indentation
-// of subsequent lines.
-
-// TODO(cgay): add some code that is indented with non-default settings.  All code below
-// assumes default settings.
+// Notes for developers:
+// * It may be useful to customize the dylan group during development to make it easier
+//   to see the effects of your changes. e.g., setting dylan-continuation-indent to 8.
+// * Lines marked with "// ***" currently have known problems, i.e., they change when
+//   tabbed. Note that in some cases adding this comment may itself have impact on the
+//   indentation of subsequent lines, which is also a bug.
 
 define library foo
   use lib1;
@@ -44,17 +44,14 @@ define module foo
          bar;                   // ***
 end;
 
-define method arglist-on-same-line (#key foo = 1, bar = 2,
-                                         baz = 3) // ***
+define method arglist-on-same-line
+    (foo, bar, #rest foo,
+     #key foo = 1, // comment
+          bar,     // comment
+          baz = 3) // comment
  => (#rest values)              // *** (works if no comment on previous line)
-  test();                       // ***
+  test();                       // *** (appears that => (...) breaks finding start of block
   test();
-end;
-
-
-define function foo
-    ()  // *** this comment causes next line to break
- => ()
   block ()
     foo();
   end;
@@ -64,7 +61,7 @@ define function arglist-on-multiple-lines
     (arg1 :: <string>, #rest args,
      #key key1 :: false-or(<x>) = #f,
           key2 = 2,
-          key3 = 3)             // ***
+          key3 = 3) // comment
  => ()                          // *** (works when arglist is just ())
   foo();                        // ***
   bar();
@@ -78,10 +75,12 @@ define function arglist-on-multiple-lines
   let v = #[a,
             b,
             c];
-  let long-variable-name = #[
+  let foo = #[
     a,                          // ***
     b                           // ***
   ];
+  let foo = #[a,
+              b];
   local
     method foo () => ()
       foo(bar,
