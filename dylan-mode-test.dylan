@@ -44,13 +44,9 @@ define module foo
          bar;                   // ***
 end;
 
-define method arglist-on-same-line
-    (foo, bar, #rest foo,
-     #key foo = 1, // comment
-          bar,     // comment
-          baz = 3) // comment
- => (#rest values)              // *** (works if no comment on previous line)
-  test();                       // *** (appears that => (...) breaks finding start of block
+define method arglist-on-same-line (foo, bar, #rest foo)
+ => (#rest values)
+  test();
   test();
   block ()
     foo();
@@ -61,26 +57,32 @@ define function arglist-on-multiple-lines
     (arg1 :: <string>, #rest args,
      #key key1 :: false-or(<x>) = #f,
           key2 = 2,
-          key3 = 3) // comment
- => ()                          // *** (works when arglist is just ())
+          key3 = 3)
+ => ()
   foo();                        // ***
   bar();
-  let v = really-long-function-name-that-goes-on-for-miles(
-            arg1, arg2,         // ***
-            arg3, arg4);        // ***
-  let v = fn(arg1, arg2,
-             arg3, arg4);
-  let (super, extra, long, variable, list)
-    = fn();
-  let v = #[a,
-            b,
-            c];
-  let foo = #[
-    a,                          // ***
-    b                           // ***
-  ];
-  let foo = #[a,
-              b];
+  block (return)
+    let v = really-long-function-name-that-goes-on-for-miles(
+              arg1, arg2,         // ***
+              arg3, arg4);        // ***
+    let v = fn(arg1, arg2,
+               arg3, arg4);
+    if (thing)
+      let (super, extra, long, variable, list)
+        = fn();
+    else
+      other-thing()
+    end;
+    let v = #[a,
+              b,
+              c];
+    let foo = #[
+      a,                          // ***
+      b                           // ***
+    ];
+    let foo = #[a,
+                b];
+  end block;
   local
     method foo () => ()
       foo(bar,
@@ -150,4 +152,9 @@ define macro foo-definer
     { stuff }
  => { other stuff }             // ***
     
+end;
+
+define test foo (option: bar)
+  assert-true(#t);              // ***
+  assert-false(#f);
 end;
