@@ -445,9 +445,7 @@ using the values of the various keyword list variables."
           ("profiling[ \t\n]*" "")
           ;; Special patterns for "define method" and "define function", which
           ;; have a return value spec.
-          ;; TODO(cgay): there's no way this can work. The method signature can be
-          ;; multiple lines, with comments on any line. I think we need to handle
-          ;; it specially, in particular for indentation after #key. 
+          ;; TODO(cgay): comments may appear before/in/after the signature.
           (,(concat "\\(" dylan-define-pattern "\\)?"
                     "\\(method\\|function\\)[ \t\n]+[^( ]*[ \t\n]*")
            "[ \t\n]*=>[^;)]+)?;?")
@@ -626,8 +624,8 @@ so we can handle them separately, whether they are well-formed or not."
                (point))
           (point-max)))))
 
-(defun dylan-find-keyword (&optional match-statement-end in-case no-commas
-                                     start)
+(defun dylan-backward-find-keyword (&optional match-statement-end in-case no-commas
+                                              start)
   "Move the point backward to the beginning of the innermost
 enclosing compound statement or set of parentheses. Return t on
 success and nil otherwise."
@@ -678,7 +676,7 @@ success and nil otherwise."
                  ((or (looking-at "end")            ; Point is either before or
                       (and (dylan-look-back "\\_<end[ \t]*$") ; after "end".
                            (backward-word 1)))
-                  (dylan-find-keyword)  ; Search for the start of the block.
+                  (dylan-backward-find-keyword)  ; Search for the start of the block.
                   ;; cpage 2007-05-17: Why does this check for "method" and
                   ;; "define"? Should it also check for "define...function"?
                   ;; What about "define...class", etc.?
@@ -902,7 +900,7 @@ more."
           (dylan-skip-whitespace-backward))
         (if (dylan-look-back "[,;]$\\|=>$")
             (backward-char))            ; TODO(cgay): should go back 2 for "=>" ?
-        (cond ((not (dylan-find-keyword t in-case no-commas))
+        (cond ((not (dylan-backward-find-keyword t in-case no-commas))
                (if (dylan-look-back "\\(define\\|local\\)[ \t]+") ; hack
                    (goto-char (match-beginning 0))))
               ((looking-at dylan-separator-word-pattern)
@@ -1077,7 +1075,7 @@ at the current point."
          ;; ultimate indentation may depend on whether in-paren is true or not.
          (block-indent
           (save-excursion
-            (when (dylan-find-keyword)
+            (when (dylan-backward-find-keyword)
               (and (looking-at "method")
                    (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
                    (goto-char (match-beginning 0)))
@@ -1163,7 +1161,7 @@ newlines and closing punctuation are needed."
          (need-newline)
          (str
           (save-excursion
-            (if (not (dylan-find-keyword))
+            (if (not (dylan-backward-find-keyword))
                 (error "No nesting block"))
             ;; need newline if multi-line block and not "("
             (setq need-newline (not (or (looking-at "[[({]")
@@ -1171,7 +1169,7 @@ newlines and closing punctuation are needed."
                                                         (>= (point) here)))))
             (setq terminator
                   (save-excursion
-                    (cond ((not (dylan-find-keyword)) ";")
+                    (cond ((not (dylan-backward-find-keyword)) ";")
                           ((looking-at "[[({]") "")
                           (t ";"))))
             ;; We intentionally fail to accept newlines in "define
