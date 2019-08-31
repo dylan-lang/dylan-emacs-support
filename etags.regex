@@ -9,6 +9,6 @@
 	Two separate entries for local methods to avoid matching "  end method foo".
 /[ \t]+local[ \t]+method[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\1/i
 /[ \t]+method[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\1/i
-/[ \t]+\(\(constant\|sealed\|instance\|class\|each-subclass\|virtual\|inherited\|lazy\|weak\)[ \t]\)?+slot[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\2/i
+/[ \t]+\(\(constant\|sealed\|instance\|class\|each-subclass\|virtual\|inherited\|lazy\|weak\)[ \t]\)?+slot[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\3/i
 
 /[ \t]+\let[ \t]+handler[ \t]+\([a-z!&*<>|^$%@_+~?\/=-]+\)/\1/i
