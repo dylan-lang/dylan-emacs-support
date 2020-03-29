@@ -788,29 +788,29 @@ and nil otherwise."
     result))
 
 (defun dylan-skip-star-comment-backward ()
-  "Utility function for `dylan-skip-whitespace-backward'. Find
-beginning of enclosing \"/*\" comment. Deals properly with
-nested \"/*\" and with \"//\"."
+  "Utility function for `dylan-skip-whitespace-backward'. Find beginning of
+enclosing block comment. Deals properly with nested block comments and with
+comments inside strings."
   (re-search-backward "/\\*\\|\\*/")
   (while (cond ((dylan-look-back dylan-comment-pattern)
                 (goto-char (match-beginning 0)))
                ((looking-at "\\*/")
                 (dylan-skip-star-comment-backward))
                (t nil))
-    (re-search-backward "/\\*\\|\\*/"))
+    (re-search-backward "/\\*\\|\\*/" nil t))
   t)
 
 (defun dylan-skip-star-comment-forward ()
-  "Utility function for `dylan-skip-whitespace-forward'. Find
-end of enclosing \"/*\" comment. Deals properly with nested
-\"/*\" and with \"//\"."
+  "Utility function for `dylan-skip-whitespace-forward'. Find end of enclosing
+block comment. Deals properly with nested block comments and comments inside
+strings."
   (re-search-forward "/\\*\\|\\*/")
   (while (cond ((dylan-look-back dylan-comment-pattern)
                 (end-of-line))
                ((dylan-look-back "/\\*$")
                 (dylan-skip-star-comment-forward))
                (t nil))
-    (re-search-forward "/\\*\\|\\*/"))
+    (re-search-forward "/\\*\\|\\*/" nil t))
   t)
 
 (defun dylan-skip-whitespace-backward ()
