@@ -141,7 +141,7 @@ whitespace prefix."
     ;; Testworks
     ;; TODO(cgay): these probably don't belong here but adding them here "worked".
     ;; They should more naturally be in dylan-other-parameterized-definition-words.
-    "suite" "test")
+    "suite" "test" "benchmark")
   "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dylan-named-definition-words
