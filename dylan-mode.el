@@ -51,6 +51,8 @@
 ;;   Just highlight the "x" as a variable binding.
 ;; * Customize fill-column to some acceptable value so that auto-filled
 ;;   comments are filled at a standard place > 70.  I use 89 myself.
+;; * It appears as though some code matches only some of the graphic-character
+;;   BNF when it should match all graphic chars.
 
 
 (defconst dylan-mode-version "2.0"
@@ -134,6 +136,19 @@ whitespace prefix."
 
 
 ;;; Regular expressions:
+
+;;; BNF that are hard to remember
+(defconst graphic-character "!&*<>|^$%@_")
+(defconst special-character "-+~?/=")   ; code may assume '-' comes first
+
+;;; For symbols special care has to be taken to handle leading numerics and
+;;; leading graphics. Ensure that if one of those comes first it is followed by
+;;; an alphabetic.
+(defconst dylan-keyword-symbol-pattern
+  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*:"
+          graphic-character
+          special-character             ; intentionally follows '[' in regex
+          graphic-character))
 
 (defvar dylan-unnamed-definition-words
   '(;; Melange/C-FFI
@@ -505,13 +520,14 @@ using the values of the various keyword list variables."
                 `(,dylan-end-keyword-pattern
                   ,dylan-keyword-pattern
                   ,dylan-separator-word-pattern
-                  ;; Symbols with keyword syntax
-                  "[-_a-zA-Z?!*@<>$%]+:"
+                  ,dylan-keyword-symbol-pattern
+
                   ;; Symbols with string syntax
                   ;;
                   ;; Is there a better way to fontify these symbols? Using
                   ;; font-lock syntactic keywords, perhaps?
                   ("\\(#\\)\"[^\"]*\"?" 1 font-lock-string-face)
+
                   ;; Logical negation operator
                   ("\\W\\(~\\)" 1 font-lock-negation-char-face)
                   ;; Function signature keywords
@@ -1305,6 +1321,7 @@ treat code in the file body as the interior of a string."
 
 (defvar dylan-mode-syntax-table
   (let ((table (make-syntax-table prog-mode-syntax-table)))
+    ;; TODO(cgay): should the remaining symbol constituents ('|', '@', etc) be here?
     (modify-syntax-entry ?_ "_" table)  ; symbol constituent
     (modify-syntax-entry ?- "_" table)  ; symbol constituent
     (modify-syntax-entry ?< "_" table)  ; symbol constituent
