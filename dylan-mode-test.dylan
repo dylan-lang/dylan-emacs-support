@@ -56,10 +56,10 @@ end;
 define function arglist-on-multiple-lines
     (arg1 :: <string>, #rest args,
      #key key1 :: false-or(<x>) = #f,
-          key2 = 2,
+          key2 = 2,             // *** key2, key3 should colorize
           key3 = 3)
  => ()
-  foo();                        // ***
+  foo();
   bar();
   block (return)
     let v = really-long-function-name-that-goes-on-for-miles(
@@ -158,3 +158,9 @@ define test foo (option: bar)
   assert-true(#t);              // ***
   assert-false(#f);
 end;
+
+define inline function test-highlight-inline () end;
+define may-inline function test-highlight-may-inline () end;
+define not-inline function test-highlight-not-inline () end;
+define inline-only function test-highlight-inline-only () end;
+define default-inline function test-highlight-default-inline () end;

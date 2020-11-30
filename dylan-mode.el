@@ -141,14 +141,16 @@ whitespace prefix."
 (defconst graphic-character "!&*<>|^$%@_")
 (defconst special-character "-+~?/=")   ; code may assume '-' comes first
 
-;;; For symbols special care has to be taken to handle leading numerics and
-;;; leading graphics. Ensure that if one of those comes first it is followed by
-;;; an alphabetic.
-(defconst dylan-keyword-symbol-pattern
-  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*:"
+;;; For Dylan `name` BNF special care has to be taken to handle leading
+;;; numerics and leading graphics.
+(defconst dylan-name-pattern
+  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*"
           graphic-character
           special-character             ; intentionally follows '[' in regex
           graphic-character))
+
+(defconst dylan-keyword-symbol-pattern
+  (format "%s:" dylan-name-pattern))
 
 (defvar dylan-unnamed-definition-words
   '(;; Melange/C-FFI
@@ -352,7 +354,8 @@ Dylan Mode, for Font Lock decoration level 1.")
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 2.")
 
-(defconst dylan-define-pattern "define\\([ \t]+\\w+\\)*[ \t]+"
+(defconst dylan-define-pattern
+  (format "define\\([[:blank:]]+%s\\)*[[:blank:]]+" dylan-name-pattern)
   "Pattern that matches `define' and adjectives. A sub-pattern
 designed to be followed by patterns that match the define word or
 other parts of the definition macro call.")
