@@ -79,7 +79,7 @@ define function arglist-on-multiple-lines
     let foo = #[
       a,                          // ***
       b                           // ***
-    ];
+    ];                            // ***
     let foo = #[a,
                 b];
   end block;
@@ -171,3 +171,6 @@ define function foo ()
   printing-object (o, s) end;
   doing-this () end;
 end function;
+
+let 0d0 = x;                  // *** 0d0 not valid name, shouldn't highlight.
+let 0dd = x;                  // 0dd is valid name, should highlight.

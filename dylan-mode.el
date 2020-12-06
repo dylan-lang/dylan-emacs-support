@@ -43,6 +43,10 @@
 ;; over the place and keep the *Messages* window visible, since tracing doesn't say the
 ;; names of the arguments or return values.  If someone else knows a better way please
 ;; comment.
+;;
+;; With so many cascading defvars and the fact that eval-buffer doesn't reset
+;; their values, frequently the easiest way to test changes is to start a new
+;; emacs.
 
 ;; Bugs / to-do list
 ;;
@@ -143,7 +147,7 @@ whitespace prefix."
 ;;; For Dylan `name` BNF special care has to be taken to handle leading
 ;;; numerics and leading graphics.
 (defconst dylan-name-pattern
-  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*"
+  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*"
           graphic-character
           special-character             ; intentionally follows '[' in regex
           graphic-character))
