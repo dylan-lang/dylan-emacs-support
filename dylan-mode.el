@@ -135,9 +135,8 @@ whitespace prefix."
   :group 'dylan)
 
 
-;;; Regular expressions:
+;;; Regular expressions -- See https://opendylan.org/books/drm/Lexical_Grammar
 
-;;; BNF that are hard to remember
 (defconst graphic-character "!&*<>|^$%@_")
 (defconst special-character "-+~?/=")   ; code may assume '-' comes first
 
@@ -217,8 +216,11 @@ simple definitions and are appended to `dylan-other-simple-definition-words'.")
     "iterate" "profiling")
   "Words that begin statements with implicit bodies.")
 
-;; Names beginning "with-" and "without-" are commonly used as statement macros.
-(defvar dylan-with-statement-prefix "with\\(out\\)\\{0,1\\}-")
+;; Names beginning "with-", "without-", and "...ing-" (e.g., printing-object)
+;; are commonly used as statement macros.
+(defvar dylan-with-statement-prefix
+  "\\(with\\|without\\|[a-zA-Z]+ing\\)-")
+
 (defvar dylan-statement-prefixes
   (concat "\\|\\_<" dylan-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
 
@@ -237,6 +239,7 @@ may include any general pattern that must be indented specially.")
   "Keywords that do not require special indentation handling, but which
 should be highlighted.")
 
+;;; See also dylan-skip-star-comment-backward and -forward.
 (defvar dylan-comment-pattern "//.*$"
   "Internal pattern for finding comments in Dylan code. Currently only
 handles end-of-line comments.")
@@ -347,9 +350,11 @@ fontifying Dylan interchange file headers in Dylan Mode.")
 (defvar dylan-font-lock-keywords nil
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 0.")
+
 (defvar dylan-font-lock-keywords-1 nil
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 1.")
+
 (defvar dylan-font-lock-keywords-2 nil
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 2.")

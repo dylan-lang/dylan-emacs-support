@@ -164,3 +164,10 @@ define may-inline function test-highlight-may-inline () end;
 define not-inline function test-highlight-not-inline () end;
 define inline-only function test-highlight-inline-only () end;
 define default-inline function test-highlight-default-inline () end;
+
+define function foo ()
+  with-open-file (stream = "/tmp/foo") end;
+  without-interrupts () body() end;
+  printing-object (o, s) end;
+  doing-this () end;
+end function;
