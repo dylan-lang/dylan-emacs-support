@@ -155,9 +155,22 @@ define macro foo-definer
 end;
 
 define test foo (option: bar)
-  assert-true(#t);              // ***
+  assert-true(#t);
   assert-false(#f);
 end;
+
+define benchmark b ()
+  benchmark-repeat ()
+    x();
+    y();                        // ***
+  end;                          // ***
+end;
+
+define suite s ()
+  benchmark b;
+  test t;
+  suite s;
+end suite;
 
 define inline function test-highlight-inline () end;
 define may-inline function test-highlight-may-inline () end;

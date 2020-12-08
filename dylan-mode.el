@@ -157,11 +157,7 @@ whitespace prefix."
 
 (defvar dylan-unnamed-definition-words
   '(;; Melange/C-FFI
-    "interface"
-    ;; Testworks
-    ;; TODO(cgay): these probably don't belong here but adding them here "worked".
-    ;; They should more naturally be in dylan-other-parameterized-definition-words.
-    "suite" "test" "benchmark")
+    "interface")
   "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dylan-named-definition-words
@@ -186,6 +182,8 @@ also parameterized like \"define method\" and are appended to
 (defvar dylan-other-parameterized-definition-words
   '(;; Dylan
     "method" "function"
+    ;; Testworks
+    "test" "benchmark" "suite"
     ;; C-FFI
     "C-variable" "C-address")
   "Words that introduce trickier definitions like \"define method\". These
@@ -1105,6 +1103,8 @@ at the current point."
           (save-excursion
             (when (dylan-backward-find-keyword)
               (and (looking-at "method")
+                   ;; TODO(cgay): rename dylan-look-back to dylan-this-line-has
+                   ;; or something that indicates the scope of the search.
                    (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
                    (goto-char (match-beginning 0)))
               (when (looking-at "[[({]")
