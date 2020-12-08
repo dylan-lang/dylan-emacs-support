@@ -172,5 +172,8 @@ define function foo ()
   doing-this () end;
 end function;
 
-let 0d0 = x;                  // *** 0d0 not valid name, shouldn't highlight.
-let 0dd = x;                  // 0dd is valid name, should highlight.
+let 0d0 = x;    // *** 0d0 not valid name, shouldn't highlight.
+let 0dd = x;    // 0dd is valid name, should highlight.
+
+let x~ = ~x;    // x~ is valid name, should highlight fully.
+let $x = y;     // With point on =, M-b should move point onto x, not $.

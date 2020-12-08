@@ -1333,22 +1333,39 @@ treat code in the file body as the interior of a string."
 
 (defvar dylan-mode-syntax-table
   (let ((table (make-syntax-table prog-mode-syntax-table)))
-    ;; TODO(cgay): should the remaining symbol constituents ('|', '@', etc) be here?
-    (modify-syntax-entry ?_ "_" table)  ; symbol constituent
-    (modify-syntax-entry ?- "_" table)  ; symbol constituent
-    (modify-syntax-entry ?< "_" table)  ; symbol constituent
-    (modify-syntax-entry ?> "_" table)  ; symbol constituent
-    (modify-syntax-entry ?? "_" table)  ; symbol constituent
-    (modify-syntax-entry ?! "_" table)  ; symbol constituent
-    (modify-syntax-entry ?= "_" table)  ; symbol constituent
-    (modify-syntax-entry ?: "_" table)  ; symbol constituent
+
+    ;; Dylan graphic-character BNF are symbol ("_") constituents.
+    ;; (Explicitly set all, despite some being in parent table.)
+    (modify-syntax-entry ?! "_" table)
+    (modify-syntax-entry ?& "_" table)
+    (modify-syntax-entry ?< "_" table)
+    (modify-syntax-entry ?> "_" table)
+    (modify-syntax-entry ?| "_" table)
+    (modify-syntax-entry ?^ "_" table)
+    (modify-syntax-entry ?$ "_" table)
+    (modify-syntax-entry ?% "_" table)
+    (modify-syntax-entry ?@ "_" table)
+    (modify-syntax-entry ?_ "_" table)
+    (modify-syntax-entry ?\* "_ 23n" table)
+
+    ;; Dylan special-character BNF, also symbol constituents.
+    (modify-syntax-entry ?- "_" table)
+    (modify-syntax-entry ?+ "_" table)
+    (modify-syntax-entry ?~ "_" table)
+    (modify-syntax-entry ?? "_" table)
+    (modify-syntax-entry ?/ "_ 124b" table)
+    (modify-syntax-entry ?= "_" table)
+
+    ;; Not clear to me that ':' should be a symbol constituent; it's
+    ;; really punctuation after the symbol. Leaving it alone for now.
+    ;; --cgay Dec 2020
+    (modify-syntax-entry ?: "_" table)
+
     (modify-syntax-entry ?' "\"" table) ; string quote
     (modify-syntax-entry ?\f " " table) ; whitespace
+
     (modify-syntax-entry ?# "'" table)  ; expression quote or prefix operator
-    ;; Doc is not clear on what a, b, and c mean. Anyone understand it? --cgay May 2019
     (modify-syntax-entry ?\n "> b" table) ; comment ender
-    (modify-syntax-entry ?/ "_ 124b" table) ; symbol constituent, comment 1 start, comment 2 start, comment 2 end
-    (modify-syntax-entry ?\* "_ 23n" table) ; symbol constituent, comment 2 start, comment 1 end, nestable
     table))
 
 ;;;###autoload
