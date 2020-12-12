@@ -56,10 +56,10 @@ end;
 define function arglist-on-multiple-lines
     (arg1 :: <string>, #rest args,
      #key key1 :: false-or(<x>) = #f,
-          key2 = 2,
+          key2 = 2,             // *** key2, key3 should colorize
           key3 = 3)
  => ()
-  foo();                        // ***
+  foo();
   bar();
   block (return)
     let v = really-long-function-name-that-goes-on-for-miles(
@@ -79,7 +79,7 @@ define function arglist-on-multiple-lines
     let foo = #[
       a,                          // ***
       b                           // ***
-    ];
+    ];                            // ***
     let foo = #[a,
                 b];
   end block;
@@ -155,6 +155,38 @@ define macro foo-definer
 end;
 
 define test foo (option: bar)
-  assert-true(#t);              // ***
+  assert-true(#t);
   assert-false(#f);
 end;
+
+define benchmark b ()
+  benchmark-repeat ()
+    x();
+    y();                        // ***
+  end;                          // ***
+end;
+
+define suite s ()
+  benchmark b;
+  test t;
+  suite s;
+end suite;
+
+define inline function test-highlight-inline () end;
+define may-inline function test-highlight-may-inline () end;
+define not-inline function test-highlight-not-inline () end;
+define inline-only function test-highlight-inline-only () end;
+define default-inline function test-highlight-default-inline () end;
+
+define function foo ()
+  with-open-file (stream = "/tmp/foo") end;
+  without-interrupts () body() end;
+  printing-object (o, s) end;
+  doing-this () end;
+end function;
+
+let 0d0 = x;    // *** 0d0 not valid name, shouldn't highlight.
+let 0dd = x;    // 0dd is valid name, should highlight.
+
+let x~ = ~x;    // x~ is valid name, should highlight fully.
+let $x = y;     // With point on =, M-b should move point onto x, not $.

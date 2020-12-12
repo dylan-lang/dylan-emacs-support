@@ -43,6 +43,10 @@
 ;; over the place and keep the *Messages* window visible, since tracing doesn't say the
 ;; names of the arguments or return values.  If someone else knows a better way please
 ;; comment.
+;;
+;; With so many cascading defvars and the fact that eval-buffer doesn't reset
+;; their values, frequently the easiest way to test changes is to start a new
+;; emacs.
 
 ;; Bugs / to-do list
 ;;
@@ -135,28 +139,25 @@ whitespace prefix."
   :group 'dylan)
 
 
-;;; Regular expressions:
+;;; Regular expressions -- See https://opendylan.org/books/drm/Lexical_Grammar
 
-;;; BNF that are hard to remember
 (defconst graphic-character "!&*<>|^$%@_")
 (defconst special-character "-+~?/=")   ; code may assume '-' comes first
 
-;;; For symbols special care has to be taken to handle leading numerics and
-;;; leading graphics. Ensure that if one of those comes first it is followed by
-;;; an alphabetic.
-(defconst dylan-keyword-symbol-pattern
-  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*:"
+;;; For Dylan `name` BNF special care has to be taken to handle leading
+;;; numerics and leading graphics.
+(defconst dylan-name-pattern
+  (format "\\([a-zA-Z]\\|[0-9][a-zA-Z][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*"
           graphic-character
           special-character             ; intentionally follows '[' in regex
           graphic-character))
 
+(defconst dylan-keyword-symbol-pattern
+  (format "%s:" dylan-name-pattern))
+
 (defvar dylan-unnamed-definition-words
   '(;; Melange/C-FFI
-    "interface"
-    ;; Testworks
-    ;; TODO(cgay): these probably don't belong here but adding them here "worked".
-    ;; They should more naturally be in dylan-other-parameterized-definition-words.
-    "suite" "test" "benchmark")
+    "interface")
   "Words that introduce unnamed definitions like \"define interface\".")
 
 (defvar dylan-named-definition-words
@@ -181,6 +182,8 @@ also parameterized like \"define method\" and are appended to
 (defvar dylan-other-parameterized-definition-words
   '(;; Dylan
     "method" "function"
+    ;; Testworks
+    "test" "benchmark" "suite"
     ;; C-FFI
     "C-variable" "C-address")
   "Words that introduce trickier definitions like \"define method\". These
@@ -215,8 +218,11 @@ simple definitions and are appended to `dylan-other-simple-definition-words'.")
     "iterate" "profiling")
   "Words that begin statements with implicit bodies.")
 
-;; Names beginning "with-" and "without-" are commonly used as statement macros.
-(defvar dylan-with-statement-prefix "with\\(out\\)\\{0,1\\}-")
+;; Names beginning "with-", "without-", and "...ing-" (e.g., printing-object)
+;; are commonly used as statement macros.
+(defvar dylan-with-statement-prefix
+  "\\(with\\|without\\|[a-zA-Z]+ing\\)-")
+
 (defvar dylan-statement-prefixes
   (concat "\\|\\_<" dylan-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
 
@@ -235,6 +241,7 @@ may include any general pattern that must be indented specially.")
   "Keywords that do not require special indentation handling, but which
 should be highlighted.")
 
+;;; See also dylan-skip-star-comment-backward and -forward.
 (defvar dylan-comment-pattern "//.*$"
   "Internal pattern for finding comments in Dylan code. Currently only
 handles end-of-line comments.")
@@ -345,14 +352,17 @@ fontifying Dylan interchange file headers in Dylan Mode.")
 (defvar dylan-font-lock-keywords nil
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 0.")
+
 (defvar dylan-font-lock-keywords-1 nil
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 1.")
+
 (defvar dylan-font-lock-keywords-2 nil
   "Value to which `font-lock-keywords' should be set when in
 Dylan Mode, for Font Lock decoration level 2.")
 
-(defconst dylan-define-pattern "define\\([ \t]+\\w+\\)*[ \t]+"
+(defconst dylan-define-pattern
+  (format "define\\([[:blank:]]+%s\\)*[[:blank:]]+" dylan-name-pattern)
   "Pattern that matches `define' and adjectives. A sub-pattern
 designed to be followed by patterns that match the define word or
 other parts of the definition macro call.")
@@ -1093,6 +1103,8 @@ at the current point."
           (save-excursion
             (when (dylan-backward-find-keyword)
               (and (looking-at "method")
+                   ;; TODO(cgay): rename dylan-look-back to dylan-this-line-has
+                   ;; or something that indicates the scope of the search.
                    (dylan-look-back "define\\([ \t\n]+\\w+\\)*[ \t]+$")
                    (goto-char (match-beginning 0)))
               (when (looking-at "[[({]")
@@ -1321,22 +1333,39 @@ treat code in the file body as the interior of a string."
 
 (defvar dylan-mode-syntax-table
   (let ((table (make-syntax-table prog-mode-syntax-table)))
-    ;; TODO(cgay): should the remaining symbol constituents ('|', '@', etc) be here?
-    (modify-syntax-entry ?_ "_" table)  ; symbol constituent
-    (modify-syntax-entry ?- "_" table)  ; symbol constituent
-    (modify-syntax-entry ?< "_" table)  ; symbol constituent
-    (modify-syntax-entry ?> "_" table)  ; symbol constituent
-    (modify-syntax-entry ?? "_" table)  ; symbol constituent
-    (modify-syntax-entry ?! "_" table)  ; symbol constituent
-    (modify-syntax-entry ?= "_" table)  ; symbol constituent
-    (modify-syntax-entry ?: "_" table)  ; symbol constituent
+
+    ;; Dylan graphic-character BNF are symbol ("_") constituents.
+    ;; (Explicitly set all, despite some being in parent table.)
+    (modify-syntax-entry ?! "_" table)
+    (modify-syntax-entry ?& "_" table)
+    (modify-syntax-entry ?< "_" table)
+    (modify-syntax-entry ?> "_" table)
+    (modify-syntax-entry ?| "_" table)
+    (modify-syntax-entry ?^ "_" table)
+    (modify-syntax-entry ?$ "_" table)
+    (modify-syntax-entry ?% "_" table)
+    (modify-syntax-entry ?@ "_" table)
+    (modify-syntax-entry ?_ "_" table)
+    (modify-syntax-entry ?\* "_ 23n" table)
+
+    ;; Dylan special-character BNF, also symbol constituents.
+    (modify-syntax-entry ?- "_" table)
+    (modify-syntax-entry ?+ "_" table)
+    (modify-syntax-entry ?~ "_" table)
+    (modify-syntax-entry ?? "_" table)
+    (modify-syntax-entry ?/ "_ 124b" table)
+    (modify-syntax-entry ?= "_" table)
+
+    ;; Not clear to me that ':' should be a symbol constituent; it's
+    ;; really punctuation after the symbol. Leaving it alone for now.
+    ;; --cgay Dec 2020
+    (modify-syntax-entry ?: "_" table)
+
     (modify-syntax-entry ?' "\"" table) ; string quote
     (modify-syntax-entry ?\f " " table) ; whitespace
+
     (modify-syntax-entry ?# "'" table)  ; expression quote or prefix operator
-    ;; Doc is not clear on what a, b, and c mean. Anyone understand it? --cgay May 2019
     (modify-syntax-entry ?\n "> b" table) ; comment ender
-    (modify-syntax-entry ?/ "_ 124b" table) ; symbol constituent, comment 1 start, comment 2 start, comment 2 end
-    (modify-syntax-entry ?\* "_ 23n" table) ; symbol constituent, comment 2 start, comment 1 end, nestable
     table))
 
 ;;;###autoload
