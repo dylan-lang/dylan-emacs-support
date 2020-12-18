@@ -179,10 +179,15 @@ define inline-only function test-highlight-inline-only () end;
 define default-inline function test-highlight-default-inline () end;
 
 define function foo ()
-  with-open-file (stream = "/tmp/foo") end;
+  with-open-file (stream = "/tmp/foo")
+    body();
+  end;
+  file-system/with-open-file (stream = "/tmp/foo")
+    body()
+  end;
   without-interrupts () body() end;
-  printing-object (o, s) end;
-  doing-this () end;
+  printing-object (o, s) body() end;
+  doing-this () body() end;
 end function;
 
 let 0d0 = x;    // *** 0d0 not valid name, shouldn't highlight.

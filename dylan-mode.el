@@ -219,9 +219,10 @@ simple definitions and are appended to `dylan-other-simple-definition-words'.")
   "Words that begin statements with implicit bodies.")
 
 ;; Names beginning "with-", "without-", and "...ing-" (e.g., printing-object)
-;; are commonly used as statement macros.
+;; are commonly used as statement macros. Also includes optional module prefix,
+;; with the assumption that the prefix is very simple and ends with '/'.
 (defvar dylan-with-statement-prefix
-  "\\(with\\|without\\|[a-zA-Z]+ing\\)-")
+  "\\([a-zA-Z-]+/\\)?\\(with\\|without\\|[a-zA-Z]+ing\\)-")
 
 (defvar dylan-statement-prefixes
   (concat "\\|\\_<" dylan-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
