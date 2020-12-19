@@ -188,6 +188,9 @@ define function foo ()
   without-interrupts () body() end;
   printing-object (o, s) body() end;
   doing-this () body() end;
+  iterate a-loop ()
+    body()
+  end;
 end function;
 
 let 0d0 = x;    // *** 0d0 not valid name, shouldn't highlight.

@@ -467,7 +467,7 @@ using the values of the various keyword list variables."
           ("unless[ \t\n]*" "")
           ("until[ \t\n]*" "")
           ("while[ \t\n]*" "")
-          ("iterate[ \t\n]+\\w+[ \t\n]*" "")
+          ("iterate[ \t\n]+[a-zA-Z-]+[ \t\n]*" "")
           ("profiling[ \t\n]*" "")
           ;; Special patterns for "define method" and "define function", which
           ;; have a return value spec.
