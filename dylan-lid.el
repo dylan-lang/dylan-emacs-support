@@ -39,9 +39,11 @@
   "Return string describing the version of Dylan LID mode.
 When called interactively, displays the version."
   (interactive)
-  (if (called-interactively-p 'interactive)
-      (message (dylan-lid-version))
-    (format "Dylan LID Mode version %s" dylan-lid-version-number)))
+  (let ((string (format "Dylan LID Mode version %s"
+                        dylan-lid-version-number)))
+    (when (called-interactively-p 'interactive)
+      (message "%s" string))
+    string))
 
 
 ;;; Customization:
