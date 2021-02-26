@@ -1,4 +1,4 @@
-;;; dylan-lid.el --- Major mode for editing Dylan LID files.
+;;; dylan-lid.el --- Major mode for Dylan LID files -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014 Erik Charlebois
 
@@ -130,8 +130,8 @@ fontifying Dylan LID files in Dylan LID Mode.")
                            (car (last fname))))
          (dylan (concat basename ".dylan")))
     (when (file-exists-p dylan)
-      (lexical-let ((map (make-sparse-keymap))
-                    (src-file dylan))
+      (let ((map (make-sparse-keymap))
+            (src-file dylan))
         (define-key map [mouse-1]
           (lambda ()
             (interactive)
@@ -150,7 +150,7 @@ fontifying Dylan LID files in Dylan LID Mode.")
     (goto-char (point-min))
     (save-match-data
       (when (re-search-forward "^Files:\\s-*" nil t)
-	(lexical-let ((bound nil))
+	(let ((bound nil))
           (save-excursion
             (when (re-search-forward "^[a-zA-Z0-9\\-]+\\s-*:" nil t)
               (setq bound (match-beginning 0))))
