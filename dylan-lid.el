@@ -78,17 +78,17 @@ whitespace prefix."
   `(
     ;; Header lines with keywords, and lines with value continuations.
     (,(concat "^"
-	      "\\(?:\\("
-	      "[a-zA-Z][-a-zA-Z0-9]*:"	; keyword...
-	      "\\)\\|"
-	      "[ \t]"			; ...or continuation prefix
-	      "\\)"
-	      "[ \t]*"			; space
-	      "\\("
-	      ;; Can keyword lines have empty values?
-	      "[^ \t\n][^\n]*?"		; value
-	      "\\)"
-	      "[ \t]*\\(\n\\|\\'\\)")	; tail space
+              "\\(?:\\("
+              "[a-zA-Z][-a-zA-Z0-9]*:"  ; keyword...
+              "\\)\\|"
+              "[ \t]"                   ; ...or continuation prefix
+              "\\)"
+              "[ \t]*"                  ; space
+              "\\("
+              ;; Can keyword lines have empty values?
+              "[^ \t\n][^\n]*?"         ; value
+              "\\)"
+              "[ \t]*\\(\n\\|\\'\\)")   ; tail space
      (1 'dylan-lid-keyword-face nil t)
      (2 'dylan-lid-value-face))
 
@@ -98,8 +98,8 @@ whitespace prefix."
     ;; Note: Ideally, we'd mark any subsequent continuation lines invalid,
     ;; too. Look into a way to do that.
     (,(concat "^"
-	      "[^ \t\n]"		; any invalid prefix character
-	      "[^\n]*\n")		; rest of line
+              "[^ \t\n]"                ; any invalid prefix character
+              "[^\n]*\n")               ; rest of line
      . 'dylan-lid-error-face))
  "Value to which `font-lock-keywords' should be set when
 fontifying Dylan LID files in Dylan LID Mode.")
@@ -148,7 +148,7 @@ fontifying Dylan LID files in Dylan LID Mode.")
     (goto-char (point-min))
     (save-match-data
       (when (re-search-forward "^Files:\\s-*" nil t)
-	(let ((bound nil))
+        (let ((bound nil))
           (save-excursion
             (when (re-search-forward "^[a-zA-Z0-9\\-]+\\s-*:" nil t)
               (setq bound (match-beginning 0))))
