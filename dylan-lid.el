@@ -26,8 +26,6 @@
 ;; Dylan LID mode is a major mode for editing LID files which define libraries
 ;; for the Dylan programming language. It provides indenting and
 ;; font-lock support.
-;;
-;; This code requires Emacs 24.
 
 
 ;;; Code:
