@@ -101,14 +101,15 @@ whitespace prefix."
               "[^ \t\n]"                ; any invalid prefix character
               "[^\n]*\n")               ; rest of line
      . 'dylan-lid-error-face))
-  "Value to which `font-lock-keywords' should be set when
-fontifying Dylan LID files in Dylan LID Mode.")
+  "Font lock keywords for ‘dylan-lid--mode’.  See ‘font-lock-keywords’.")
 
 
 ;;; Font locking:
 
 (defun dylan-lid-font-lock-fontify-region (beg end loudly)
-  "Dylan LID Mode font lock fontification."
+  "Fontify a region of a Dylan LID Mode buffer.
+
+The arguments BEG, END, LOUDLY are as for `font-lock-fontify-region'."
   (let ((font-lock-dont-widen t)
         (font-lock-keywords dylan-lid-font-lock-keywords)
         (font-lock-keywords-only t))
@@ -118,9 +119,11 @@ fontifying Dylan LID files in Dylan LID Mode.")
 ;;; Clickable files:
 
 (defun dylan-lid-make-file-link (start end src-dir)
-  "Attempt to make the region between START and END into a
- clickable link to open a module for editing, with modules located
- relative to SRC-DIR"
+  "Turn the region between START and END into a clickable link.
+
+If the region points to an existing a Dylan module, make it a
+link that opens that module for editing. Modules are located
+relative to SRC-DIR."
   (let* ((name (buffer-substring-no-properties start end))
          (fname (split-string name "\\."))
          (basename (concat (mapconcat 'file-name-as-directory
@@ -140,7 +143,9 @@ fontifying Dylan LID files in Dylan LID Mode.")
                            "mouse-1: edit file")))))
 
 (defun dylan-lid-make-files-clickable ()
-  "Make all modules with existing files clickable, where clicking opens them"
+  "Make all modules with existing files clickable.
+
+See `dylan-lid-make-file-link'."
   (interactive)
   (remove-list-of-text-properties (point-min) (point-max)
                                   '(keymap mouse-face help-echo))
@@ -166,7 +171,8 @@ fontifying Dylan LID files in Dylan LID Mode.")
       (with-silent-modifications
         (dylan-lid-make-files-clickable))))
 
-(defvar dylan-lid-timer-id nil "ID of the one-and-only timer")
+(defvar dylan-lid-timer-id nil
+  "ID of the global Dylan LID timer.")
 
 
 ;;; dylan-lid-mode:
