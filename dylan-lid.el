@@ -3,7 +3,6 @@
 ;; Copyright (C) 2014 Erik Charlebois
 
 ;; Author: Erik Charlebois (erikcharlebois@gmail.com)
-;; Version: 1.00
 
 ;; This file is *NOT* part of GNU Emacs.
 
