@@ -30,19 +30,6 @@
 
 ;;; Code:
 
-(defconst dylan-lid-version-number "1.00"
-  "Dylan LID Mode version number.")
-
-(defun dylan-lid-version ()
-  "Return string describing the version of Dylan LID mode.
-When called interactively, displays the version."
-  (interactive)
-  (let ((string (format "Dylan LID Mode version %s"
-                        dylan-lid-version-number)))
-    (when (called-interactively-p 'interactive)
-      (message "%s" string))
-    string))
-
 
 ;;; Customization:
 
@@ -190,9 +177,6 @@ See `dylan-lid-make-file-link'."
 
 May be customized with the options in the `dylan-lid' customization
 group.
-
-To see the current version of Dylan LID Mode, enter
-`\\[dylan-lid-version]'.
 
 This mode runs the hook `dylan-lid-mode-hook', as the final step
 during initialization."
