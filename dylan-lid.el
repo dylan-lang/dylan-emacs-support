@@ -101,7 +101,7 @@ whitespace prefix."
               "[^ \t\n]"                ; any invalid prefix character
               "[^\n]*\n")               ; rest of line
      . 'dylan-lid-error-face))
- "Value to which `font-lock-keywords' should be set when
+  "Value to which `font-lock-keywords' should be set when
 fontifying Dylan LID files in Dylan LID Mode.")
 
 
@@ -162,9 +162,9 @@ fontifying Dylan LID files in Dylan LID Mode.")
 
 (defun dylan-lid-make-lid-files-clickable ()
   "Apply modifications only to .lid files and avoid marking the file as changed."
-    (if (derived-mode-p 'dylan-lid-mode)
-        (with-silent-modifications
-          (dylan-lid-make-files-clickable))))
+  (if (derived-mode-p 'dylan-lid-mode)
+      (with-silent-modifications
+        (dylan-lid-make-files-clickable))))
 
 (defvar dylan-lid-timer-id nil "ID of the one-and-only timer")
 
