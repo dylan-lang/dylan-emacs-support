@@ -94,7 +94,7 @@ whitespace prefix."
 ;;; Font locking:
 
 (defun dylan-lid-font-lock-fontify-region (beg end loudly)
-  "Fontify a region of a Dylan LID Mode buffer.
+  "Fontify region in Dylan LID buffer.
 
 The arguments BEG, END, LOUDLY are as for `font-lock-fontify-region'."
   (let ((font-lock-dont-widen t)
@@ -106,11 +106,11 @@ The arguments BEG, END, LOUDLY are as for `font-lock-fontify-region'."
 ;;; Clickable files:
 
 (defun dylan-lid-make-file-link (start end src-dir)
-  "Turn the region between START and END into a clickable link.
+  "Turn region between START and END into clickable link.
 
-If the region points to an existing a Dylan module, make it a
-link that opens that module for editing. Modules are located
-relative to SRC-DIR."
+If the region points to an existing Dylan module, make it a link
+that opens that module for editing. Modules are located relative
+to SRC-DIR."
   (let* ((name (buffer-substring-no-properties start end))
          (fname (split-string name "\\."))
          (basename (concat (mapconcat 'file-name-as-directory
@@ -130,7 +130,7 @@ relative to SRC-DIR."
                            "mouse-1: edit file")))))
 
 (defun dylan-lid-make-files-clickable ()
-  "Make all modules with existing files clickable.
+  "Turn all Dylan modules with existing files into clickable links.
 
 See `dylan-lid-make-file-link'."
   (interactive)
@@ -153,7 +153,12 @@ See `dylan-lid-make-file-link'."
             (re-search-forward "\\s-*" nil t)))))))
 
 (defun dylan-lid-make-lid-files-clickable ()
-  "Apply modifications only to .lid files and avoid marking the file as changed."
+  "Turn all Dylan modules with existing files into clickable links.
+
+Apply modifications only to `dylan-lid-mode' buffers and avoid
+marking the buffers as modified.
+
+See `dylan-lid-make-file-link'."
   (if (derived-mode-p 'dylan-lid-mode)
       (with-silent-modifications
         (dylan-lid-make-files-clickable))))
