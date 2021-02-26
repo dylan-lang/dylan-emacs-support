@@ -1,7 +1,7 @@
 ;;; dylan-lid.el --- Major mode for Dylan LID files -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014 Erik Charlebois
-
+;; SPDX-License-Identifier: GPL-1.0-or-later
 ;; Author: Erik Charlebois (erikcharlebois@gmail.com)
 
 ;; This file is *NOT* part of GNU Emacs.
