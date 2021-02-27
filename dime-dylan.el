@@ -1,3 +1,15 @@
+;;; dime-dylan.el --- Dylan interaction mode -*- lexical-binding: t -*-
+
+;; URL: https://opendylan.org/
+;; Package-Requires: ((emacs "25.1"))
+;; SPDX-License-Identifier: GPL-2.0-or-later
+
+;;; Commentary:
+
+;; Support code for Dime.
+
+;;; Code:
+
 (require 'dime)
 
 ;;;; Arglist Display
@@ -42,52 +54,52 @@ more than one space."
 ;; Licencse: GNU GPL (same license as Emacs)
 ;; Modified by Hannes Mehnert <hannes@opendylan.org>
 
-(defun dime-expand-subclass-node (widget)
+(defun dime-dylan-expand-subclass-node (widget)
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
 	(loop for kid in (dime-eval `(swank:dylan-subclasses ,name))
 	      collect `(tree-widget :tag ,kid
-				    :expander dime-expand-subclass-node
+				    :expander dime-dylan-expand-subclass-node
 				    :has-children t)))))
 
-(defun dime-expand-superclass-node (widget)
+(defun dime-dylan-expand-superclass-node (widget)
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
 	(loop for kid in (dime-eval `(swank:dylan-superclasses ,name))
 	      collect `(tree-widget :tag ,kid
-				    :expander dime-expand-superclass-node
+				    :expander dime-dylan-expand-superclass-node
 				    :has-children t)))))
 
 (defun dime-dylan-browse-subclasses (name)
   "Read the name of a class and show its subclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
-  (dime-call-with-browser-setup
+  (dime-dylan-call-with-browser-setup
    "*dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
    (lambda ()
      (widget-create 'tree-widget :tag name
-                    :expander 'dime-expand-subclass-node
+                    :expander 'dime-dylan-expand-subclass-node
                     :has-echildren t))))
 
 (defun dime-dylan-browse-superclasses (name)
   "Read the name of a class and show its superclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
-  (dime-call-with-browser-setup
+  (dime-dylan-call-with-browser-setup
    "*dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
    (lambda ()
      (widget-create 'tree-widget :tag name
-                    :expander 'dime-expand-superclass-node
+                    :expander 'dime-dylan-expand-superclass-node
                     :has-echildren t))))
 
-(defvar dime-browser-map nil
+(defvar dime-dylan-browser-map nil
   "Keymap for tree widget browsers")
 
 (require 'tree-widget)
-(unless dime-browser-map
-  (setq dime-browser-map (make-sparse-keymap))
-  (set-keymap-parent dime-browser-map widget-keymap)
-  (define-key dime-browser-map "q" 'bury-buffer))
+(unless dime-dylan-browser-map
+  (setq dime-dylan-browser-map (make-sparse-keymap))
+  (set-keymap-parent dime-dylan-browser-map widget-keymap)
+  (define-key dime-dylan-browser-map "q" 'bury-buffer))
 
-(defun dime-call-with-browser-setup (buffer project module title fn)
+(defun dime-dylan-call-with-browser-setup (buffer project module title fn)
   (switch-to-buffer buffer)
   (kill-all-local-variables)
   (setq dime-buffer-project project)
@@ -98,8 +110,9 @@ more than one space."
     (funcall fn))
   (lisp-mode-variables t)
   (dime-mode t)
-  (use-local-map dime-browser-map)
+  (use-local-map dime-dylan-browser-map)
   (widget-setup))
 
 (provide 'dime-dylan)
 
+;;; dime-dylan.el ends here
