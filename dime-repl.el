@@ -408,8 +408,8 @@ This is automatically synchronized from Dylan.")
 (dime-define-keys dime-inspector-mode-map
   ((kbd "M-RET") 'dime-inspector-copy-down-to-repl))
 
-(dime-define-keys sldb-mode-map
-  ("\C-y" 'sldb-insert-frame-call-to-repl))
+(dime-define-keys dime-debug-mode-map
+  ("\C-y" 'dime-debug-insert-frame-call-to-repl))
 
 (def-dime-selector-method ?r
   "DIME Read-Eval-Print-Loop."
@@ -1390,11 +1390,11 @@ expansion will be added to the REPL's history.)"
    (dime-repl-send-string (format "%s" `(swank:inspector-nth-part ,number)))
    (dime-repl))
 
-(defun sldb-insert-frame-call-to-repl ()
+(defun dime-debug-insert-frame-call-to-repl ()
   "Insert a call to a frame at point."
   (interactive)
   (let ((call (dime-eval `(swank-backend::frame-call
-                            ,(sldb-frame-number-at-point)))))
+                            ,(dime-debug-frame-number-at-point)))))
     (dime-switch-to-output-buffer)
     (if (>= (point) dime-repl-prompt-start-mark)
         (insert call)

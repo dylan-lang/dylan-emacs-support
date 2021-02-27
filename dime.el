@@ -1,4 +1,4 @@
-;;; dime.el --- Superior Dylan Interaction Mode for Emacs
+;;; dime.el --- Dylan interaction mode for Emacs
 ;;
 ;;;; License
 ;;     Copyright (C) 2003  Eric Marsden, Luke Gorrie, Helmut Eller
@@ -43,16 +43,16 @@
 ;;   Trapping compiler messages and creating annotations in the source
 ;;   file on the appropriate forms.
 ;;
-;; DIME requires Emacs 24.
+;; Dime requires Emacs 24.
 ;;
-;; In order to run DIME, a supporting Dylan server called Swank is
+;; In order to run Dime, a supporting Dylan server called Swank is
 ;; required. Swank is distributed with dime.el and will automatically
 ;; be started in a normal installation.
 
 
 ;;;; Dependencies and setup
 
-;; check that we have at least Emacs 24... full DIME support is only
+;; check that we have at least Emacs 24... full Dime support is only
 ;; available in 24.3, but dime-compat lets dylan-mode work in 24.1.
 (when (< emacs-major-version 24)
   (error "Dime requires an Emacs version of 24, or above"))
@@ -95,7 +95,7 @@ Emacs Lisp package."))
 
 ;;;###autoload
 (defun dime-setup (&optional contribs)
-  "Setup Emacs so that dylan-mode buffers always use DIME.
+  "Setup Emacs so that dylan-mode buffers always use Dime.
 CONTRIBS is a list of contrib packages to load."
   (when (member 'dylan-mode dime-dylan-modes)
     (add-hook 'dylan-mode-hook 'dime-dylan-mode-hook))
@@ -137,14 +137,14 @@ Return nil if the ChangeLog file cannot be found."
 ;;;;; dime
 
 (defgroup dime nil
-  "Interaction with the Superior Dylan Environment."
+  "Interaction with the Dylan environment."
   :prefix "dime-"
   :group 'applications)
 
 ;;;;; dime-ui
 
 (defgroup dime-ui nil
-  "Interaction with the Superior Dylan Environment."
+  "Interaction with the Dylan environment."
   :prefix "dime-"
   :group 'dime)
 
@@ -156,7 +156,7 @@ debugger backtraces and apropos listings."
   :group 'dime-ui)
 
 (defcustom dime-kill-without-query-p nil
-  "If non-nil, kill DIME processes without query when quitting Emacs.
+  "If non-nil, kill Dime processes without query when quitting Emacs.
 This applies to the *inferior-dylan* buffer and the network connections."
   :type 'boolean
   :group 'dime-ui)
@@ -176,7 +176,7 @@ dime.el, but could also be set to an absolute filename."
   :group 'dime-dylan)
 
 (defcustom dime-connected-hook nil
-  "List of functions to call when DIME connects to Dylan."
+  "List of functions to call when Dime connects to Dylan."
   :type 'hook
   :group 'dime-dylan)
 
@@ -317,33 +317,33 @@ argument."
   "Face for compiler notes while selected."
   :group 'dime-mode-faces)
 
-;;;;; sldb
+;;;;; dime-debug
 
-(defgroup dime-debugger nil
+(defgroup dime-debug nil
   "Backtrace options and fontification."
-  :prefix "sldb-"
+  :prefix "dime-debug-"
   :group 'dime)
 
-(defmacro define-sldb-faces (&rest faces)
-  "Define the set of SLDB faces.
+(defmacro define-dime-debug-faces (&rest faces)
+  "Define the set of dime-debug faces.
 Each face specifiation is (NAME DESCRIPTION &optional PROPERTIES).
-NAME is a symbol; the face will be called sldb-NAME-face.
+NAME is a symbol; the face will be called dime-debug-NAME-face.
 DESCRIPTION is a one-liner for the customization buffer.
 PROPERTIES specifies any default face properties."
   `(progn ,@(loop for face in faces
-                  collect `(define-sldb-face ,@face))))
+                  collect `(define-dime-debug-face ,@face))))
 
-(defmacro define-sldb-face (name description &optional default)
-  (let ((facename (intern (format "sldb-%s-face" (symbol-name name)))))
+(defmacro define-dime-debug-face (name description &optional default)
+  (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name)))))
     `(defface ,facename
        (list (list t ,default))
       ,(format "Face for %s." description)
-      :group 'dime-debugger)))
+      :group 'dime-debug)))
 
-(define-sldb-faces
+(define-dime-debug-faces
   (topline        "the top line describing the error")
   (condition      "the condition class")
-  (section        "the labels of major sections in the debugger buffer")
+  (section        "the labels of major sections in the debug buffer")
   (frame-label    "backtrace frame numbers")
   (restart-type   "restart names."
                   (if (dime-face-inheritance-possible-p)
@@ -375,7 +375,7 @@ more easily. See `dime-init-keymaps'.")
 
 (define-minor-mode dime-mode
   "\\<dime-mode-map>\
-DIME: The Superior Dylan Interaction Mode for Emacs (minor-mode).
+Dime: Dylan interaction mode for Emacs (minor-mode).
 
 Commands to compile the current buffer's source file and visually
 highlight any resulting compiler notes and warnings:
@@ -442,10 +442,10 @@ information."
   (cond ((not (eq (process-status conn) 'open))
          (format " %s" (process-status conn)))
         ((let ((pending (length (dime-rex-continuations conn)))
-               (sldbs (length (sldb-buffers conn))))
-           (cond ((and (zerop sldbs) (zerop pending)) nil)
-                 ((zerop sldbs) (format " %s" pending))
-                 (t (format " %s/%s" pending sldbs)))))))
+               (dime-debugs (length (dime-debug-buffers conn))))
+           (cond ((and (zerop dime-debugs) (zerop pending)) nil)
+                 ((zerop dime-debugs) (format " %s" pending))
+                 (t (format " %s/%s" pending dime-debugs)))))))
 
 
 ;;;;; Key bindings
@@ -613,7 +613,7 @@ This list of flushed between commands.")
 
 ;;;; Framework'ey bits
 ;;;
-;;; This section contains some standard DIME idioms: basic macros,
+;;; This section contains some standard Dime idioms: basic macros,
 ;;; ways of showing messages to the user, etc. All the code in this
 ;;; file should use these functions when applicable.
 ;;;
@@ -961,7 +961,7 @@ last activated the buffer."
   (funcall dime-from-dylan-filename-function filename))
 
 
-;;;; Starting DIME
+;;;; Starting Dime
 ;;;
 ;;; This section covers starting an inferior-dylan, compiling and
 ;;; starting the server, initiating a network connection.
@@ -996,7 +996,7 @@ See `dime-dylan-implementations'")
 
 ;;;###autoload
 (defun dime (&optional command coding-system)
-  "Start an inferior^_superior Dylan and connect to its Swank server."
+  "Start Dylan and connect to its Swank server."
   (interactive)
 
   (let ((inferior-dylan-program (or command inferior-dylan-program))
@@ -1136,7 +1136,7 @@ DIRECTORY change to this directory before starting the process.
 
 ;;;;; Start inferior dylan
 ;;;
-;;; Here is the protocol for starting DIME:
+;;; Here is the protocol for starting Dime:
 ;;;
 ;;;   0. Emacs recompiles/reloads dime.elc if it exists and is stale.
 ;;;   1. Emacs starts an inferior Dylan process.
@@ -1385,7 +1385,7 @@ The default condition handler for timer functions (see
 ;;; This section covers the low-level networking: establishing
 ;;; connections and encoding/decoding protocol messages.
 ;;;
-;;; Each DIME protocol message beings with a 3-byte length header
+;;; Each Dime protocol message beings with a 3-byte length header
 ;;; followed by an S-expression as text. The sexp must be readable
 ;;; both by Emacs and by Open Dylan, so if it contains any embedded
 ;;; code fragments they should be sent as strings.
@@ -1416,7 +1416,7 @@ first line of the file."
 (defun dime-net-connect (host port coding-system)
   "Establish a connection with a Dylan."
   (let* ((inhibit-quit nil)
-         (proc (open-network-stream "DIME Dylan" nil host port))
+         (proc (open-network-stream "Dime Dylan" nil host port))
          (buffer (dime-make-net-buffer " *dime-connection*")))
     (push proc dime-net-processes)
     (set-process-buffer proc buffer)
@@ -1789,7 +1789,7 @@ This is automatically synchronized from Dylan.")
 ;;;;; Connection setup
 
 (defvar dime-connection-counter 0
-  "The number of DIME connections made. For generating serial numbers.")
+  "The number of Dime connections made. For generating serial numbers.")
 
 ;;; Interface
 (defun dime-setup-connection (process)
@@ -2035,7 +2035,7 @@ or nil if nothing suitable can be found.")
   "List of stack-tags of continuations waiting on the stack.")
 
 (defun dime-eval (sexp &optional project)
-  "Evaluate EXPR on the superior Dylan and return the result."
+  "Evaluate EXPR in Dylan and return the result."
   (let* ((tag (cl-gensym (format "dime-result-%d-"
                                  (1+ (dime-continuation-counter)))))
 	 (dime-stack-eval-tags (cons tag dime-stack-eval-tags)))
@@ -2060,7 +2060,7 @@ or nil if nothing suitable can be found.")
            (accept-process-output nil 0.01)))))))
 
 (defun dime-eval-async (sexp &optional cont project)
-  "Evaluate EXPR on the superior Dylan and call CONT with the result."
+  "Evaluate EXPR in Dylan and call CONT with the result."
   (declare (indent 1))
   (dime-rex (cont (buffer (current-buffer)))
       (sexp (or project dylan-buffer-module))
@@ -2091,7 +2091,7 @@ or nil if nothing suitable can be found.")
 (defun dime-busy-p (&optional conn)
   "True if Dylan has outstanding requests.
 Debugged requests are ignored."
-  (let ((debugged (sldb-debugged-continuations (or conn (dime-connection)))))
+  (let ((debugged (dime-debug-debugged-continuations (or conn (dime-connection)))))
     (cl-remove-if (lambda (id)
                     (memq id debugged))
                   (dime-rex-continuations)
@@ -2147,13 +2147,13 @@ Debugged requests are ignored."
                     (error "Unexpected reply: %S %S" id value)))))
           ((:debug-activate thread level &optional select)
            (assert thread)
-           (sldb-activate thread level select))
+           (dime-debug-activate thread level select))
           ((:debug thread level condition restarts frames conts)
            (assert thread)
-           (sldb-setup thread level condition restarts frames conts))
+           (dime-debug-setup thread level condition restarts frames conts))
           ((:debug-return thread level stepping)
            (assert thread)
-           (sldb-exit thread level stepping))
+           (dime-debug-exit thread level stepping))
           ((:emacs-interrupt thread)
            (dime-send `(:emacs-interrupt ,thread)))
           ((:channel-send id msg)
@@ -2213,7 +2213,7 @@ Debugged requests are ignored."
   "Clear all pending continuations and erase connection buffer."
   (interactive)
   (setf (dime-rex-continuations) '())
-  (mapc #'kill-buffer (sldb-buffers))
+  (mapc #'kill-buffer (dime-debug-buffers))
   (dime-with-connection-buffer ()
     (erase-buffer)))
 
@@ -2344,8 +2344,8 @@ This is only used by the repl command sayoonara."
     (when (or (string= (buffer-name buf) dime-event-buffer-name)
               (string-match "^\\*inferior-dylan*" (buffer-name buf))
               (string-match "^\\*dime-repl .*\\*$" (buffer-name buf))
-              (string-match "^\\*sldb .*\\*$" (buffer-name buf))
-              (string-match "^\\*DIME.*\\*$" (buffer-name buf)))
+              (string-match "^\\*dime-debug .*\\*$" (buffer-name buf))
+              (string-match "^\\*Dime.*\\*$" (buffer-name buf)))
       (kill-buffer buf))))
 
 
@@ -4253,12 +4253,12 @@ If PROJECT is NIL, then search in all projects."
 arg, you're interactively asked for parameters of the search."
   (interactive
    (if current-prefix-arg
-       (list (read-string "DIME Apropos: ")
+       (list (read-string "Dime Apropos: ")
              (y-or-n-p "External symbols only? ")
              (let ((pkg (dime-read-project-name "Project: ")))
                (if (string= pkg "") nil pkg))
              (y-or-n-p "Case-sensitive? "))
-     (list (read-string "DIME Apropos: ") t nil nil)))
+     (list (read-string "Dime Apropos: ") t nil nil)))
   (let ((buffer-project (or project dylan-buffer-module)))
     (dime-eval-async
      `(swank:apropos-list-for-emacs ,string ,only-external-p
@@ -4270,7 +4270,7 @@ arg, you're interactively asked for parameters of the search."
 (defun dime-apropos-all ()
   "Shortcut for (dime-apropos <string> nil nil)"
   (interactive)
-  (dime-apropos (read-string "DIME Apropos: ") nil nil))
+  (dime-apropos (read-string "Dime Apropos: ") nil nil))
 
 (defun dime-apropos-project (project &optional internal)
   "Show apropos listing for symbols in PROJECT.
@@ -4709,7 +4709,7 @@ When displaying XREF information, this goes to the previous reference."
 ;;;; Macroexpansion
 
 (define-minor-mode dime-macroexpansion-minor-mode
-    "DIME mode for macroexpansion"
+    "Dime mode for macroexpansion"
     nil
   " Macroexpand"
   '(("g" . dime-macroexpand-again)))
@@ -4912,55 +4912,55 @@ argument is given, with CL:MACROEXPAND."
     (message "Connection closed.")))
 
 
-;;;; Debugger (SLDB)
+;;;; Debugger
 
-(defvar sldb-hook nil
+(defvar dime-debug-hook nil
   "Hook run on entry to the debugger.")
 
-(defcustom sldb-initial-restart-limit 6
+(defcustom dime-debug-initial-restart-limit 6
   "Maximum number of restarts to display initially."
-  :group 'dime-debugger
+  :group 'dime-debug
   :type 'integer)
 
 
-;;;;; Local variables in the debugger buffer
+;;;;; Local variables in the debug buffer
 
-(defvar-local sldb-condition nil
+(defvar-local dime-debug-condition nil
   "A list (DESCRIPTION TYPE) describing the condition being debugged.")
 
-(defvar-local sldb-restarts nil
+(defvar-local dime-debug-restarts nil
   "List of (NAME DESCRIPTION) for each available restart.")
 
-(defvar-local sldb-level nil
+(defvar-local dime-debug-level nil
   "Current debug level (recursion depth) displayed in buffer.")
 
-(defvar-local sldb-backtrace-start-marker nil
+(defvar-local dime-debug-backtrace-start-marker nil
   "Marker placed at the first frame of the backtrace.")
 
-(defvar-local sldb-restart-list-start-marker nil
+(defvar-local dime-debug-restart-list-start-marker nil
   "Marker placed at the first restart in the restart list.")
 
-(defvar-local sldb-continuations nil
+(defvar-local dime-debug-continuations nil
   "List of ids for pending continuation.")
 
-;;;;; SLDB macros
+;;;;; Dime debug macros
 
 ;; some macros that we need to define before the first use
 
 ;; FIXME: rename
-(defmacro in-sldb-face (name string)
-  "Return STRING propertised with face sldb-NAME-face."
+(defmacro in-dime-debug-face (name string)
+  "Return STRING propertised with face dime-debug-NAME-face."
   (declare (indent 1))
-  (let ((facename (intern (format "sldb-%s-face" (symbol-name name))))
+  (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name))))
 	(var (cl-gensym "string")))
     `(let ((,var ,string))
       (dime-add-face ',facename ,var)
       ,var)))
 
 
-;;;;; sldb-mode
+;;;;; dime-debug-mode
 
-(defvar sldb-mode-syntax-table
+(defvar dime-debug-mode-syntax-table
   (let ((table (copy-syntax-table lisp-mode-syntax-table)))
     ;; We give < and > parenthesis syntax, so that #< ... > is treated
     ;; as a balanced expression.  This enables autodoc-mode to match
@@ -4971,180 +4971,181 @@ argument is given, with CL:MACROEXPAND."
     (modify-syntax-entry ?< "(" table)
     (modify-syntax-entry ?> ")" table)
     table)
-  "Syntax table for SLDB mode.")
+  "Syntax table for Dime debug mode.")
 
-(define-derived-mode sldb-mode fundamental-mode "sldb"
-  "Superior dylan debugger mode.
-In addition to ordinary DIME commands, the following are
-available:\\<sldb-mode-map>
+(define-derived-mode dime-debug-mode fundamental-mode "dime-debug"
+  "Dylan debugger.
+
+In addition to ordinary Dime commands, the following are
+available:\\<dime-debug-mode-map>
 
 Commands to examine the selected frame:
-   \\[sldb-toggle-details]   - toggle details (local bindings, CATCH tags)
-   \\[sldb-show-source]   - view source for the frame
-   \\[sldb-eval-in-frame]   - eval in frame
-   \\[sldb-pprint-eval-in-frame]   - eval in frame, pretty-print result
-   \\[sldb-disassemble]   - disassemble
-   \\[sldb-inspect-in-frame]   - inspect
+   \\[dime-debug-toggle-details]   - toggle details (local bindings, CATCH tags)
+   \\[dime-debug-show-source]   - view source for the frame
+   \\[dime-debug-eval-in-frame]   - eval in frame
+   \\[dime-debug-pprint-eval-in-frame]   - eval in frame, pretty-print result
+   \\[dime-debug-disassemble]   - disassemble
+   \\[dime-debug-inspect-in-frame]   - inspect
 
 Commands to invoke restarts:
-   \\[sldb-quit]   - quit
-   \\[sldb-abort]   - abort
-   \\[sldb-continue]   - continue
-   \\[sldb-invoke-restart-0]-\\[sldb-invoke-restart-9] - restart shortcuts
-   \\[sldb-invoke-restart-by-name]   - invoke restart by name
+   \\[dime-debug-quit]   - quit
+   \\[dime-debug-abort]   - abort
+   \\[dime-debug-continue]   - continue
+   \\[dime-debug-invoke-restart-0]-\\[dime-debug-invoke-restart-9] - restart shortcuts
+   \\[dime-debug-invoke-restart-by-name]   - invoke restart by name
 
 Commands to navigate frames:
-   \\[sldb-down]   - down
-   \\[sldb-up]   - up
-   \\[sldb-details-down] - down, with details
-   \\[sldb-details-up] - up, with details
-   \\[sldb-cycle] - cycle between restarts & backtrace
-   \\[sldb-beginning-of-backtrace]   - beginning of backtrace
-   \\[sldb-end-of-backtrace]   - end of backtrace
+   \\[dime-debug-down]   - down
+   \\[dime-debug-up]   - up
+   \\[dime-debug-details-down] - down, with details
+   \\[dime-debug-details-up] - up, with details
+   \\[dime-debug-cycle] - cycle between restarts & backtrace
+   \\[dime-debug-beginning-of-backtrace]   - beginning of backtrace
+   \\[dime-debug-end-of-backtrace]   - end of backtrace
 
 Miscellaneous commands:
-   \\[sldb-restart-frame]   - restart frame
-   \\[sldb-return-from-frame]   - return from frame
-   \\[sldb-step]   - step
-   \\[sldb-break-with-default-debugger]   - switch to native debugger
-   \\[sldb-break-with-system-debugger]   - switch to system debugger (gdb)
+   \\[dime-debug-restart-frame]   - restart frame
+   \\[dime-debug-return-from-frame]   - return from frame
+   \\[dime-debug-step]   - step
+   \\[dime-debug-break-with-default-debugger]   - switch to native debugger
+   \\[dime-debug-break-with-system-debugger]   - switch to system debugger (gdb)
    \\[dime-interactive-eval]   - eval
-   \\[sldb-inspect-condition]   - inspect signalled condition
+   \\[dime-debug-inspect-condition]   - inspect signalled condition
 
 Full list of commands:
 
-\\{sldb-mode-map}"
+\\{dime-debug-mode-map}"
   (erase-buffer)
-  (set-syntax-table sldb-mode-syntax-table)
+  (set-syntax-table dime-debug-mode-syntax-table)
   (dime-set-truncate-lines)
-  ;; Make original dime-connection "sticky" for SLDB commands in this buffer
+  ;; Make original dime-connection "sticky" for Dime debug commands in this buffer
   (setq dime-buffer-connection (dime-connection)))
 
-(set-keymap-parent sldb-mode-map dime-parent-map)
+(set-keymap-parent dime-debug-mode-map dime-parent-map)
 
-(dime-define-keys sldb-mode-map
+(dime-define-keys dime-debug-mode-map
 
-  ((kbd "RET") 'sldb-default-action)
-  ("\C-m"      'sldb-default-action)
-  ([return] 'sldb-default-action)
-  ([mouse-2]  'sldb-default-action/mouse)
+  ((kbd "RET") 'dime-debug-default-action)
+  ("\C-m"      'dime-debug-default-action)
+  ([return] 'dime-debug-default-action)
+  ([mouse-2]  'dime-debug-default-action/mouse)
   ([follow-link] 'mouse-face)
-  ("\C-i" 'sldb-cycle)
+  ("\C-i" 'dime-debug-cycle)
   ("h"    'describe-mode)
-  ("v"    'sldb-show-source)
-  ("e"    'sldb-eval-in-frame)
-  ("d"    'sldb-pprint-eval-in-frame)
-  ("D"    'sldb-disassemble)
-  ("i"    'sldb-inspect-in-frame)
-  ("n"    'sldb-down)
-  ("p"    'sldb-up)
-  ("\M-n" 'sldb-details-down)
-  ("\M-p" 'sldb-details-up)
-  ("<"    'sldb-beginning-of-backtrace)
-  (">"    'sldb-end-of-backtrace)
-  ("t"    'sldb-toggle-details)
-  ("r"    'sldb-restart-frame)
-  ("I"    'sldb-invoke-restart-by-name)
-  ("R"    'sldb-return-from-frame)
-  ("c"    'sldb-continue)
-  ("s"    'sldb-step)
-  ("x"    'sldb-next)
-  ("o"    'sldb-out)
-  ("b"    'sldb-break-on-return)
-  ("a"    'sldb-abort)
-  ("q"    'sldb-quit)
-  ("A"    'sldb-break-with-system-debugger)
-  ("B"    'sldb-break-with-default-debugger)
-  ("P"    'sldb-print-condition)
-  ("C"    'sldb-inspect-condition)
+  ("v"    'dime-debug-show-source)
+  ("e"    'dime-debug-eval-in-frame)
+  ("d"    'dime-debug-pprint-eval-in-frame)
+  ("D"    'dime-debug-disassemble)
+  ("i"    'dime-debug-inspect-in-frame)
+  ("n"    'dime-debug-down)
+  ("p"    'dime-debug-up)
+  ("\M-n" 'dime-debug-details-down)
+  ("\M-p" 'dime-debug-details-up)
+  ("<"    'dime-debug-beginning-of-backtrace)
+  (">"    'dime-debug-end-of-backtrace)
+  ("t"    'dime-debug-toggle-details)
+  ("r"    'dime-debug-restart-frame)
+  ("I"    'dime-debug-invoke-restart-by-name)
+  ("R"    'dime-debug-return-from-frame)
+  ("c"    'dime-debug-continue)
+  ("s"    'dime-debug-step)
+  ("x"    'dime-debug-next)
+  ("o"    'dime-debug-out)
+  ("b"    'dime-debug-break-on-return)
+  ("a"    'dime-debug-abort)
+  ("q"    'dime-debug-quit)
+  ("A"    'dime-debug-break-with-system-debugger)
+  ("B"    'dime-debug-break-with-default-debugger)
+  ("P"    'dime-debug-print-condition)
+  ("C"    'dime-debug-inspect-condition)
   (":"    'dime-interactive-eval)
-  ("\C-c\C-c" 'sldb-recompile-frame-source))
+  ("\C-c\C-c" 'dime-debug-recompile-frame-source))
 
 ;; Keys 0-9 are shortcuts to invoke particular restarts.
 (dotimes (number 10)
-  (let ((fname (intern (format "sldb-invoke-restart-%S" number)))
+  (let ((fname (intern (format "dime-debug-invoke-restart-%S" number)))
         (docstring (format "Invoke restart numbered %S." number)))
     (eval `(defun ,fname ()
              ,docstring
              (interactive)
-             (sldb-invoke-restart ,number)))
-    (define-key sldb-mode-map (number-to-string number) fname)))
+             (dime-debug-invoke-restart ,number)))
+    (define-key dime-debug-mode-map (number-to-string number) fname)))
 
 
-;;;;; SLDB buffer creation & update
+;;;;; Dime debug buffer creation & update
 
-(defun sldb-buffers (&optional connection)
-  "Return a list of all sldb buffers (belonging to CONNECTION.)"
+(defun dime-debug-buffers (&optional connection)
+  "Return a list of all dime-debug buffers (belonging to CONNECTION.)"
   (if connection
       (dime-filter-buffers (lambda ()
                               (and (eq dime-buffer-connection connection)
-                                   (eq major-mode 'sldb-mode))))
-      (dime-filter-buffers (lambda () (eq major-mode 'sldb-mode)))))
+                                   (eq major-mode 'dime-debug-mode))))
+      (dime-filter-buffers (lambda () (eq major-mode 'dime-debug-mode)))))
 
-(defun sldb-find-buffer (thread &optional connection)
+(defun dime-debug-find-buffer (thread &optional connection)
   (let ((connection (or connection (dime-connection))))
     (cl-find-if (lambda (buffer)
                   (with-current-buffer buffer
                     (and (eq dime-buffer-connection connection)
                          (eq dime-current-thread thread))))
-                (sldb-buffers))))
+                (dime-debug-buffers))))
 
-(defun sldb-get-default-buffer ()
-  "Get a sldb buffer.
+(defun dime-debug-get-default-buffer ()
+  "Get a dime-debug buffer.
 The buffer is chosen more or less randomly."
-  (car (sldb-buffers)))
+  (car (dime-debug-buffers)))
 
-(defun sldb-get-buffer (thread &optional connection)
-  "Find or create a sldb-buffer for THREAD."
+(defun dime-debug-get-buffer (thread &optional connection)
+  "Find or create a dime-debug-buffer for THREAD."
   (let ((connection (or connection (dime-connection))))
-    (or (sldb-find-buffer thread connection)
-        (let ((name (format "*sldb %s/%s*" (dime-connection-name) thread)))
+    (or (dime-debug-find-buffer thread connection)
+        (let ((name (format "*dime-debug %s/%s*" (dime-connection-name) thread)))
           (with-current-buffer (generate-new-buffer name)
             (setq dime-buffer-connection connection
                   dime-current-thread thread)
             (current-buffer))))))
 
-(defun sldb-debugged-continuations (connection)
+(defun dime-debug-debugged-continuations (connection)
   "Return the debugged continuations for CONNECTION."
   (lexical-let ((accu '()))
-    (dolist (b (sldb-buffers))
+    (dolist (b (dime-debug-buffers))
       (with-current-buffer b
         (when (eq dime-buffer-connection connection)
-          (setq accu (append sldb-continuations accu)))))
+          (setq accu (append dime-debug-continuations accu)))))
     accu))
 
-(defun sldb-setup (thread level condition restarts frames conts)
-  "Setup a new SLDB buffer.
+(defun dime-debug-setup (thread level condition restarts frames conts)
+  "Setup a new Dime debug buffer.
 CONDITION is a string describing the condition to debug.
 RESTARTS is a list of strings (NAME DESCRIPTION) for each available restart.
 FRAMES is a list (NUMBER DESCRIPTION &optional PLIST) describing the initial
 portion of the backtrace. Frames are numbered from 0.
 CONTS is a list of pending Emacs continuations."
-  (with-current-buffer (sldb-get-buffer thread)
-    (unless (equal sldb-level level)
+  (with-current-buffer (dime-debug-get-buffer thread)
+    (unless (equal dime-debug-level level)
       (setq buffer-read-only nil)
       (dime-save-local-variables (dime-popup-restore-data)
-        (sldb-mode))
+        (dime-debug-mode))
       (setq dime-current-thread thread)
-      (setq sldb-level level)
-      (setq mode-name (format "sldb[%d]" sldb-level))
-      (setq sldb-condition condition)
-      (setq sldb-restarts restarts)
-      (setq sldb-continuations conts)
-      (sldb-insert-condition condition)
-      (insert "\n\n" (in-sldb-face section "Restarts:") "\n")
-      (setq sldb-restart-list-start-marker (point-marker))
-      (sldb-insert-restarts restarts 0 sldb-initial-restart-limit)
-      (insert "\n" (in-sldb-face section "Backtrace:") "\n")
-      (setq sldb-backtrace-start-marker (point-marker))
+      (setq dime-debug-level level)
+      (setq mode-name (format "dime-debug[%d]" dime-debug-level))
+      (setq dime-debug-condition condition)
+      (setq dime-debug-restarts restarts)
+      (setq dime-debug-continuations conts)
+      (dime-debug-insert-condition condition)
+      (insert "\n\n" (in-dime-debug-face section "Restarts:") "\n")
+      (setq dime-debug-restart-list-start-marker (point-marker))
+      (dime-debug-insert-restarts restarts 0 dime-debug-initial-restart-limit)
+      (insert "\n" (in-dime-debug-face section "Backtrace:") "\n")
+      (setq dime-debug-backtrace-start-marker (point-marker))
       (save-excursion
         (if frames
-            (sldb-insert-frames (sldb-prune-initial-frames frames) t)
+            (dime-debug-insert-frames (dime-debug-prune-initial-frames frames) t)
           (insert "[No backtrace]")))
-      (run-hooks 'sldb-hook)
+      (run-hooks 'dime-debug-hook)
       (set-syntax-table lisp-mode-syntax-table))
     (dime-display-popup-buffer t)
-    (sldb-recenter-region (point-min) (point))
+    (dime-debug-recenter-region (point-min) (point))
     (setq buffer-read-only t)
     (when (and dime-stack-eval-tags
                ;; (y-or-n-p "Enter recursive edit? ")
@@ -5152,68 +5153,68 @@ CONTS is a list of pending Emacs continuations."
       (message "Entering recursive edit..")
       (recursive-edit))))
 
-(defun sldb-activate (thread level select)
-  "Display the debugger buffer for THREAD.
+(defun dime-debug-activate (thread level select)
+  "Display the debug buffer for THREAD.
 If LEVEL isn't the same as in the buffer reinitialize the buffer."
-  (or (let ((buffer (sldb-find-buffer thread)))
+  (or (let ((buffer (dime-debug-find-buffer thread)))
         (when buffer
           (with-current-buffer buffer
-            (when (equal sldb-level level)
+            (when (equal dime-debug-level level)
               (when select (pop-to-buffer (current-buffer)))
               t))))
-      (sldb-reinitialize thread level)))
+      (dime-debug-reinitialize thread level)))
 
-(defun sldb-reinitialize (thread level)
+(defun dime-debug-reinitialize (thread level)
   (dime-rex (thread level)
       ('(swank:debugger-info-for-emacs 0 10)
        nil thread)
     ((:ok result)
-     (apply #'sldb-setup thread level result))))
+     (apply #'dime-debug-setup thread level result))))
 
-(defun sldb-exit (thread level &optional stepping)
+(defun dime-debug-exit (thread level &optional stepping)
   "Exit from the debug level LEVEL."
-  (when-let (sldb (sldb-find-buffer thread))
-    (with-current-buffer sldb
+  (when-let (dime-debug (dime-debug-find-buffer thread))
+    (with-current-buffer dime-debug
       (cond (stepping
-             (setq sldb-level nil)
-             (run-with-timer 0.4 nil 'sldb-close-step-buffer sldb))
+             (setq dime-debug-level nil)
+             (run-with-timer 0.4 nil 'dime-debug-close-step-buffer dime-debug))
             (t
              (dime-popup-buffer-quit t))))))
 
-(defun sldb-close-step-buffer (buffer)
+(defun dime-debug-close-step-buffer (buffer)
   (when (buffer-live-p buffer)
     (with-current-buffer buffer
-      (when (not sldb-level)
+      (when (not dime-debug-level)
         (dime-popup-buffer-quit t)))))
 
 
-;;;;;; SLDB buffer insertion
+;;;;;; Dime debug buffer insertion
 
-(defun sldb-insert-condition (condition)
+(defun dime-debug-insert-condition (condition)
   "Insert the text for CONDITION.
 CONDITION should be a list (MESSAGE TYPE EXTRAS).
 EXTRAS is currently used for the stepper."
   (destructuring-bind (message type extras) condition
-    (dime-insert-propertized '(sldb-default-action sldb-inspect-condition)
-                              (in-sldb-face topline message)
+    (dime-insert-propertized '(dime-debug-default-action dime-debug-inspect-condition)
+                              (in-dime-debug-face topline message)
                               "\n"
-                              (in-sldb-face condition type))
-    (sldb-dispatch-extras extras)))
+                              (in-dime-debug-face condition type))
+    (dime-debug-dispatch-extras extras)))
 
-(defvar sldb-extras-hooks)
+(defvar dime-debug-extras-hooks)
 
-(defun sldb-dispatch-extras (extras)
+(defun dime-debug-dispatch-extras (extras)
   ;; this is (mis-)used for the stepper
   (dolist (extra extras)
     (destructure-case extra
       ((:show-frame-source n)
-       (sldb-show-frame-source n))
+       (dime-debug-show-frame-source n))
       (t
-       (or (run-hook-with-args-until-success 'sldb-extras-hooks extra)
+       (or (run-hook-with-args-until-success 'dime-debug-extras-hooks extra)
            ;;(error "Unhandled extra element:" extra)
            )))))
 
-(defun sldb-insert-restarts (restarts start count)
+(defun dime-debug-insert-restarts (restarts start count)
   "Insert RESTARTS and add the needed text props
 RESTARTS should be a list ((NAME DESCRIPTION) ...)."
   (let* ((len (length restarts))
@@ -5222,88 +5223,88 @@ RESTARTS should be a list ((NAME DESCRIPTION) ...)."
           for number from start
           do (dime-insert-propertized
                `(,@nil restart ,number
-                       sldb-default-action sldb-invoke-restart
+                       dime-debug-default-action dime-debug-invoke-restart
                        mouse-face highlight)
-               " " (in-sldb-face restart-number (number-to-string number))
-               ": ["  (in-sldb-face restart-type name) "] "
-               (in-sldb-face restart string))
+               " " (in-dime-debug-face restart-number (number-to-string number))
+               ": ["  (in-dime-debug-face restart-type name) "] "
+               (in-dime-debug-face restart string))
              (insert "\n"))
     (when (< end len)
       (let ((pos (point)))
         (dime-insert-propertized
-         (list 'sldb-default-action
-               (dime-rcurry #'sldb-insert-more-restarts restarts pos end))
+         (list 'dime-debug-default-action
+               (dime-rcurry #'dime-debug-insert-more-restarts restarts pos end))
          " --more--\n")))))
 
-(defun sldb-insert-more-restarts (restarts position start)
+(defun dime-debug-insert-more-restarts (restarts position start)
   (goto-char position)
   (let ((inhibit-read-only t))
     (delete-region position (1+ (line-end-position)))
-    (sldb-insert-restarts restarts start nil)))
+    (dime-debug-insert-restarts restarts start nil)))
 
-(defun sldb-frame.string (frame)
+(defun dime-debug-frame.string (frame)
   (destructuring-bind (_ str &optional _) frame str))
 
-(defun sldb-frame.number (frame)
+(defun dime-debug-frame.number (frame)
   (destructuring-bind (n _ &optional _) frame n))
 
-(defun sldb-frame.plist (frame)
+(defun dime-debug-frame.plist (frame)
   (destructuring-bind (_ _ &optional plist) frame plist))
 
-(defun sldb-frame-restartable-p (frame)
-  (and (plist-get (sldb-frame.plist frame) :restartable) t))
+(defun dime-debug-frame-restartable-p (frame)
+  (and (plist-get (dime-debug-frame.plist frame) :restartable) t))
 
-(defun sldb-prune-initial-frames (frames)
+(defun dime-debug-prune-initial-frames (frames)
   "Return the prefix of FRAMES to initially present to the user.
 Regexp heuristics are used to avoid showing SWANK-internal frames."
   (let* ((case-fold-search t)
          (rx "^\\([() ]\\|lambda\\)*swank\\>"))
     (or (loop for frame in frames
-              until (string-match rx (sldb-frame.string frame))
+              until (string-match rx (dime-debug-frame.string frame))
               collect frame)
         frames)))
 
-(defun sldb-insert-frames (frames more)
+(defun dime-debug-insert-frames (frames more)
   "Insert FRAMES into buffer.
 If MORE is non-nil, more frames are on the Dylan stack."
-  (mapc #'sldb-insert-frame frames)
+  (mapc #'dime-debug-insert-frame frames)
   (when more
     (dime-insert-propertized
-     `(,@nil sldb-default-action sldb-fetch-more-frames
-             sldb-previous-frame-number
-             ,(sldb-frame.number (first (last frames)))
-             point-entered sldb-fetch-more-frames
+     `(,@nil dime-debug-default-action dime-debug-fetch-more-frames
+             dime-debug-previous-frame-number
+             ,(dime-debug-frame.number (first (last frames)))
+             point-entered dime-debug-fetch-more-frames
              start-open t
-             face sldb-section-face
+             face dime-debug-section-face
              mouse-face highlight)
      " --more--")
     (insert "\n")))
 
-(defun sldb-compute-frame-face (frame)
-  (if (sldb-frame-restartable-p frame)
-      'sldb-restartable-frame-line-face
-      'sldb-frame-line-face))
+(defun dime-debug-compute-frame-face (frame)
+  (if (dime-debug-frame-restartable-p frame)
+      'dime-debug-restartable-frame-line-face
+      'dime-debug-frame-line-face))
 
-(defun sldb-insert-frame (frame &optional face)
+(defun dime-debug-insert-frame (frame &optional face)
   "Insert FRAME with FACE at point.
-If FACE is nil, `sldb-compute-frame-face' is used to determine the face."
-  (setq face (or face (sldb-compute-frame-face frame)))
-  (let ((number (sldb-frame.number frame))
-        (string (sldb-frame.string frame))
-        (props `(frame ,frame sldb-default-action sldb-toggle-details)))
+If FACE is nil, `dime-debug-compute-frame-face' is used to determine the face."
+  (setq face (or face (dime-debug-compute-frame-face frame)))
+  (let ((number (dime-debug-frame.number frame))
+        (string (dime-debug-frame.string frame))
+        (props `(frame ,frame dime-debug-default-action dime-debug-toggle-details)))
     (dime-propertize-region props
       (dime-propertize-region '(mouse-face highlight)
-        (insert " " (in-sldb-face frame-label (format "%2d:" number)) " ")
+        (insert " " (in-dime-debug-face frame-label (format "%2d:" number)) " ")
         (dime-insert-indented
          (dime-add-face face string)))
       (insert "\n"))))
 
-(defun sldb-fetch-more-frames (&rest ignore)
+(defun dime-debug-fetch-more-frames (&rest ignore)
   "Fetch more backtrace frames.
 Called on the `point-entered' text-property hook."
   (let ((inhibit-point-motion-hooks t)
         (inhibit-read-only t)
-        (prev (get-text-property (point) 'sldb-previous-frame-number)))
+        (prev (get-text-property (point) 'dime-debug-previous-frame-number)))
     ;; we may be called twice, PREV is nil the second time
     (when prev
       (let* ((count 40)
@@ -5313,65 +5314,65 @@ Called on the `point-entered' text-property hook."
              (more (dime-length= frames count))
              (pos (point)))
         (delete-region (line-beginning-position) (point-max))
-        (sldb-insert-frames frames more)
+        (dime-debug-insert-frames frames more)
         (goto-char pos)))))
 
 
-;;;;;; SLDB examining text props
+;;;;;; Dime debug examining text props
 
-(defun sldb-restart-at-point ()
+(defun dime-debug-restart-at-point ()
   (or (get-text-property (point) 'restart)
       (error "No restart at point")))
 
-(defun sldb-frame-number-at-point ()
+(defun dime-debug-frame-number-at-point ()
   (let ((frame (get-text-property (point) 'frame)))
     (cond (frame (car frame))
 	  (t (error "No frame at point")))))
 
-(defun sldb-var-number-at-point ()
+(defun dime-debug-var-number-at-point ()
   (let ((var (get-text-property (point) 'var)))
     (cond (var var)
 	  (t (error "No variable at point")))))
 
-(defun sldb-previous-frame-number ()
+(defun dime-debug-previous-frame-number ()
   (save-excursion
-    (sldb-backward-frame)
-    (sldb-frame-number-at-point)))
+    (dime-debug-backward-frame)
+    (dime-debug-frame-number-at-point)))
 
-(defun sldb-frame-details-visible-p ()
+(defun dime-debug-frame-details-visible-p ()
   (and (get-text-property (point) 'frame)
        (get-text-property (point) 'details-visible-p)))
 
-(defun sldb-frame-region ()
+(defun dime-debug-frame-region ()
   (dime-property-bounds 'frame))
 
-(defun sldb-forward-frame ()
+(defun dime-debug-forward-frame ()
   (goto-char (next-single-char-property-change (point) 'frame)))
 
-(defun sldb-backward-frame ()
-  (when (> (point) sldb-backtrace-start-marker)
+(defun dime-debug-backward-frame ()
+  (when (> (point) dime-debug-backtrace-start-marker)
     (goto-char (previous-single-char-property-change
                 (if (get-text-property (point) 'frame)
-                    (car (sldb-frame-region))
+                    (car (dime-debug-frame-region))
                     (point))
                 'frame
-                nil sldb-backtrace-start-marker))))
+                nil dime-debug-backtrace-start-marker))))
 
-(defun sldb-goto-last-frame ()
+(defun dime-debug-goto-last-frame ()
   (goto-char (point-max))
   (while (not (get-text-property (point) 'frame))
     (goto-char (previous-single-property-change (point) 'frame))
     ;; Recenter to bottom of the window; -2 to account for the
-    ;; empty last line displayed in sldb buffers.
+    ;; empty last line displayed in dime-debug buffers.
     (recenter -2)))
 
-(defun sldb-beginning-of-backtrace ()
+(defun dime-debug-beginning-of-backtrace ()
   "Goto the first frame."
   (interactive)
-  (goto-char sldb-backtrace-start-marker))
+  (goto-char dime-debug-backtrace-start-marker))
 
 
-;;;;;; SLDB recenter & redisplay
+;;;;;; Dime debug recenter & redisplay
 
 ;; FIXME: these functions need factorization
 
@@ -5389,7 +5390,7 @@ Called on the `point-entered' text-property hook."
            (cond ((= (current-column) 0) (recenter 1))
                  (t (recenter)))))))))
 
-(defun sldb-recenter-region (start end &optional center)
+(defun dime-debug-recenter-region (start end &optional center)
   "Make the region from START to END visible.
 Avoid point motions, if possible.
 Minimize scrolling, if CENTER is nil.
@@ -5459,60 +5460,60 @@ This is 0 if START and END at the same line."
      (if (save-excursion (goto-char end) (bolp)) 0 1)))
 
 
-;;;;; SLDB commands
+;;;;; Dime debug commands
 
-(defun sldb-default-action ()
+(defun dime-debug-default-action ()
   "Invoke the action at point."
   (interactive)
-  (let ((fn (get-text-property (point) 'sldb-default-action)))
+  (let ((fn (get-text-property (point) 'dime-debug-default-action)))
     (if fn (funcall fn))))
 
-(defun sldb-default-action/mouse (event)
+(defun dime-debug-default-action/mouse (event)
   "Invoke the action pointed at by the mouse."
   (interactive "e")
   (destructuring-bind (mouse-1 (w pos &rest _)) event
     (save-excursion
       (goto-char pos)
-      (let ((fn (get-text-property (point) 'sldb-default-action)))
+      (let ((fn (get-text-property (point) 'dime-debug-default-action)))
 	(if fn (funcall fn))))))
 
-(defun sldb-cycle ()
+(defun dime-debug-cycle ()
   "Cycle between restart list and backtrace."
   (interactive)
   (let ((pt (point)))
-    (cond ((< pt sldb-restart-list-start-marker)
-           (goto-char sldb-restart-list-start-marker))
-          ((< pt sldb-backtrace-start-marker)
-           (goto-char sldb-backtrace-start-marker))
+    (cond ((< pt dime-debug-restart-list-start-marker)
+           (goto-char dime-debug-restart-list-start-marker))
+          ((< pt dime-debug-backtrace-start-marker)
+           (goto-char dime-debug-backtrace-start-marker))
           (t
-           (goto-char sldb-restart-list-start-marker)))))
+           (goto-char dime-debug-restart-list-start-marker)))))
 
-(defun sldb-end-of-backtrace ()
+(defun dime-debug-end-of-backtrace ()
   "Fetch the entire backtrace and go to the last frame."
   (interactive)
-  (sldb-fetch-all-frames)
-  (sldb-goto-last-frame))
+  (dime-debug-fetch-all-frames)
+  (dime-debug-goto-last-frame))
 
-(defun sldb-fetch-all-frames ()
+(defun dime-debug-fetch-all-frames ()
   (let ((inhibit-read-only t)
         (inhibit-point-motion-hooks t))
-    (sldb-goto-last-frame)
-    (let ((last (sldb-frame-number-at-point)))
+    (dime-debug-goto-last-frame)
+    (let ((last (dime-debug-frame-number-at-point)))
       (goto-char (next-single-char-property-change (point) 'frame))
       (delete-region (point) (point-max))
       (save-excursion
-        (sldb-insert-frames (dime-eval `(swank:backtrace ,(1+ last) nil))
+        (dime-debug-insert-frames (dime-eval `(swank:backtrace ,(1+ last) nil))
                             nil)))))
 
 
-;;;;;; SLDB show source
+;;;;;; Dime debug show source
 
-(defun sldb-show-source ()
+(defun dime-debug-show-source ()
   "Highlight the frame at point's expression in a source code buffer."
   (interactive)
-  (sldb-show-frame-source (sldb-frame-number-at-point)))
+  (dime-debug-show-frame-source (dime-debug-frame-number-at-point)))
 
-(defun sldb-show-frame-source (frame-number)
+(defun dime-debug-show-frame-source (frame-number)
   (dime-eval-async
    `(swank:frame-source-location ,frame-number)
    (lambda (source-location)
@@ -5541,219 +5542,219 @@ This is 0 if START and END at the same line."
                       timeout))
 
 
-;;;;;; SLDB toggle details
+;;;;;; Dime debug toggle details
 
-(defun sldb-toggle-details (&optional on)
+(defun dime-debug-toggle-details (&optional on)
   "Toggle display of details for the current frame.
 The details include local variable bindings and CATCH-tags."
   (interactive)
-  (assert (sldb-frame-number-at-point))
+  (assert (dime-debug-frame-number-at-point))
   (let ((inhibit-read-only t)
         (inhibit-point-motion-hooks t))
-    (if (or on (not (sldb-frame-details-visible-p)))
-	(sldb-show-frame-details)
-      (sldb-hide-frame-details))))
+    (if (or on (not (dime-debug-frame-details-visible-p)))
+	(dime-debug-show-frame-details)
+      (dime-debug-hide-frame-details))))
 
-(defun sldb-show-frame-details ()
+(defun dime-debug-show-frame-details ()
   ;; fetch and display info about local variables and catch tags
-  (destructuring-bind (start end frame locals catches) (sldb-frame-details)
+  (destructuring-bind (start end frame locals catches) (dime-debug-frame-details)
     (dime-save-coordinates start
       (delete-region start end)
       (dime-propertize-region `(frame ,frame details-visible-p t)
-        (sldb-insert-frame frame (if (sldb-frame-restartable-p frame)
-                                     'sldb-restartable-frame-line-face
+        (dime-debug-insert-frame frame (if (dime-debug-frame-restartable-p frame)
+                                     'dime-debug-restartable-frame-line-face
                                      ;; FIXME: can we somehow merge the two?
-                                     'sldb-detailed-frame-line-face))
+                                     'dime-debug-detailed-frame-line-face))
         (let ((indent1 "      ")
               (indent2 "        "))
-          (insert indent1 (in-sldb-face section
+          (insert indent1 (in-dime-debug-face section
                             (if locals "Locals:" "[No Locals]")) "\n")
-          (sldb-insert-locals locals indent2 frame)
+          (dime-debug-insert-locals locals indent2 frame)
           (when catches
-            (insert indent1 (in-sldb-face section "Catch-tags:") "\n")
+            (insert indent1 (in-dime-debug-face section "Catch-tags:") "\n")
             (dolist (tag catches)
               (dime-propertize-region `(catch-tag ,tag)
-                (insert indent2 (in-sldb-face catch-tag (format "%s" tag))
+                (insert indent2 (in-dime-debug-face catch-tag (format "%s" tag))
                         "\n"))))
           (setq end (point)))))
-    (sldb-recenter-region start end)))
+    (dime-debug-recenter-region start end)))
 
-(defun sldb-frame-details ()
+(defun dime-debug-frame-details ()
   ;; Return a list (START END FRAME LOCALS CATCHES) for frame at point.
   (let* ((frame (get-text-property (point) 'frame))
          (num (car frame)))
-    (destructuring-bind (start end) (sldb-frame-region)
+    (destructuring-bind (start end) (dime-debug-frame-region)
       (list* start end frame
              (dime-eval `(swank:frame-locals-and-catch-tags ,num))))))
 
-(defvar sldb-insert-frame-variable-value-function
-  'sldb-insert-frame-variable-value)
+(defvar dime-debug-insert-frame-variable-value-function
+  'dime-debug-insert-frame-variable-value)
 
-(defun sldb-insert-locals (vars prefix frame)
+(defun dime-debug-insert-locals (vars prefix frame)
   "Insert VARS and add PREFIX at the beginning of each inserted line.
 VAR should be a plist with the keys :name, :id, and :value."
   (loop for i from 0
         for var in vars do
         (destructuring-bind (&key name id value) var
-          (dime-propertize-region (list 'sldb-default-action 'sldb-inspect-var
+          (dime-propertize-region (list 'dime-debug-default-action 'dime-debug-inspect-var
                                          'var i)
             (insert prefix
-                    (in-sldb-face local-name
+                    (in-dime-debug-face local-name
                       (concat name (if (zerop id) "" (format "#%d" id))))
                     " = ")
-            (funcall sldb-insert-frame-variable-value-function value frame i)
+            (funcall dime-debug-insert-frame-variable-value-function value frame i)
             (insert "\n")))))
 
-(defun sldb-insert-frame-variable-value (value frame index)
-  (insert (in-sldb-face local-value value)))
+(defun dime-debug-insert-frame-variable-value (value frame index)
+  (insert (in-dime-debug-face local-value value)))
 
-(defun sldb-hide-frame-details ()
+(defun dime-debug-hide-frame-details ()
   ;; delete locals and catch tags, but keep the function name and args.
-  (destructuring-bind (start end) (sldb-frame-region)
+  (destructuring-bind (start end) (dime-debug-frame-region)
     (let ((frame (get-text-property (point) 'frame)))
       (dime-save-coordinates start
         (delete-region start end)
         (dime-propertize-region '(details-visible-p nil)
-          (sldb-insert-frame frame))))))
+          (dime-debug-insert-frame frame))))))
 
-(defun sldb-disassemble ()
+(defun dime-debug-disassemble ()
   "Disassemble the code for the current frame."
   (interactive)
-  (let ((frame (sldb-frame-number-at-point)))
-    (dime-eval-async `(swank:sldb-disassemble ,frame)
+  (let ((frame (dime-debug-frame-number-at-point)))
+    (dime-eval-async `(swank:dime-debug-disassemble ,frame)
                       (lambda (result)
 			(dime-show-description result nil)))))
 
 
-;;;;;; SLDB eval and inspect
+;;;;;; Dime debug eval and inspect
 
-(defun sldb-eval-in-frame (string)
+(defun dime-debug-eval-in-frame (string)
   "Prompt for an expression and evaluate it in the selected frame."
   (interactive (list (dime-read-from-minibuffer "Eval in frame: ")))
-  (let* ((number (sldb-frame-number-at-point)))
+  (let* ((number (dime-debug-frame-number-at-point)))
     (dime-eval-async `(swank:eval-string-in-frame ,string ,number)
                       (if current-prefix-arg
                           'dime-write-string
                         'dime-display-eval-result))))
 
-(defun sldb-pprint-eval-in-frame (string)
+(defun dime-debug-pprint-eval-in-frame (string)
   "Prompt for an expression, evaluate in selected frame, pretty-print result."
   (interactive (list (dime-read-from-minibuffer "Eval in frame: ")))
-  (let* ((number (sldb-frame-number-at-point)))
+  (let* ((number (dime-debug-frame-number-at-point)))
     (dime-eval-async `(swank:pprint-eval-string-in-frame ,string ,number)
 		      (lambda (result)
 			(dime-show-description result nil)))))
 
-(defun sldb-inspect-in-frame (string)
+(defun dime-debug-inspect-in-frame (string)
   "Prompt for an expression and inspect it in the selected frame."
   (interactive (list (dime-read-from-minibuffer
                       "Inspect in frame (evaluated): "
                       (dime-sexp-at-point))))
-  (let ((number (sldb-frame-number-at-point)))
+  (let ((number (dime-debug-frame-number-at-point)))
     (dime-eval-async `(swank:inspect-in-frame ,string ,number)
                       'dime-open-inspector)))
 
-(defun sldb-inspect-var ()
-  (let ((frame (sldb-frame-number-at-point))
-        (var (sldb-var-number-at-point)))
+(defun dime-debug-inspect-var ()
+  (let ((frame (dime-debug-frame-number-at-point))
+        (var (dime-debug-var-number-at-point)))
     (dime-eval-async `(swank:inspect-frame-var ,frame ,var)
                       'dime-open-inspector)))
 
-(defun sldb-inspect-condition ()
-  "Inspect the current debugger condition."
+(defun dime-debug-inspect-condition ()
+  "Inspect the current debug condition."
   (interactive)
   (dime-eval-async '(swank:inspect-current-condition)
                     'dime-open-inspector))
 
 
-;;;;;; SLDB movement
+;;;;;; Dime debug movement
 
-(defun sldb-down ()
+(defun dime-debug-down ()
   "Select next frame."
   (interactive)
-  (sldb-forward-frame))
+  (dime-debug-forward-frame))
 
-(defun sldb-up ()
+(defun dime-debug-up ()
   "Select previous frame."
   (interactive)
-  (sldb-backward-frame)
-  (when (= (point) sldb-backtrace-start-marker)
+  (dime-debug-backward-frame)
+  (when (= (point) dime-debug-backtrace-start-marker)
     (recenter (1+ (count-lines (point-min) (point))))))
 
-(defun sldb-sugar-move (move-fn)
+(defun dime-debug-sugar-move (move-fn)
   (let ((inhibit-read-only t))
-    (when (sldb-frame-details-visible-p) (sldb-hide-frame-details))
+    (when (dime-debug-frame-details-visible-p) (dime-debug-hide-frame-details))
     (funcall move-fn)
-    (sldb-show-source)
-    (sldb-toggle-details t)))
+    (dime-debug-show-source)
+    (dime-debug-toggle-details t)))
 
-(defun sldb-details-up ()
+(defun dime-debug-details-up ()
   "Select previous frame and show details."
   (interactive)
-  (sldb-sugar-move 'sldb-up))
+  (dime-debug-sugar-move 'dime-debug-up))
 
-(defun sldb-details-down ()
+(defun dime-debug-details-down ()
   "Select next frame and show details."
   (interactive)
-  (sldb-sugar-move 'sldb-down))
+  (dime-debug-sugar-move 'dime-debug-down))
 
 
-;;;;;; SLDB restarts
+;;;;;; Dime debug restarts
 
-(defun sldb-quit ()
+(defun dime-debug-quit ()
   "Quit to toplevel."
   (interactive)
-  (assert sldb-restarts () "sldb-quit called outside of sldb buffer")
+  (assert dime-debug-restarts () "dime-debug-quit called outside of dime-debug buffer")
   (dime-rex () ('(swank:throw-to-toplevel))
-    ((:ok x) (error "sldb-quit returned [%s]" x))
+    ((:ok x) (error "dime-debug-quit returned [%s]" x))
     ((:abort _) _)))
 
-(defun sldb-continue ()
+(defun dime-debug-continue ()
   "Invoke the \"continue\" restart."
   (interactive)
-  (assert sldb-restarts () "sldb-continue called outside of sldb buffer")
+  (assert dime-debug-restarts () "dime-debug-continue called outside of dime-debug buffer")
   (dime-rex ()
-      ('(swank:sldb-continue))
+      ('(swank:dime-debug-continue))
     ((:ok _)
      (message "No restart named continue")
      (ding))
     ((:abort _) _)))
 
-(defun sldb-abort ()
+(defun dime-debug-abort ()
   "Invoke the \"abort\" restart."
   (interactive)
-  (dime-eval-async '(swank:sldb-abort)
+  (dime-eval-async '(swank:dime-debug-abort)
                     (lambda (v) (message "Restart returned: %S" v))))
 
-(defun sldb-invoke-restart (&optional number)
+(defun dime-debug-invoke-restart (&optional number)
   "Invoke a restart.
-Optional NUMBER (index into `sldb-restarts') specifies the
+Optional NUMBER (index into `dime-debug-restarts') specifies the
 restart to invoke, otherwise use the restart at point."
   (interactive)
-  (let ((restart (or number (sldb-restart-at-point))))
+  (let ((restart (or number (dime-debug-restart-at-point))))
     (dime-rex ()
-        ((list 'swank:invoke-nth-restart-for-emacs sldb-level restart))
+        ((list 'swank:invoke-nth-restart-for-emacs dime-debug-level restart))
       ((:ok value) (message "Restart returned: %s" value))
       ((:abort _) _))))
 
-(defun sldb-invoke-restart-by-name (restart-name)
+(defun dime-debug-invoke-restart-by-name (restart-name)
   (interactive (list (let ((completion-ignore-case t))
-                       (completing-read "Restart: " sldb-restarts nil t
+                       (completing-read "Restart: " dime-debug-restarts nil t
                                         ""
-                                        'sldb-invoke-restart-by-name))))
-  (sldb-invoke-restart (cl-position restart-name sldb-restarts
+                                        'dime-debug-invoke-restart-by-name))))
+  (dime-debug-invoke-restart (cl-position restart-name dime-debug-restarts
                                     :test 'string= :key 'first)))
 
-(defun sldb-break-with-default-debugger (&optional dont-unwind)
+(defun dime-debug-break-with-default-debugger (&optional dont-unwind)
   "Enter default debugger."
   (interactive "P")
   (dime-rex ()
-      ((list 'swank:sldb-break-with-default-debugger
+      ((list 'swank:dime-debug-break-with-default-debugger
              (not (not dont-unwind)))
        nil dime-current-thread)
     ((:abort _) _)))
 
-(defun sldb-break-with-system-debugger (&optional lightweight)
+(defun dime-debug-break-with-system-debugger (&optional lightweight)
   "Enter system debugger (gdb)."
   (interactive "P")
   (dime-attach-gdb dime-buffer-connection lightweight))
@@ -5797,53 +5798,53 @@ process, or nil."
                                    nil t (connection-identifier initial-value))
                   candidates)))))
 
-(defun sldb-step ()
+(defun dime-debug-step ()
   "Step to next basic-block boundary."
   (interactive)
-  (let ((frame (sldb-frame-number-at-point)))
-    (dime-eval-async `(swank:sldb-step ,frame))))
+  (let ((frame (dime-debug-frame-number-at-point)))
+    (dime-eval-async `(swank:dime-debug-step ,frame))))
 
-(defun sldb-next ()
+(defun dime-debug-next ()
   "Step over call."
   (interactive)
-  (let ((frame (sldb-frame-number-at-point)))
-    (dime-eval-async `(swank:sldb-next ,frame))))
+  (let ((frame (dime-debug-frame-number-at-point)))
+    (dime-eval-async `(swank:dime-debug-next ,frame))))
 
-(defun sldb-out ()
+(defun dime-debug-out ()
   "Resume stepping after returning from this function."
   (interactive)
-  (let ((frame (sldb-frame-number-at-point)))
-    (dime-eval-async `(swank:sldb-out ,frame))))
+  (let ((frame (dime-debug-frame-number-at-point)))
+    (dime-eval-async `(swank:dime-debug-out ,frame))))
 
-(defun sldb-break-on-return ()
+(defun dime-debug-break-on-return ()
   "Set a breakpoint at the current frame.
 The debugger is entered when the frame exits."
   (interactive)
-  (let ((frame (sldb-frame-number-at-point)))
-    (dime-eval-async `(swank:sldb-break-on-return ,frame)
+  (let ((frame (dime-debug-frame-number-at-point)))
+    (dime-eval-async `(swank:dime-debug-break-on-return ,frame)
                       (lambda (msg) (message "%s" msg)))))
 
-(defun sldb-break (name)
+(defun dime-debug-break (name)
   "Set a breakpoint at the start of the function NAME."
   (interactive (list (dime-read-symbol-name "Function: " t)))
-  (dime-eval-async `(swank:sldb-break ,name)
+  (dime-eval-async `(swank:dime-debug-break ,name)
                     (lambda (msg) (message "%s" msg))))
 
-(defun sldb-return-from-frame (string)
+(defun dime-debug-return-from-frame (string)
   "Reads an expression in the minibuffer and causes the function to
 return that value, evaluated in the context of the frame."
   (interactive (list (dime-read-from-minibuffer "Return from frame: ")))
-  (let* ((number (sldb-frame-number-at-point)))
+  (let* ((number (dime-debug-frame-number-at-point)))
     (dime-rex ()
-        ((list 'swank:sldb-return-from-frame number string))
+        ((list 'swank:dime-debug-return-from-frame number string))
       ((:ok value) (message "%s" value))
       ((:abort _) _))))
 
-(defun sldb-restart-frame ()
+(defun dime-debug-restart-frame ()
   "Causes the frame to restart execution with the same arguments as it
 was called originally."
   (interactive)
-  (let* ((number (sldb-frame-number-at-point)))
+  (let* ((number (dime-debug-frame-number-at-point)))
     (dime-rex ()
         ((list 'swank:restart-frame number))
       ((:ok value) (message "%s" value))
@@ -5856,12 +5857,12 @@ was called originally."
     (lambda (msg) (message "%s" msg))))
 
 
-;;;;;; SLDB recompilation commands
+;;;;;; Dime debug recompilation commands
 
-(defun sldb-recompile-frame-source (&optional raw-prefix-arg)
+(defun dime-debug-recompile-frame-source (&optional raw-prefix-arg)
   (interactive "P")
   (dime-eval-async
-   `(swank:frame-source-location ,(sldb-frame-number-at-point))
+   `(swank:frame-source-location ,(dime-debug-frame-number-at-point))
    (lexical-let ((policy (dime-compute-policy raw-prefix-arg)))
      (lambda (source-location)
        (destructure-case source-location
@@ -5998,7 +5999,7 @@ was called originally."
 
 (define-derived-mode dime-thread-control-mode fundamental-mode
   "Threads"
-  "DIME Thread Control Panel Mode.
+  "Dime Thread Control Panel Mode.
 
 \\{dime-thread-control-mode-map}
 \\{dime-popup-buffer-mode-map}"
@@ -6052,7 +6053,7 @@ was called originally."
 
 (define-derived-mode dime-connection-list-mode fundamental-mode
   "Dime-Connections"
-  "DIME Connection List Mode.
+  "Dime Connection List Mode.
 
 \\{dime-connection-list-mode-map}
 \\{dime-popup-buffer-mode-map}"
@@ -6638,16 +6639,16 @@ switch-to-buffer."
   (dime-recently-visited-buffer 'dylan-mode))
 
 (def-dime-selector-method ?d
-  "*sldb* buffer for the current connection."
-  (or (sldb-get-default-buffer)
-      (error "No debugger buffer")))
+  "*dime-debug* buffer for the current connection."
+  (or (dime-debug-get-default-buffer)
+      (error "No debug buffer")))
 
 (def-dime-selector-method ?e
   "most recently visited emacs-dylan-mode buffer."
   (dime-recently-visited-buffer 'emacs-dylan-mode))
 
 (def-dime-selector-method ?c
-  "DIME connections buffer."
+  "Dime connections buffer."
   (dime-list-connections)
   dime-connections-buffer-name)
 
@@ -6659,7 +6660,7 @@ switch-to-buffer."
           "*"))
 
 (def-dime-selector-method ?t
-  "DIME threads buffer."
+  "Dime threads buffer."
   (dime-list-threads)
   dime-threads-buffer-name)
 
@@ -6760,7 +6761,7 @@ Only considers buffers that are not already visible."
 
 (defvar dime-easy-menu
   (let ((C '(dime-connected-p)))
-    `("DIME"
+    `("Dime"
       [ "Edit Definition..."       dime-edit-definition ,C ]
       [ "Return From Definition"   dime-pop-find-definition-stack ,C ]
       [ "Complete Symbol"          dime-complete-symbol ,C ]
@@ -6824,47 +6825,47 @@ Only considers buffers that are not already visible."
       [ "Sync Project & Directory" dime-sync-project-and-default-directory ,C]
       )))
 
-(defvar dime-sldb-easy-menu
+(defvar dime-debug-easy-menu
   (let ((C '(dime-connected-p)))
-    `("SLDB"
-      [ "Next Frame" sldb-down t ]
-      [ "Previous Frame" sldb-up t ]
-      [ "Toggle Frame Details" sldb-toggle-details t ]
-      [ "Next Frame (Details)" sldb-details-down t ]
-      [ "Previous Frame (Details)" sldb-details-up t ]
+    `("Dime debug"
+      [ "Next Frame" dime-debug-down t ]
+      [ "Previous Frame" dime-debug-up t ]
+      [ "Toggle Frame Details" dime-debug-toggle-details t ]
+      [ "Next Frame (Details)" dime-debug-details-down t ]
+      [ "Previous Frame (Details)" dime-debug-details-up t ]
       "--"
       [ "Eval Expression..." dime-interactive-eval ,C ]
-      [ "Eval in Frame..." sldb-eval-in-frame ,C ]
-      [ "Eval in Frame (pretty print)..." sldb-pprint-eval-in-frame ,C ]
-      [ "Inspect In Frame..." sldb-inspect-in-frame ,C ]
-      [ "Inspect Condition Object" sldb-inspect-condition ,C ]
+      [ "Eval in Frame..." dime-debug-eval-in-frame ,C ]
+      [ "Eval in Frame (pretty print)..." dime-debug-pprint-eval-in-frame ,C ]
+      [ "Inspect In Frame..." dime-debug-inspect-in-frame ,C ]
+      [ "Inspect Condition Object" dime-debug-inspect-condition ,C ]
       "--"
-      [ "Restart Frame" sldb-restart-frame ,C ]
-      [ "Return from Frame..." sldb-return-from-frame ,C ]
+      [ "Restart Frame" dime-debug-restart-frame ,C ]
+      [ "Return from Frame..." dime-debug-return-from-frame ,C ]
       ("Invoke Restart"
-       [ "Continue" sldb-continue ,C ]
-       [ "Abort"    sldb-abort ,C ]
-       [ "Step"      sldb-step ,C ]
-       [ "Step next" sldb-next ,C ]
-       [ "Step out"  sldb-out ,C ]
+       [ "Continue" dime-debug-continue ,C ]
+       [ "Abort"    dime-debug-abort ,C ]
+       [ "Step"      dime-debug-step ,C ]
+       [ "Step next" dime-debug-next ,C ]
+       [ "Step out"  dime-debug-out ,C ]
        )
       "--"
-      [ "Quit (throw)" sldb-quit ,C ]
-      [ "Break With Default Debugger" sldb-break-with-default-debugger ,C ])))
+      [ "Quit (throw)" dime-debug-quit ,C ]
+      [ "Break With Default Debugger" dime-debug-break-with-default-debugger ,C ])))
 
-(easy-menu-define menubar-dime dime-mode-map "DIME" dime-easy-menu)
+(easy-menu-define menubar-dime dime-mode-map "Dime" dime-easy-menu)
 
 (defun dime-add-easy-menu ()
   (easy-menu-add dime-easy-menu 'dime-mode-map))
 
 (add-hook 'dime-mode-hook 'dime-add-easy-menu)
 
-(defun dime-sldb-add-easy-menu ()
-  (easy-menu-define menubar-dime-sldb
-    sldb-mode-map "SLDB" dime-sldb-easy-menu)
-  (easy-menu-add dime-sldb-easy-menu 'sldb-mode-map))
+(defun dime-debug-add-easy-menu ()
+  (easy-menu-define menubar-dime-debug
+    dime-debug-mode-map "Dime debug" dime-debug-easy-menu)
+  (easy-menu-add dime-debug-easy-menu 'dime-debug-mode-map))
 
-(add-hook 'sldb-mode-hook 'dime-sldb-add-easy-menu)
+(add-hook 'dime-debug-mode-hook 'dime-debug-add-easy-menu)
 
 
 ;;;; Cheat Sheet
@@ -6884,16 +6885,16 @@ Only considers buffers that are not already visible."
      :map dime-mode-map
      :bindings (dime-indent-and-complete-symbol
                 dime-fuzzy-complete-symbol))
-    (:title "Within SLDB buffers"
-     :map sldb-mode-map
-     :bindings ((sldb-default-action "Do 'whatever' with thing at point")
-                (sldb-toggle-details "Toggle frame details visualization")
-                (sldb-quit "Quit to REPL")
-                (sldb-abort "Invoke ABORT restart")
-                (sldb-continue "Invoke CONTINUE restart (if available)")
-                (sldb-show-source "Jump to frame's source code")
-                (sldb-eval-in-frame "Evaluate in frame at point")
-                (sldb-inspect-in-frame "Evaluate in frame at point and inspect result")))
+    (:title "Within Dime debug buffers"
+     :map dime-debug-mode-map
+     :bindings ((dime-debug-default-action "Do 'whatever' with thing at point")
+                (dime-debug-toggle-details "Toggle frame details visualization")
+                (dime-debug-quit "Quit to REPL")
+                (dime-debug-abort "Invoke ABORT restart")
+                (dime-debug-continue "Invoke CONTINUE restart (if available)")
+                (dime-debug-show-source "Jump to frame's source code")
+                (dime-debug-eval-in-frame "Evaluate in frame at point")
+                (dime-debug-inspect-in-frame "Evaluate in frame at point and inspect result")))
     (:title "Within the Inspector"
      :map dime-inspector-mode-map
      :bindings ((dime-inspector-next-inspectable-object "Jump to next inspectable object")
@@ -6914,7 +6915,7 @@ Only considers buffers that are not already visible."
   (setq buffer-read-only nil)
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
-  (insert "DIME: The Superior Dylan Interaction Mode for Emacs (minor-mode).\n\n")
+  (insert "Dime: Dylan interaction mode for Emacs (minor-mode).\n\n")
   (dolist (mode dime-cheat-sheet-table)
     (let ((title (cl-getf mode :title))
           (mode-map (cl-getf mode :map))
