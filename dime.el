@@ -43,19 +43,12 @@
 ;;   Trapping compiler messages and creating annotations in the source
 ;;   file on the appropriate forms.
 ;;
-;; Dime requires Emacs 24.
-;;
 ;; In order to run Dime, a supporting Dylan server called Swank is
 ;; required. Swank is distributed with dime.el and will automatically
 ;; be started in a normal installation.
 
 
 ;;;; Dependencies and setup
-
-;; check that we have at least Emacs 24... full Dime support is only
-;; available in 24.3, but dime-compat lets dylan-mode work in 24.1.
-(when (< emacs-major-version 24)
-  (error "Dime requires an Emacs version of 24, or above"))
 
 (eval-when-compile
   (require 'cl))
@@ -73,7 +66,6 @@
 (require 'compile)
 (require 'gud)
 
-(require 'dime-compat)
 (require 'dylan-mode)
 (require 'dylan-lid)
 (require 'dylan-optimization-coloring)
