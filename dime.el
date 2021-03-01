@@ -2351,8 +2351,8 @@ region that will be compiled.")
   :options '(dime-maybe-show-compilation-log
              dime-create-compilation-log
              dime-show-compilation-log
-             dime-maybe-list-compiler-notes
-             dime-list-compiler-notes
+             dime-note-tree-maybe-show
+             dime-note-tree-show
              dime-maybe-show-xrefs-for-notes
              dime-goto-first-note))
 
@@ -6773,7 +6773,7 @@ Only considers buffers that are not already visible."
        [ "Next Note"               dime-next-note t ]
        [ "Previous Note"           dime-previous-note t ]
        [ "Remove Notes"            dime-remove-notes t ]
-       [ "List Notes"              dime-list-compiler-notes ,C ])
+       [ "Show Notes"              dime-note-tree-show ,C ])
       ("Cross Reference"
        [ "Who Calls..."            dime-who-calls ,C ]
        [ "Who References... "      dime-who-references ,C ]
