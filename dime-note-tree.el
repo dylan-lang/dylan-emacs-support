@@ -27,7 +27,7 @@ grouped by severity.
   (:license "GPL"))
 
 (defun dime-note-tree-maybe-show (notes)
-  "Show the compiler notes if appropriate."
+  "Show the compiler NOTES if appropriate."
   ;; don't pop up a buffer if all notes are already annotated in the
   ;; buffer itself
   (unless (cl-every #'dime-note-has-location-p notes)
@@ -51,11 +51,15 @@ grouped by severity.
 (defvar dime-note-tree-printer 'dime-note-tree-default-printer)
 
 (defun dime-note-tree--for-note (note)
+  "Make a note tree for the given NOTE."
   (make-dime-note-tree :item (dime-note.message note)
                        :plist (list 'note note)
                        :print-fn dime-note-tree-printer))
 
 (defun dime-note-tree--for-severity (severity notes collapsed-p)
+  "Make a note tree for NOTES of the given SEVERITY.
+
+COLLAPSED-P says whether the tree is initially collapsed."
   (make-dime-note-tree :item (format "%s (%d)"
                                      (dime-severity-label severity)
                                      (length notes))
@@ -63,13 +67,15 @@ grouped by severity.
                        :collapsed-p collapsed-p))
 
 (defun dime-note-tree--from-notes (notes)
+  "Make a note tree from a list of NOTES."
   (let* ((alist (dime-alistify notes #'dime-note.severity #'eq))
          (collapsed-p (dime-length> alist 1)))
     (loop for (severity . notes) in alist
           collect (dime-note-tree--for-severity severity notes
                                                 collapsed-p))))
 
-(defvar dime-note-tree-mode-map)
+(defvar dime-note-tree-mode-map nil
+  "Keymap for Dime note tree mode.")
 
 (define-derived-mode dime-note-tree-mode fundamental-mode
   "Compiler-Notes"
@@ -85,7 +91,9 @@ grouped by severity.
   ([mouse-2] 'dime-note-tree-mouse-default-action-or-show-details))
 
 (defun dime-note-tree-mouse-default-action-or-show-details (event)
-  "Invoke the action pointed at by the mouse, or show details."
+  "Invoke the action pointed at by the mouse, or show details.
+
+This command is meant to be bound to a mouse EVENT."
   (interactive "e")
   (cl-destructuring-bind (mouse-2 (w pos &rest _) &rest __) event
     (save-excursion
@@ -101,6 +109,7 @@ grouped by severity.
     (if fn (funcall fn) (dime-note-tree-show-details))))
 
 (defun dime-note-tree-show-details ()
+  "Show details for the note tree at point."
   (interactive)
   (let* ((tree (dime-note-tree--at-point))
          (note (plist-get (dime-note-tree--plist tree) 'note))
@@ -124,18 +133,21 @@ grouped by severity.
   (plist '() :type list))
 
 (defun dime-note-tree--leaf-p (tree)
+  "Return t if the given note TREE is a leaf node, nil otherwise."
   (not (dime-note-tree--kids tree)))
 
 (defun dime-note-tree-default-printer (tree)
+  "Print note TREE using default representation."
   (princ (dime-note-tree--item tree) (current-buffer)))
 
 (defun dime-note-tree--decoration (tree)
+  "Return decorative prefix for note TREE as a string."
   (cond ((dime-note-tree--leaf-p tree) "-- ")
 	((dime-note-tree--collapsed-p tree) "[+] ")
 	(t "-+  ")))
 
 (defun dime-note-tree--insert-list (list prefix)
-  "Insert a list of trees."
+  "Insert LIST of note trees using PREFIX for each."
   (loop for (elt . rest) on list
 	do (cond (rest
 		  (insert prefix " |")
@@ -145,12 +157,11 @@ grouped by severity.
 		  (insert prefix " `")
 		  (dime-note-tree--insert elt (concat prefix "  "))))))
 
-(defun dime-note-tree--insert-decoration (tree)
-  (insert (dime-note-tree--decoration tree)))
-
 (defun dime-note-tree--indent-item (start end prefix)
-  "Insert PREFIX at the beginning of each but the first line.
-This is used for labels spanning multiple lines."
+  "Insert PREFIX at the beginning of each line except the first.
+
+This is used for labels spanning multiple lines. START and END
+are the region to modify."
   (save-excursion
     (goto-char end)
     (beginning-of-line)
@@ -164,7 +175,7 @@ This is used for labels spanning multiple lines."
       tree
     (let ((line-start (line-beginning-position)))
       (setf start-mark (point-marker))
-      (dime-note-tree--insert-decoration tree)
+      (insert (dime-note-tree--decoration tree))
       (funcall print-fn tree)
       (dime-note-tree--indent-item start-mark (point) (concat prefix "   "))
       (add-text-properties line-start (point) (list 'dime-note-tree tree))
@@ -176,6 +187,7 @@ This is used for labels spanning multiple lines."
       (setf end-mark (point-marker)))))
 
 (defun dime-note-tree--at-point ()
+  "Return the note tree at point, error if none."
   (cond ((get-text-property (point) 'dime-note-tree))
         (t (error "No tree at point"))))
 
