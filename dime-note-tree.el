@@ -41,12 +41,10 @@ grouped by severity.
                              :mode 'dime-note-tree-mode)
       (when (null notes)
         (insert "[no notes]"))
-      (let ((collapsed-p))
-        (dolist (tree (dime-note-tree--from-notes notes))
-          (when (dime-note-tree--collapsed-p tree) (setf collapsed-p t))
-          (dime-note-tree--insert tree "")
-          (insert "\n"))
-        (goto-char (point-min))))))
+      (dolist (tree (dime-note-tree--from-notes notes))
+        (dime-note-tree--insert tree "")
+        (insert "\n"))
+      (goto-char (point-min)))))
 
 (defvar dime-note-tree-printer 'dime-note-tree-default-printer)
 
@@ -74,7 +72,7 @@ COLLAPSED-P says whether the tree is initially collapsed."
           collect (dime-note-tree--for-severity severity notes
                                                 collapsed-p))))
 
-(defvar dime-note-tree-mode-map nil
+(defvar dime-note-tree-mode-map (make-sparse-keymap)
   "Keymap for Dime note tree mode.")
 
 (define-derived-mode dime-note-tree-mode fundamental-mode
@@ -95,7 +93,7 @@ COLLAPSED-P says whether the tree is initially collapsed."
 
 This command is meant to be bound to a mouse EVENT."
   (interactive "e")
-  (cl-destructuring-bind (mouse-2 (w pos &rest _) &rest __) event
+  (cl-destructuring-bind (_mouse-2 (_w pos &rest ignore1) &rest ignore2) event
     (save-excursion
       (goto-char pos)
       (let ((fn (get-text-property (point)
