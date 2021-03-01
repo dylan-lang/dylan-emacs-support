@@ -1,6 +1,18 @@
+;;; dime-note-tree.el --- Dylan interaction mode -*- lexical-binding: t -*-
+
+;; SPDX-License-Identifier: GPL-2.0-or-later
+;; URL: https://opendylan.org/
+;; Package-Requires: ((emacs "25.1"))
+
+;;; Commentary:
+
+;;; Code:
+
+(require 'cl-lib)
+
 (require 'dime)
 
-(define-dime-contrib dime-compiler-notes-tree
+(define-dime-contrib dime-note-tree
   "Display compiler messages in tree layout.
 
 M-x dime-list-compiler-notes display the compiler notes in a tree
@@ -73,7 +85,7 @@ grouped by severity.
 (defun dime-compiler-notes-default-action-or-show-details/mouse (event)
   "Invoke the action pointed at by the mouse, or show details."
   (interactive "e")
-  (destructuring-bind (mouse-2 (w pos &rest _) &rest __) event
+  (cl-destructuring-bind (mouse-2 (w pos &rest _) &rest __) event
     (save-excursion
       (goto-char pos)
       (let ((fn (get-text-property (point)
@@ -180,4 +192,6 @@ This is used for labels spanning multiple lines."
     (delete-char 1)
     (goto-char start-mark)))
 
-(provide 'dime-compiler-notes-tree)
+(provide 'dime-note-tree)
+
+;;; dime-note-tree.el ends here
