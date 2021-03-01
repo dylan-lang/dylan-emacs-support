@@ -1,19 +1,22 @@
-;;; dime-repl.el ---
-;;
-;; Original Author: Helmut Eller
-;; Contributors: to many to mention
-;; License: GNU GPL (same license as Emacs)
-;;
-;;; Description:
-;;
+;;; dime-repl.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
-;;
-;;; Installation:
-;;
-;; Call dime-setup and include 'dime-repl as argument:
+;; Author: Helmut Eller
+;; Contributors: to many to mention
+;; SPDX-License-Identifier: GPL-2.0-or-later
+
+;; URL: https://opendylan.org/
+;; Package-Requires: ((emacs "25.1"))
+
+;;; Commentary:
+
+;; Dylan read-eval-print loop for Dime.
+
+;; To install, call dime-setup and include 'dime-repl as argument:
 ;;
 ;;  (dime-setup '(dime-repl [others conribs ...]))
-;;
+
+(require 'cl-lib)
+(require 'subr-x)
 
 (require 'dime)
 
@@ -118,9 +121,9 @@ maintain."
 ;; dummy defvar for compiler
 (defvar dime-repl-read-mode)
 
-(defun dime-reading-p ()
+(defun dime-repl-reading-p ()
   "True if Dylan is currently reading input from the REPL."
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     dime-repl-read-mode))
 
 
@@ -129,13 +132,13 @@ maintain."
 (dime-def-connection-var dime-connection-output-buffer nil
   "The buffer for the REPL.  May be nil or a dead buffer.")
 
-(defvar-local dime-output-start nil
+(defvar-local dime-repl-output-start nil
   "Marker for the start of the output for the evaluation.")
 
-(defvar-local dime-output-end nil
+(defvar-local dime-repl-output-end nil
   "Marker for end of output. New output is inserted at this mark.")
 
-(defun dime-output-buffer (&optional noprompt)
+(defun dime-repl-output-buffer (&optional noprompt)
   "Return the output buffer, create it if necessary."
   (let ((buffer (dime-connection-output-buffer)))
     (or (if (buffer-live-p buffer) buffer)
@@ -145,7 +148,7 @@ maintain."
                   (unless (eq major-mode 'dime-repl-mode)
                     (dime-repl-mode))
                   (setq dime-buffer-connection connection)
-                  (dime-reset-repl-markers)
+                  (dime-repl-reset-markers)
                   (unless noprompt
                     (dime-repl-insert-prompt))
                   (current-buffer)))))))
@@ -155,8 +158,8 @@ maintain."
 (defun dime-repl-update-banner ()
   (funcall dime-repl-banner-function)
   (dime-move-point (point-max))
-  (dime-mark-output-start)
-  (dime-mark-input-start)
+  (dime-repl-mark-output-start)
+  (dime-repl-mark-input-start)
   (dime-repl-insert-prompt))
 
 (defun dime-repl-insert-banner ()
@@ -165,22 +168,22 @@ maintain."
                                           "- ChangeLog file not found"))))
       (insert welcome))))
 
-(defun dime-init-output-buffer (connection)
-  (with-current-buffer (dime-output-buffer t)
+(defun dime-repl-init-output-buffer (connection)
+  (with-current-buffer (dime-repl-output-buffer t)
     (setq dime-buffer-connection connection
           dime-repl-directory-stack '()
           dime-repl-project-stack '())
     (dime-repl-update-banner)))
 
-(defun dime-display-output-buffer ()
+(defun dime-repl-display-output-buffer ()
   "Display the output buffer and scroll to bottom."
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     (goto-char (point-max))
     (unless (get-buffer-window (current-buffer) t)
       (display-buffer (current-buffer) t))
     (dime-repl-show-maximum-output)))
 
-(defun dime-output-filter (process string)
+(defun dime-repl-output-filter (process string)
   (with-current-buffer (process-buffer process)
     (when (and (plusp (length string))
                (eq (process-status dime-buffer-connection) 'open))
@@ -188,41 +191,41 @@ maintain."
 
 (defvar dime-open-stream-hooks)
 
-(defun dime-open-stream-to-dylan (port)
+(defun dime-repl-open-stream-to-dylan (port)
   (let ((stream (open-network-stream "*dylan-output-stream*"
                                      (dime-with-connection-buffer ()
                                        (current-buffer))
 				     dime-dylan-host port)))
     (dime-set-query-on-exit-flag stream)
-    (set-process-filter stream 'dime-output-filter)
+    (set-process-filter stream 'dime-repl-output-filter)
     (let ((pcs (process-coding-system (dime-current-connection))))
       (set-process-coding-system stream (car pcs) (cdr pcs)))
-    (when-let (secret (dime-secret))
+    (when-let ((secret (dime-secret)))
       (dime-net-send secret stream))
     (run-hook-with-args 'dime-open-stream-hooks stream)
     stream))
 
-(defvar dime-write-string-function 'dime-repl-write-string)
+(defvar dime-repl-write-string-function 'dime-repl-write-string)
 
 (defun dime-write-string (string &optional target)
   "Insert STRING in the REPL buffer or some other TARGET.
 If TARGET is nil, insert STRING as regular process
 output.  If TARGET is :repl-result, insert STRING as the result of the
 evaluation.  Other values of TARGET map to an Emacs marker via the
-hashtable `dime-output-target-to-marker'; output is inserted at this marker."
-  (funcall dime-write-string-function string target))
+hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker."
+  (funcall dime-repl-write-string-function string target))
 
 (defun dime-repl-write-string (string &optional target)
-  (case target
+  (cl-case target
     ((nil) (dime-repl-emit string))
     (:repl-result (dime-repl-emit-result string))
-    (t (dime-emit-to-target string target))))
+    (t (dime-repl-emit-to-target string target))))
 
 (defvar dime-repl-popup-on-output nil
   "Display the output buffer when some output is written.
 This is set to nil after displaying the buffer.")
 
-(defmacro dime-save-marker (marker &rest body)
+(defmacro dime-repl-save-marker (marker &rest body)
   (declare (indent 1))
   (let ((pos (cl-gensym "pos")))
   `(let ((,pos (marker-position ,marker)))
@@ -231,17 +234,17 @@ This is set to nil after displaying the buffer.")
 
 (defun dime-repl-emit (string)
   ;; insert the string STRING in the output buffer
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     (save-excursion
-      (goto-char dime-output-end)
-      (dime-save-marker dime-output-start
+      (goto-char dime-repl-output-end)
+      (dime-repl-save-marker dime-repl-output-start
         (dime-propertize-region '(face dime-repl-output-face
                                         rear-nonsticky (face))
           (insert-before-markers string)
           (when (and (= (point) dime-repl-prompt-start-mark)
                      (not (bolp)))
             (insert-before-markers "\n")
-            (set-marker dime-output-end (1- (point)))))))
+            (set-marker dime-repl-output-end (1- (point)))))))
     (when dime-repl-popup-on-output
       (setq dime-repl-popup-on-output nil)
       (display-buffer (current-buffer)))
@@ -249,10 +252,10 @@ This is set to nil after displaying the buffer.")
 
 (defun dime-repl-emit-result (string &optional bol)
   ;; insert STRING and mark it as evaluation result
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     (save-excursion
-      (dime-save-marker dime-output-start
-        (dime-save-marker dime-output-end
+      (dime-repl-save-marker dime-repl-output-start
+        (dime-repl-save-marker dime-repl-output-end
           (goto-char dime-repl-input-start-mark)
           (when (and bol (not (bolp))) (insert-before-markers "\n"))
           (dime-propertize-region `(face dime-repl-result-face
@@ -260,30 +263,30 @@ This is set to nil after displaying the buffer.")
             (insert-before-markers string)))))
     (dime-repl-show-maximum-output)))
 
-(defvar dime-last-output-target-id 0
+(defvar dime-repl-last-output-target-id 0
   "The last integer we used as a TARGET id.")
 
-(defvar dime-output-target-to-marker
+(defvar dime-repl-output-target-to-marker
   (make-hash-table)
   "Map from TARGET ids to Emacs markers.
 The markers indicate where output should be inserted.")
 
-(defun dime-output-target-marker (target)
+(defun dime-repl-output-target-marker (target)
   "Return the marker where output for TARGET should be inserted."
-  (case target
+  (cl-case target
     ((nil)
-     (with-current-buffer (dime-output-buffer)
-       dime-output-end))
+     (with-current-buffer (dime-repl-output-buffer)
+       dime-repl-output-end))
     (:repl-result
-     (with-current-buffer (dime-output-buffer)
+     (with-current-buffer (dime-repl-output-buffer)
        dime-repl-input-start-mark))
     (t
-     (gethash target dime-output-target-to-marker))))
+     (gethash target dime-repl-output-target-to-marker))))
 
-(defun dime-emit-to-target (string target)
+(defun dime-repl-emit-to-target (string target)
   "Insert STRING at target TARGET.
-See `dime-output-target-to-marker'."
-  (let* ((marker (dime-output-target-marker target))
+See `dime-repl-output-target-to-marker'."
+  (let* ((marker (dime-repl-output-target-marker target))
          (buffer (and marker (marker-buffer marker))))
     (when buffer
       (with-current-buffer buffer
@@ -301,7 +304,7 @@ Hint: You can use `display-buffer-reuse-frames' and
 `special-display-buffer-names' to customize the frame in which
 the buffer should appear."
   (interactive)
-  (pop-to-buffer (dime-output-buffer))
+  (pop-to-buffer (dime-repl-output-buffer))
   (goto-char (point-max)))
 
 
@@ -329,7 +332,7 @@ the buffer should appear."
 ;; taken when output-end and input-start are at the same position: if
 ;; we insert at that point, we must move the right markers.  We should
 ;; also not leave (window-)point in the middle of the new output.  The
-;; idiom we use is a combination to dime-save-marker,
+;; idiom we use is a combination to dime-repl-save-marker,
 ;; insert-before-markers, and manually updating window-point
 ;; afterwards.
 ;;
@@ -353,9 +356,9 @@ the buffer should appear."
   "The current project name of the Superior dylan.
 This is automatically synchronized from Dylan.")
 
-(defun dime-reset-repl-markers ()
-  (dolist (markname '(dime-output-start
-                      dime-output-end
+(defun dime-repl-reset-markers ()
+  (dolist (markname '(dime-repl-output-start
+                      dime-repl-output-end
                       dime-repl-prompt-start-mark
                       dime-repl-input-start-mark))
     (set markname (make-marker))
@@ -376,8 +379,8 @@ This is automatically synchronized from Dylan.")
   ("\C-c~" 'dime-sync-project-and-default-directory))
 
 (dime-define-keys dime-connection-list-mode-map
-  ((kbd "RET") 'dime-goto-connection)
-  ([return] 'dime-goto-connection))
+  ((kbd "RET") 'dime-repl-goto-connection)
+  ([return] 'dime-repl-goto-connection))
 
 (dime-define-keys dime-repl-mode-map
   ("\C-m" 'dime-repl-return)
@@ -406,14 +409,14 @@ This is automatically synchronized from Dylan.")
   ("\C-c\C-z" 'dime-nop))
 
 (dime-define-keys dime-inspector-mode-map
-  ((kbd "M-RET") 'dime-inspector-copy-down-to-repl))
+  ((kbd "M-RET") 'dime-repl-inspector-copy-down-to-repl))
 
 (dime-define-keys dime-debug-mode-map
-  ("\C-y" 'dime-debug-insert-frame-call-to-repl))
+  ("\C-y" 'dime-repl-insert-debug-frame-call-to-repl))
 
 (def-dime-selector-method ?r
   "DIME Read-Eval-Print-Loop."
-  (dime-output-buffer))
+  (dime-repl-output-buffer))
 
 (define-minor-mode dime-repl-map-mode
   "Minor mode which makes dime-repl-mode-map available.
@@ -486,10 +489,10 @@ This is automatically synchronized from Dylan.")
      (dime-repl-show-abort condition))))
 
 (defun dime-repl-insert-result (result)
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     (save-excursion
       (when result
-        (destructure-case result
+        (dime--destructuring-case result
           ((:values &rest strings)
            (cond ((null strings)
                   (dime-repl-emit-result "; No value\n" t))
@@ -500,11 +503,11 @@ This is automatically synchronized from Dylan.")
     (dime-repl-show-maximum-output)))
 
 (defun dime-repl-show-abort (condition)
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     (save-excursion
-      (dime-save-marker dime-output-start
-        (dime-save-marker dime-output-end
-          (goto-char dime-output-end)
+      (dime-repl-save-marker dime-repl-output-start
+        (dime-repl-save-marker dime-repl-output-end
+          (goto-char dime-repl-output-end)
           (insert-before-markers (format "; Evaluation aborted on %s.\n" condition))
           (dime-repl-insert-prompt))))
     (dime-repl-show-maximum-output)))
@@ -514,8 +517,8 @@ This is automatically synchronized from Dylan.")
 Set point after the prompt.
 Return the position of the prompt beginning."
   (goto-char dime-repl-input-start-mark)
-  (dime-save-marker dime-output-start
-    (dime-save-marker dime-output-end
+  (dime-repl-save-marker dime-repl-output-start
+    (dime-repl-save-marker dime-repl-output-end
       (unless (bolp) (insert-before-markers "\n"))
       (let ((prompt-start (point))
             (prompt (format "%s> " (dime-dylan-project-prompt-string))))
@@ -551,23 +554,23 @@ buffer."
                                           (point)
                                         (point-max)))))
 
-(defun dime-property-position (text-property &optional object)
+(defun dime-repl-property-position (text-property &optional object)
   "Return the first position of TEXT-PROPERTY, or nil."
   (if (get-text-property 0 text-property object)
       0
     (next-single-property-change 0 text-property object)))
 
-(defun dime-mark-input-start ()
+(defun dime-repl-mark-input-start ()
   (set-marker dime-repl-input-start-mark (point) (current-buffer)))
 
-(defun dime-mark-output-start ()
-  (set-marker dime-output-start (point))
-  (set-marker dime-output-end (point)))
+(defun dime-repl-mark-output-start ()
+  (set-marker dime-repl-output-start (point))
+  (set-marker dime-repl-output-end (point)))
 
-(defun dime-mark-output-end ()
+(defun dime-repl-mark-output-end ()
   ;; Don't put dime-repl-output-face again; it would remove the
   ;; special presentation face, for instance in the SBCL inspector.
-  (add-text-properties dime-output-start dime-output-end
+  (add-text-properties dime-repl-output-start dime-repl-output-end
                        '(;;face dime-repl-output-face
                          rear-nonsticky (face))))
 
@@ -624,12 +627,12 @@ buffer."
   (let ((origin (point))
         (prop 'dime-repl-prompt))
     (while (progn
-             (dime-search-property-change prop backward)
-             (not (or (dime-end-of-proprange-p prop) (bobp) (eobp)))))
-    (unless (dime-end-of-proprange-p prop)
+             (dime-repl-search-property-change prop backward)
+             (not (or (dime-repl-end-of-proprange-p prop) (bobp) (eobp)))))
+    (unless (dime-repl-end-of-proprange-p prop)
       (goto-char origin))))
 
-(defun dime-search-property-change (prop &optional backward)
+(defun dime-repl-search-property-change (prop &optional backward)
   (cond (backward
          (goto-char (or (previous-single-char-property-change (point) prop)
 			(point-min))))
@@ -637,7 +640,7 @@ buffer."
          (goto-char (or (next-single-char-property-change (point) prop)
 			(point-max))))))
 
-(defun dime-end-of-proprange-p (property)
+(defun dime-repl-end-of-proprange-p (property)
   (and (get-char-property (max 1 (1- (point))) property)
        (not (get-char-property (point) property))))
 
@@ -698,8 +701,8 @@ If NEWLINE is true then add a newline at the end of the input."
       (overlay-put overlay 'face 'dime-repl-input-face)))
   (let ((input (dime-repl-current-input)))
     (goto-char (point-max))
-    (dime-mark-input-start)
-    (dime-mark-output-start)
+    (dime-repl-mark-input-start)
+    (dime-repl-mark-output-start)
     (dime-repl-send-string input)))
 
 (defun dime-repl-grab-old-input (replace)
@@ -773,7 +776,7 @@ earlier in the buffer."
   (interactive)
   (let ((inhibit-read-only t))
     (delete-region (point-min) dime-repl-prompt-start-mark)
-    (delete-region dime-output-start dime-output-end)
+    (delete-region dime-repl-output-start dime-repl-output-end)
     (when (< (point) dime-repl-input-start-mark)
       (goto-char dime-repl-input-start-mark))
     (recenter t))
@@ -799,9 +802,9 @@ earlier in the buffer."
   "Set the project of the REPL buffer to PROJECT."
   (interactive (list (let* ((p (dime-current-project)))
                        (dime-read-project-name "Project: " p))))
-  (with-current-buffer (dime-output-buffer)
+  (with-current-buffer (dime-repl-output-buffer)
     (let ((previouse-point (- (point) dime-repl-input-start-mark)))
-      (destructuring-bind (name prompt-string)
+      (cl-destructuring-bind (name prompt-string)
           (dime-repl-shortcut-eval `(swank:set-package ,project))
         (setf (dime-dylan-project-prompt-string) prompt-string)
         (setf dime-buffer-project name)
@@ -830,7 +833,8 @@ earlier in the buffer."
 (defvar-local dime-repl-input-history '()
   "History list of strings read from the REPL buffer.")
 
-(defun dime-string-trim (character-bag string)
+;; TODO: Use the standard `string-trim' function from `subr-x'?
+(defun dime-repl-string-trim (character-bag string)
   (cl-flet ((find-bound (&optional from-end)
            (cl-position-if-not (lambda (char) (memq char character-bag))
                             string :from-end from-end)))
@@ -844,7 +848,7 @@ earlier in the buffer."
   "Add STRING to the input history.
 Empty strings and duplicates are ignored."
   (when dime-repl-history-trim-whitespaces
-    (setq string (dime-string-trim '(?\n ?\ ?\t) string)))
+    (setq string (dime-repl-string-trim '(?\n ?\ ?\t) string)))
   (unless (equal string "")
     (when dime-repl-history-remove-duplicates
       (setq dime-repl-input-history
@@ -905,7 +909,7 @@ If REGEXP is non-nil, only lines matching REGEXP are considered."
 Return -1 resp. the length of the history if no item matches.
 If EXCLUDE-STRING is specified then it's excluded from the search."
   ;; Loop through the history list looking for a matching line
-  (let* ((step (ecase direction
+  (let* ((step (cl-ecase direction
                  (forward -1)
                  (backward 1)))
          (history dime-repl-input-history)
@@ -1082,7 +1086,7 @@ The handler will use qeuery to ask the use if the error should be ingored."
 ;;;;; REPL Read Mode
 
 (define-key dime-repl-mode-map
-  (string dime-repl-shortcut-dispatch-char) 'dime-handle-repl-shortcut)
+  (string dime-repl-shortcut-dispatch-char) 'dime-repl-handle-shortcut)
 
 (define-minor-mode dime-repl-read-mode
   "Mode the read input from Emacs
@@ -1094,34 +1098,34 @@ The handler will use qeuery to ask the use if the error should be ingored."
     ("\C-c\C-b" . dime-repl-read-break)
     ("\C-c\C-c" . dime-repl-read-break)))
 
-(defvar-local dime-read-string-threads nil)
+(defvar-local dime-repl-read-string-threads nil)
 
-(defvar-local dime-read-string-tags nil)
+(defvar-local dime-repl-read-string-tags nil)
 
 (defun dime-repl-read-string (thread tag)
   (dime-switch-to-output-buffer)
-  (push thread dime-read-string-threads)
-  (push tag dime-read-string-tags)
+  (push thread dime-repl-read-string-threads)
+  (push tag dime-repl-read-string-tags)
   (goto-char (point-max))
-  (dime-mark-output-end)
-  (dime-mark-input-start)
+  (dime-repl-mark-output-end)
+  (dime-repl-mark-input-start)
   (dime-repl-read-mode 1))
 
 (defun dime-repl-return-string (string)
   (dime-dispatch-event `(:emacs-return-string
-                          ,(pop dime-read-string-threads)
-                          ,(pop dime-read-string-tags)
+                          ,(pop dime-repl-read-string-threads)
+                          ,(pop dime-repl-read-string-tags)
                           ,string))
   (dime-repl-read-mode -1))
 
 (defun dime-repl-read-break ()
   (interactive)
-  (dime-dispatch-event `(:emacs-interrupt ,(car dime-read-string-threads))))
+  (dime-dispatch-event `(:emacs-interrupt ,(car dime-repl-read-string-threads))))
 
 (defun dime-repl-abort-read (thread tag)
-  (with-current-buffer (dime-output-buffer)
-    (pop dime-read-string-threads)
-    (pop dime-read-string-tags)
+  (with-current-buffer (dime-repl-output-buffer)
+    (pop dime-repl-read-string-threads)
+    (pop dime-repl-read-string-tags)
     (dime-repl-read-mode -1)
     (message "Read aborted")))
 
@@ -1137,32 +1141,32 @@ The handler will use qeuery to ask the use if the error should be ingored."
 (defvar dime-repl-shortcut-history '()
   "History list of shortcut command names.")
 
-(defvar dime-within-repl-shortcut-handler-p nil
+(defvar dime-repl-within-shortcut-handler-p nil
   "Bound to T if we're in a REPL shortcut handler invoked from the REPL.")
 
-(defun dime-handle-repl-shortcut ()
+(defun dime-repl-handle-shortcut ()
   (interactive)
   (if (> (point) dime-repl-input-start-mark)
       (insert (string dime-repl-shortcut-dispatch-char))
-      (let ((shortcut (dime-lookup-shortcut
+      (let ((shortcut (dime-repl-lookup-shortcut
                        (completing-read "Command: "
                                         (dime-bogus-completion-alist
-                                         (dime-list-all-repl-shortcuts))
+                                         (dime-repl-list-all-shortcuts))
                                         nil t nil
                                         'dime-repl-shortcut-history))))
         (with-struct (dime-repl-shortcut. handler) shortcut
-          (let ((dime-within-repl-shortcut-handler-p t))
+          (let ((dime-repl-within-shortcut-handler-p t))
             (call-interactively handler))))))
 
-(defun dime-list-all-repl-shortcuts ()
+(defun dime-repl-list-all-shortcuts ()
   (loop for shortcut in dime-repl-shortcut-table
         append (dime-repl-shortcut.names shortcut)))
 
-(defun dime-lookup-shortcut (name)
+(defun dime-repl-lookup-shortcut (name)
   (cl-find-if (lambda (s) (member name (dime-repl-shortcut.names s)))
            dime-repl-shortcut-table))
 
-(defmacro defdime-repl-shortcut (edylan-name names &rest options)
+(defmacro define-dime-repl-shortcut (edylan-name names &rest options)
   "Define a new repl shortcut. EDYLAN-NAME is a symbol specifying
 the name of the interactive function to create, or NIL if no
 function should be created.
@@ -1191,7 +1195,7 @@ of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
   "This function should be used by REPL shortcut handlers instead
 of `dime-eval' to evaluate their final expansion. (This
 expansion will be added to the REPL's history.)"
-  (when dime-within-repl-shortcut-handler-p ; were we invoked via ,foo?
+  (when dime-repl-within-shortcut-handler-p ; were we invoked via ,foo?
     (dime-repl-add-to-input-history (prin1-to-string sexp)))
   (dime-eval sexp project))
 
@@ -1199,11 +1203,11 @@ expansion will be added to the REPL's history.)"
   "This function should be used by REPL shortcut handlers instead
 of `dime-eval-async' to evaluate their final expansion. (This
 expansion will be added to the REPL's history.)"
-  (when dime-within-repl-shortcut-handler-p ; were we invoked via ,foo?
+  (when dime-repl-within-shortcut-handler-p ; were we invoked via ,foo?
     (dime-repl-add-to-input-history (prin1-to-string sexp)))
   (dime-eval-async sexp cont project))
 
-(defun dime-list-repl-short-cuts ()
+(defun dime-repl-list-shortcuts ()
   (interactive)
   (dime-with-popup-buffer ((dime-buffer-name :repl-help))
     (let ((table (cl-sort (cl-copy-list dime-repl-shortcut-table) #'string<
@@ -1223,29 +1227,29 @@ expansion will be added to the REPL's history.)"
               (insert "\n     " (dime-repl-shortcut.one-liner shortcut)))
             (insert "\n")))))))
 
-(defun dime-save-some-dylan-buffers ()
+(defun dime-repl-save-some-dylan-buffers ()
   (if dime-repl-only-save-dylan-buffers
       (save-some-buffers nil (lambda ()
                                (and (memq major-mode dime-dylan-modes)
                                     (not (null buffer-file-name)))))
       (save-some-buffers)))
 
-(defdime-repl-shortcut dime-repl-shortcut-help ("help")
-  (:handler 'dime-list-repl-short-cuts)
+(define-dime-repl-shortcut dime-repl-shortcut-help ("help")
+  (:handler 'dime-repl-list-shortcuts)
   (:one-liner "Display the help."))
 
-(defdime-repl-shortcut nil ("change-directory" "!d" "cd")
-  (:handler 'dime-set-default-directory)
+(define-dime-repl-shortcut nil ("change-directory" "!d" "cd")
+  (:handler 'dime-repl-set-default-directory)
   (:one-liner "Change the current directory."))
 
-(defdime-repl-shortcut nil ("pwd")
+(define-dime-repl-shortcut nil ("pwd")
   (:handler (lambda ()
               (interactive)
               (let ((dir (dime-eval `(swank:default-directory))))
                 (message "Directory %s" dir))))
   (:one-liner "Show the current directory."))
 
-(defdime-repl-shortcut dime-repl-push-directory
+(define-dime-repl-shortcut dime-repl-push-directory
     ("push-directory" "+d" "pushd")
   (:handler (lambda (directory)
               (interactive
@@ -1255,31 +1259,31 @@ expansion will be added to the REPL's history.)"
                       nil nil "")))
               (push (dime-eval '(swank:default-directory))
                     dime-repl-directory-stack)
-              (dime-set-default-directory directory)))
+              (dime-repl-set-default-directory directory)))
   (:one-liner "Save the current directory and set it to a new one."))
 
-(defdime-repl-shortcut dime-repl-pop-directory
+(define-dime-repl-shortcut dime-repl-pop-directory
     ("pop-directory" "-d" "popd")
   (:handler (lambda ()
               (interactive)
               (if (null dime-repl-directory-stack)
                   (message "Directory stack is empty.")
-                  (dime-set-default-directory
+                  (dime-repl-set-default-directory
                    (pop dime-repl-directory-stack)))))
   (:one-liner "Restore the last saved directory."))
 
-(defdime-repl-shortcut nil ("change-project" "change-package" "!p" "in-project" "in")
+(define-dime-repl-shortcut nil ("change-project" "change-package" "!p" "in-project" "in")
   (:handler 'dime-repl-set-project)
   (:one-liner "Change the current project."))
 
-(defdime-repl-shortcut dime-repl-push-project ("push-project" "+p")
+(define-dime-repl-shortcut dime-repl-push-project ("push-project" "+p")
   (:handler (lambda (project)
               (interactive (list (dime-read-project-name "Project: ")))
               (push (dime-current-project) dime-repl-project-stack)
               (dime-repl-set-project project)))
   (:one-liner "Save the current project and set it to a new one."))
 
-(defdime-repl-shortcut dime-repl-pop-project ("pop-project" "-p")
+(define-dime-repl-shortcut dime-repl-pop-project ("pop-project" "-p")
   (:handler (lambda ()
               (interactive)
               (if (null dime-repl-project-stack)
@@ -1288,7 +1292,7 @@ expansion will be added to the REPL's history.)"
                    (pop dime-repl-project-stack)))))
   (:one-liner "Restore the last saved project."))
 
-(defdime-repl-shortcut dime-repl-resend ("resend-form")
+(define-dime-repl-shortcut dime-repl-resend ("resend-form")
   (:handler (lambda ()
               (interactive)
               (insert (car dime-repl-input-history))
@@ -1296,15 +1300,15 @@ expansion will be added to the REPL's history.)"
               (dime-repl-send-input)))
   (:one-liner "Resend the last form."))
 
-(defdime-repl-shortcut dime-repl-disconnect ("disconnect")
+(define-dime-repl-shortcut dime-repl-disconnect ("disconnect")
   (:handler 'dime-disconnect)
   (:one-liner "Disconnect the current connection."))
 
-(defdime-repl-shortcut dime-repl-disconnect-all ("disconnect-all")
+(define-dime-repl-shortcut dime-repl-disconnect-all ("disconnect-all")
   (:handler 'dime-disconnect-all)
   (:one-liner "Disconnect all connections."))
 
-(defdime-repl-shortcut dime-repl-sayoonara ("sayoonara")
+(define-dime-repl-shortcut dime-repl-sayoonara ("sayoonara")
   (:handler (lambda ()
               (interactive)
               (when (dime-connected-p)
@@ -1312,17 +1316,17 @@ expansion will be added to the REPL's history.)"
               (dime-kill-all-buffers)))
   (:one-liner "Quit all Dylans and close all DIME buffers."))
 
-(defdime-repl-shortcut dime-repl-quit ("quit")
+(define-dime-repl-shortcut dime-repl-quit ("quit")
   (:handler (lambda ()
 	      (interactive)
               ;; `dime-quit-dylan' determines the connection to quit
               ;; on behalf of the REPL's `dime-buffer-connection'.
-              (let ((repl-buffer (dime-output-buffer)))
+              (let ((repl-buffer (dime-repl-output-buffer)))
                 (dime-quit-dylan)
                 (kill-buffer repl-buffer))))
   (:one-liner "Quit the current Dylan."))
 
-(defdime-repl-shortcut dime-repl-defparameter ("defparameter" "!")
+(define-dime-repl-shortcut dime-repl-defparameter ("defparameter" "!")
   (:handler (lambda (name value)
               (interactive (list (dime-read-symbol-name "Name (symbol): " t)
                                  (dime-read-from-minibuffer "Value: " "*")))
@@ -1331,39 +1335,39 @@ expansion will be added to the REPL's history.)"
               (dime-repl-send-input t)))
   (:one-liner "Define a new global, special, variable."))
 
-(defdime-repl-shortcut dime-repl-compile-and-load ("compile-and-load" "cl")
+(define-dime-repl-shortcut dime-repl-compile-and-load ("compile-and-load" "cl")
   (:handler (lambda (filename)
               (interactive (list (expand-file-name
                                   (read-file-name "File: " nil nil nil nil))))
-              (dime-save-some-dylan-buffers)
+              (dime-repl-save-some-dylan-buffers)
               (dime-repl-shortcut-eval-async
                `(swank:compile-file-if-needed
                  ,(dime-to-dylan-filename filename) t)
                #'dime-compilation-finished)))
   (:one-liner "Compile (if neccessary) and load a dylan file."))
 
-(defdime-repl-shortcut nil  ("restart-inferior-dylan")
+(define-dime-repl-shortcut nil ("restart-inferior-dylan")
   (:handler 'dime-restart-inferior-dylan)
   (:one-liner "Restart *inferior-dylan* and reconnect DIME."))
 
-(defun dime-redirect-inferior-output (&optional noerror)
+(defun dime-repl-redirect-inferior-output (&optional noerror)
   "Redirect output of the inferior-process to the REPL buffer."
   (interactive)
   (let ((proc (dime-inferior-process)))
     (cond (proc
-           (let ((filter (dime-rcurry #'dime-inferior-output-filter
+           (let ((filter (dime-rcurry #'dime-repl-inferior-output-filter
                                        (dime-current-connection))))
              (set-process-filter proc filter)))
 	  (noerror)
 	  (t (error "No inferior dylan process")))))
 
-(defun dime-inferior-output-filter (proc string conn)
+(defun dime-repl-inferior-output-filter (proc string conn)
   (cond ((eq (process-status conn) 'closed)
          (message "Connection closed.  Removing inferior output filter.")
          (message "Lost output: %S" string)
          (set-process-filter proc nil))
         (t
-         (dime-output-filter conn string))))
+         (dime-repl-output-filter conn string))))
 
 (defun dime-redirect-trace-output ()
   "Redirect the trace output to a separate Emacs buffer."
@@ -1371,11 +1375,11 @@ expansion will be added to the REPL's history.)"
   (let ((buffer (get-buffer-create (dime-buffer-name :trace))))
     (with-current-buffer buffer
       (let ((marker (copy-marker (buffer-size)))
-            (target (incf dime-last-output-target-id)))
-        (puthash target marker dime-output-target-to-marker)
+            (target (incf dime-repl-last-output-target-id)))
+        (puthash target marker dime-repl-output-target-to-marker)
         (dime-eval `(swank:redirect-trace-output ,target))))
     ;; Note: We would like the entries in
-    ;; dime-output-target-to-marker to disappear when the buffers are
+    ;; dime-repl-output-target-to-marker to disappear when the buffers are
     ;; killed.  We cannot just make the hash-table ":weakness 'value"
     ;; -- there is no reference from the buffers to the markers in the
     ;; buffer, so entries would disappear even though the buffers are
@@ -1383,14 +1387,14 @@ expansion will be added to the REPL's history.)"
     ;; that keep the markers. --mkoeppe
     (pop-to-buffer buffer)))
 
-(defun dime-inspector-copy-down-to-repl (number)
+(defun dime-repl-inspector-copy-down-to-repl (number)
    "Evaluate the inspector slot at point via the REPL (to set `*')."
    (interactive (list (or (get-text-property (point) 'dime-part-number)
                           (error "No part at point"))))
    (dime-repl-send-string (format "%s" `(swank:inspector-nth-part ,number)))
    (dime-repl))
 
-(defun dime-debug-insert-frame-call-to-repl ()
+(defun dime-repl-insert-debug-frame-call-to-repl ()
   "Insert a call to a frame at point."
   (interactive)
   (let ((call (dime-eval `(swank-backend::frame-call
@@ -1403,7 +1407,7 @@ expansion will be added to the REPL's history.)"
 	  (insert call))))
   (dime-repl))
 
-(defun dime-set-default-directory (directory)
+(defun dime-repl-set-default-directory (directory)
   "Make DIRECTORY become Dylan's current directory."
   (interactive (list (read-directory-name "Directory: " nil nil t)))
   (let ((dir (expand-file-name directory)))
@@ -1411,7 +1415,7 @@ expansion will be added to the REPL's history.)"
              (dime-from-dylan-filename
               (dime-repl-shortcut-eval `(swank:set-default-directory
                                           ,(dime-to-dylan-filename dir)))))
-    (with-current-buffer (dime-output-buffer)
+    (with-current-buffer (dime-repl-output-buffer)
       (setq default-directory dir))))
 
 (defun dime-sync-project-and-default-directory ()
@@ -1423,7 +1427,7 @@ expansion will be added to the REPL's history.)"
          (directory default-directory))
     (when (and project exists-p)
       (dime-repl-set-project project))
-    (dime-set-default-directory directory)
+    (dime-repl-set-default-directory directory)
     ;; Sync *inferior-dylan* dir
     (let* ((proc (dime-process))
            (buffer (and proc (process-buffer proc))))
@@ -1431,16 +1435,16 @@ expansion will be added to the REPL's history.)"
         (with-current-buffer buffer
           (setq default-directory directory))))
     (message "project: %s%s  directory: %s"
-             (with-current-buffer (dime-output-buffer)
+             (with-current-buffer (dime-repl-output-buffer)
                (dime-current-project))
              (if exists-p "" (format " (project %s doesn't exist)" project))
              directory)))
 
-(defun dime-goto-connection ()
+(defun dime-repl-goto-connection ()
   "Switch to the REPL buffer for the connection at point."
   (interactive)
   (let ((dime-dispatching-connection (dime-connection-at-point)))
-    (switch-to-buffer (dime-output-buffer))))
+    (switch-to-buffer (dime-repl-output-buffer))))
 
 (defvar dime-repl-easy-menu
   (let ((C '(dime-connected-p)))
@@ -1466,12 +1470,12 @@ expansion will be added to the REPL's history.)"
 
 (add-hook 'dime-repl-mode-hook 'dime-repl-add-easy-menu)
 
-(defun dime-hide-inferior-dylan-buffer ()
+(defun dime-repl-hide-inferior-dylan-buffer ()
   "Display the REPL buffer instead of the *inferior-dylan* buffer."
   (let* ((buffer (if (dime-process)
                      (process-buffer (dime-process))))
          (window (if buffer (get-buffer-window buffer t)))
-         (repl-buffer (dime-output-buffer t))
+         (repl-buffer (dime-repl-output-buffer t))
          (repl-window (get-buffer-window repl-buffer)))
     (when buffer
       (bury-buffer buffer))
@@ -1485,15 +1489,15 @@ expansion will be added to the REPL's history.)"
            (goto-char (point-max))))))
 
 (defun dime-repl-connected-hook-function ()
-  (destructuring-bind (project prompt)
+  (cl-destructuring-bind (project prompt)
       (let ((dime-current-thread t))
 	(dime-eval '(swank:create-repl nil)))
     (setf (dime-dylan-project-prompt-string) prompt))
-  (dime-hide-inferior-dylan-buffer)
-  (dime-init-output-buffer (dime-connection)))
+  (dime-repl-hide-inferior-dylan-buffer)
+  (dime-repl-init-output-buffer (dime-connection)))
 
 (defun dime-repl-event-hook-function (event)
-  (destructure-case event
+  (dime--destructuring-case event
     ((:write-string output &optional target)
      (dime-write-string output target)
      t)
@@ -1505,7 +1509,7 @@ expansion will be added to the REPL's history.)"
      (dime-repl-abort-read thread tag)
      t)
     ((:open-dedicated-output-stream port)
-     (dime-open-stream-to-dylan port)
+     (dime-repl-open-stream-to-dylan port)
      t)
     ((:new-project project prompt-string)
      (setf (dime-dylan-project-prompt-string) prompt-string)
@@ -1524,3 +1528,5 @@ expansion will be added to the REPL's history.)"
   (remove-hook 'dime-connected-hook 'dime-repl-connected-hook-function))
 
 (provide 'dime-repl)
+
+;;; dime-repl.el ends here

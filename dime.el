@@ -1,79 +1,72 @@
-;;; dime.el --- Dylan interaction mode for Emacs
-;;
-;;;; License
-;;     Copyright (C) 2003  Eric Marsden, Luke Gorrie, Helmut Eller
-;;     Copyright (C) 2004,2005,2006  Luke Gorrie, Helmut Eller
-;;     Copyright (C) 2007,2008,2009  Helmut Eller, Tobias C. Rittweiler
-;;
-;;     For a detailed list of contributors, see the manual.
-;;
-;;     This program is free software; you can redistribute it and/or
-;;     modify it under the terms of the GNU General Public License as
-;;     published by the Free Software Foundation; either version 2 of
-;;     the License, or (at your option) any later version.
-;;
-;;     This program is distributed in the hope that it will be useful,
-;;     but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-;;     GNU General Public License for more details.
-;;
-;;     You should have received a copy of the GNU General Public
-;;     License along with this program; if not, write to the Free
-;;     Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-;;     MA 02111-1307, USA.
+;;; dime.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
-
-;;;; Commentary
-;;
-;; This file contains extensions for programming in Open Dylan. The
-;; main features are:
-;;
-;;   A socket-based communication/RPC interface between Emacs and
+;; Copyright (C) 2003 Eric Marsden, Luke Gorrie, Helmut Eller
+;; Copyright (C) 2004, 2005, 2006 Luke Gorrie, Helmut Eller
+;; Copyright (C) 2007, 2008, 2009 Helmut Eller, Tobias C. Rittweiler
+;; SPDX-License-Identifier: GPL-2.0-or-later
+
+;; URL: https://opendylan.org/
+;; Package-Requires: ((emacs "25.1"))
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This file contains extensions for programming in Open Dylan.
+;; The main features are:
+
+;; * A socket-based communication/RPC interface between Emacs and
 ;;   Dylan, enabling introspection and remote development.
-;;
-;;   The `dime-mode' minor-mode complementing `dylan-mode'. This new
+
+;; * The `dime-mode' minor-mode complementing `dylan-mode'.  This new
 ;;   mode includes many commands for interacting with the Open Dylan
 ;;   process.
-;;
-;;   A Dylan debugger written in Emacs Lisp. The debugger pops up
+
+;; * A Dylan debugger written in Emacs Lisp.  The debugger pops up
 ;;   an Emacs buffer similar to the Emacs/Elisp debugger.
-;;
-;;   A Open Dylan inspector to interactively look at run-time data.
-;;
-;;   Trapping compiler messages and creating annotations in the source
+
+;; * A Open Dylan inspector to interactively look at run-time data.
+
+;; * Trapping compiler messages and creating annotations in the source
 ;;   file on the appropriate forms.
-;;
-;; Dime requires Emacs 24.
-;;
+
 ;; In order to run Dime, a supporting Dylan server called Swank is
-;; required. Swank is distributed with dime.el and will automatically
-;; be started in a normal installation.
+;; required.
+
+;;; Code:
 
 
 ;;;; Dependencies and setup
 
-;; check that we have at least Emacs 24... full Dime support is only
-;; available in 24.3, but dime-compat lets dylan-mode work in 24.1.
-(when (< emacs-major-version 24)
-  (error "Dime requires an Emacs version of 24, or above"))
-
-(eval-when-compile
-  (require 'cl))
-(require 'thingatpt)
+(require 'apropos)
+(require 'arc-mode)
+(require 'cl-lib)
 (require 'comint)
-(require 'timer)
-(require 'pp)
-(require 'hideshow)
-(require 'font-lock)
+(require 'compile)
 (require 'easymenu)
 (require 'etags)
-(require 'arc-mode)
-(require 'apropos)
-(require 'outline)
-(require 'compile)
+(require 'font-lock)
 (require 'gud)
+(require 'hideshow)
+(require 'outline)
+(require 'pp)
+(require 'subr-x)
+(require 'thingatpt)
+(require 'timer)
 
-(require 'dime-compat)
 (require 'dylan-mode)
 (require 'dylan-lid)
 (require 'dylan-optimization-coloring)
@@ -330,8 +323,8 @@ Each face specifiation is (NAME DESCRIPTION &optional PROPERTIES).
 NAME is a symbol; the face will be called dime-debug-NAME-face.
 DESCRIPTION is a one-liner for the customization buffer.
 PROPERTIES specifies any default face properties."
-  `(progn ,@(loop for face in faces
-                  collect `(define-dime-debug-face ,@face))))
+  `(progn ,@(cl-loop for face in faces
+                     collect `(define-dime-debug-face ,@face))))
 
 (defmacro define-dime-debug-face (name description &optional default)
   (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name)))))
@@ -486,8 +479,7 @@ information."
     ;; Include DOC keys...
     ("\C-d"  dime-doc-map)
     ;; Include XREF WHO-FOO keys...
-    ("\C-w"  dime-who-map)
-    ))
+    ("\C-w"  dime-who-map)))
 
 (defvar dime-editing-map nil
   "These keys are useful for buffers where the user can insert and
@@ -572,12 +564,12 @@ edit s-exprs, e.g. for source buffers and the REPL.")
 (defun dime-bind-keys (keymap bothp bindings)
   "Add BINDINGS to KEYMAP.
 If BOTHP is true also add bindings with control modifier."
-  (loop for (key command) in bindings do
-        (cond (bothp
-               (define-key keymap `[,key] command)
-               (unless (equal key ?h)     ; But don't bind C-h
-                 (define-key keymap `[(control ,key)] command)))
-              (t (define-key keymap key command)))))
+  (cl-loop for (key command) in bindings do
+           (cond (bothp
+                  (define-key keymap `[,key] command)
+                  (unless (equal key ?h)     ; But don't bind C-h
+                    (define-key keymap `[(control ,key)] command)))
+                 (t (define-key keymap key command)))))
 
 (dime-init-keymaps)
 
@@ -619,17 +611,9 @@ This list of flushed between commands.")
 ;;;
 ;;;;; Syntactic sugar
 
-(cl-defmacro when-let ((var value) &rest body)
-  "Evaluate VALUE, if the result is non-nil bind it to VAR and eval BODY.
-
-\(fn (VAR VALUE) &rest BODY)"
-  (declare (indent 1))
-  `(let ((,var ,value))
-     (when ,var ,@body)))
-
-(defmacro destructure-case (value &rest patterns)
+(defmacro dime-destructuring-case (value &rest patterns)
   "Dispatch VALUE to one of PATTERNS.
-A cross between `case' and `destructuring-bind'.
+A cross between `cl-case' and `cl-destructuring-bind'.
 The pattern syntax is:
   ((HEAD . ARGS) . BODY)
 The list of patterns is searched for a HEAD `eq' to the car of
@@ -642,17 +626,17 @@ corresponding values in the CDR of VALUE."
     `(let* ((,tmp ,value)
 	    (,operator (car ,tmp))
 	    (,operands (cdr ,tmp)))
-       (case ,operator
+       (cl-case ,operator
 	 ,@(mapcar (lambda (clause)
                      (if (eq (car clause) t)
                          `(t ,@(cdr clause))
-                       (destructuring-bind ((op &rest rands) &rest body) clause
-                         `(,op (destructuring-bind ,rands ,operands
+                       (cl-destructuring-bind ((op &rest rands) &rest body) clause
+                         `(,op (cl-destructuring-bind ,rands ,operands
                                  . ,body)))))
 		   patterns)
 	 ,@(if (eq (caar (last patterns)) t)
 	       '()
-	     `((t (error "ELISP destructure-case failed: %S" ,tmp))))))))
+	     `((t (error "ELISP dime--destructuring-case failed: %S" ,tmp))))))))
 
 (defmacro dime-define-keys (keymap &rest key-command)
   "Define keys in KEYMAP. Each KEY-COMMAND is a list of (KEY COMMAND)."
@@ -660,7 +644,7 @@ corresponding values in the CDR of VALUE."
   `(progn . ,(mapcar (lambda (k-c) `(define-key ,keymap . ,k-c))
 		     key-command)))
 
-(cl-defmacro with-struct ((conc-name &rest slots) struct &body body)
+(cl-defmacro dime--with-struct ((conc-name &rest slots) struct &body body)
   "Like with-slots but works only for structs.
 \(fn (CONC-NAME &rest SLOTS) STRUCT &body BODY)"
   (declare (indent 2))
@@ -670,7 +654,7 @@ corresponding values in the CDR of VALUE."
       `(let ((,struct-var ,struct))
 	 (symbol-macrolet
 	     ,(mapcar (lambda (slot)
-			(etypecase slot
+			(cl-etypecase slot
 			  (symbol `(,slot (,(reader slot) ,struct-var)))
 			  (cons `(,(first slot) (,(reader (second slot))
 						 ,struct-var)))))
@@ -882,7 +866,7 @@ can restore it later."
 
 (defun dime-close-popup-window ()
   (when dime-popup-restore-data
-    (destructuring-bind (popup-window selected-window old-buffer)
+    (cl-destructuring-bind (popup-window selected-window old-buffer)
         dime-popup-restore-data
       (kill-local-variable 'dime-popup-restore-data)
       (bury-buffer)
@@ -1036,7 +1020,7 @@ The rules for selecting the arguments are rather complicated:
                        nil t)))
              (dime-lookup-dylan-implementation table (intern key))))
           (t
-           (destructuring-bind (program &rest program-args)
+           (cl-destructuring-bind (program &rest program-args)
                (split-string (read-string
                               "Run dylan: " inferior-dylan-program
                               'dime-inferior-dylan-program-history))
@@ -1054,7 +1038,7 @@ The rules for selecting the arguments are rather complicated:
     (cond (table (dime-lookup-dylan-implementation dime-dylan-implementations
                                                    (or name dime-default-dylan
                                                        (car (car table)))))
-          (t (destructuring-bind (program &rest args)
+          (t (cl-destructuring-bind (program &rest args)
                  (split-string inferior-dylan-program)
                (list :program program :program-args args))))))
 
@@ -1065,7 +1049,7 @@ The rules for selecting the arguments are rather complicated:
     (when (and (= (length arguments) 1)
                (functionp (first arguments)))
       (setf arguments (funcall (first arguments))))
-    (destructuring-bind ((prog &rest args) &rest keys) arguments
+    (cl-destructuring-bind ((prog &rest args) &rest keys) arguments
       (list* :name name :program prog :program-args args keys))))
 
 (cl-defun dime-start (&key (program inferior-dylan-program) program-args
@@ -1157,7 +1141,7 @@ DIRECTORY change to this directory before starting the process.
 
 (defun dime-bytecode-stale-p ()
   "Return true if dime.elc is older than dime.el."
-  (when-let (libfile (locate-library "dime"))
+  (when-let ((libfile (locate-library "dime")))
     (let* ((basename (file-name-sans-extension libfile))
            (sourcefile (concat basename ".el"))
            (bytefile (concat basename ".elc")))
@@ -1193,8 +1177,8 @@ Return true if we have been given permission to continue."
   (cond ((not (comint-check-proc buffer))
          (dime-start-dylan program program-args env directory buffer))
         ((dime-reinitialize-inferior-dylan-p program program-args env buffer)
-         (when-let (conn (cl-find (get-buffer-process buffer) dime-net-processes
-                                  :key #'dime-inferior-process))
+         (when-let ((conn (cl-find (get-buffer-process buffer) dime-net-processes
+                                   :key #'dime-inferior-process)))
            (dime-net-close conn))
          (get-buffer-process buffer))
         (t (dime-start-dylan program program-args env directory
@@ -1240,7 +1224,7 @@ See `dime-start'.")
 
 (defun dime-start-swank-server (process args)
   "Start a Swank server on the inferior dylan."
-  (destructuring-bind (&key coding-system init &allow-other-keys) args
+  (cl-destructuring-bind (&key coding-system init &allow-other-keys) args
     (with-current-buffer (process-buffer process)
       (make-local-variable 'dime-inferior-dylan-args)
       (setq dime-inferior-dylan-args args)
@@ -1281,7 +1265,7 @@ See `dime-start'."
   (condition-case data
       (delete-file (dime-swank-port-file))
     (error
-     (ecase quiet
+     (cl-ecase quiet
        ((nil) (signal (car data) (cdr data)))
        (quiet)
        (message (message "Unable to delete swank port file %S"
@@ -1425,7 +1409,7 @@ first line of the file."
     (dime-set-query-on-exit-flag proc)
     (dime-check-coding-system coding-system)
     (set-process-coding-system proc coding-system coding-system)
-    (when-let (secret (dime-secret))
+    (when-let ((secret (dime-secret)))
       (dime-net-send secret proc))
     proc))
 
@@ -1820,7 +1804,7 @@ This is automatically synchronized from Dylan.")
   "Initialize CONNECTION with INFO received from Dylan."
   (let ((dime-dispatching-connection connection)
         (dime-current-thread t))
-    (destructuring-bind (&key pid style lisp-implementation machine
+    (cl-destructuring-bind (&key pid style lisp-implementation machine
                               features project version modules
                               &allow-other-keys) info
       (dime-check-version version connection)
@@ -1829,23 +1813,23 @@ This is automatically synchronized from Dylan.")
             (dime-communication-style) style
             (dime-dylan-features) features
             (dime-dylan-modules) modules)
-      (destructuring-bind (&key type name version program) lisp-implementation
+      (cl-destructuring-bind (&key type name version program) lisp-implementation
         (setf (dime-dylan-implementation-type) type
               (dime-dylan-implementation-version) version
               (dime-dylan-implementation-name) name
               (dime-dylan-implementation-program) program
               (dime-connection-name) (dime-generate-connection-name name)))
-      (destructuring-bind (&key instance type version) machine
+      (cl-destructuring-bind (&key instance type version) machine
         (setf (dime-machine-instance) instance)))
-    (let ((args (when-let (p (dime-inferior-process))
+    (let ((args (when-let ((p (dime-inferior-process)))
                   (dime-inferior-dylan-args p))))
-      (when-let (name (plist-get args ':name))
+      (when-let ((name (plist-get args ':name)))
         (unless (string= (dime-dylan-implementation-name) name)
           (setf (dime-connection-name)
                 (dime-generate-connection-name (symbol-name name)))))
       (dime-load-contribs)
       (run-hooks 'dime-connected-hook)
-      (when-let (fun (plist-get args ':init-function))
+      (when-let ((fun (plist-get args ':init-function)))
         (funcall fun)))
     (message "Connected. %s" (dime-random-words-of-encouragement))))
 
@@ -1859,11 +1843,11 @@ This is automatically synchronized from Dylan.")
       (top-level)))
 
 (defun dime-generate-connection-name (dylan-name)
-  (loop for i from 1
-        for name = dylan-name then (format "%s<%d>" dylan-name i)
-        while (cl-find name dime-net-processes
-                       :key #'dime-connection-name :test #'equal)
-        finally (return name)))
+  (cl-loop for i from 1
+           for name = dylan-name then (format "%s<%d>" dylan-name i)
+           while (cl-find name dime-net-processes
+                          :key #'dime-connection-name :test #'equal)
+           finally (return name)))
 
 (defun dime-connection-close-hook (process)
   (when (eq process dime-default-connection)
@@ -1905,7 +1889,7 @@ Return nil if there's no process object for the connection."
 
 (defun dime-use-sigint-for-interrupt (&optional connection)
   (let ((c (or connection (dime-connection))))
-    (ecase (dime-communication-style c)
+    (cl-ecase (dime-communication-style c)
       ((:fd-handler nil) t)
       ((:spawn :sigio) nil))))
 
@@ -1988,7 +1972,7 @@ PROJECT is evaluated and Dylan binds *BUFFER-PROJECT* to this project.
 The default value is dylan-buffer-module.
 
 CLAUSES is a list of patterns with same syntax as
-`destructure-case'.  The result of the evaluation of SEXP is
+`dime--destructuring-case'.  The result of the evaluation of SEXP is
 dispatched on CLAUSES.  The result is either a sexp of the
 form (:ok VALUE) or (:abort CONDITION).  CLAUSES is executed
 asynchronously.
@@ -1997,14 +1981,14 @@ Note: don't use backquote syntax for SEXP, because various Emacs
 versions cannot deal with that."
   (declare (indent 1))
   (let ((result (cl-gensym)))
-    `(lexical-let ,(loop for var in saved-vars
-                         collect (etypecase var
-                                   (symbol (list var var))
-                                   (cons var)))
+    `(let ,(cl-loop for var in saved-vars
+                    collect (cl-etypecase var
+                              (symbol (list var var))
+                              (cons var)))
        (dime-dispatch-event
         (list :emacs-rex ,sexp ,project ,thread
               (lambda (,result)
-                (destructure-case ,result
+                (dime--destructuring-case ,result
                   ,@continuations)))))))
 
 ;;; Interface
@@ -2131,7 +2115,7 @@ Debugged requests are ignored."
 (defun dime-dispatch-event (event &optional process)
   (let ((dime-dispatching-connection (or process (dime-connection))))
     (or (run-hook-with-args-until-success 'dime-event-hooks event)
-        (destructure-case event
+        (dime--destructuring-case event
           ((:emacs-rex form project thread continuation)
            (when (and (dime-use-sigint-for-interrupt) (dime-busy-p))
              (dime-display-oneliner "; pipelined request... %S" form))
@@ -2446,12 +2430,12 @@ See `dime-compile-and-load-file' for further details."
 
 (defun dime-hack-quotes (arglist)
   ;; eval is the wrong primitive, we really want funcall
-  (loop for arg in arglist collect `(quote ,arg)))
+  (cl-loop for arg in arglist collect `(quote ,arg)))
 
 (defun dime-simplify-plist (plist)
-  (loop for (key val) on plist by #'cddr
-        append (cond ((null val) '())
-                     (t (list key val)))))
+  (cl-loop for (key val) on plist by #'cddr
+           append (cond ((null val) '())
+                        (t (list key val)))))
 
 (defun dime-compile-defun (&optional raw-prefix-arg)
   "Compile the current toplevel form.
@@ -2494,8 +2478,8 @@ to it depending on its sign."
       #'dime-compilation-finished)))
 
 (defun dime-compilation-finished (result)
-  (with-struct (dime-compilation-result. notes duration successp
-                                          loadp faslfile) result
+  (dime--with-struct (dime-compilation-result. notes duration successp
+                                               loadp faslfile) result
     (setf dime-last-compilation-result result)
     (dime-show-note-counts notes duration (cond ((not loadp) successp)
                                                  (t (and faslfile successp))))
@@ -2515,7 +2499,7 @@ to it depending on its sign."
             (if (null notes) ". (No warnings)" ": ")
             (mapconcat
              (lambda (messages)
-               (destructuring-bind (sev . notes) messages
+               (cl-destructuring-bind (sev . notes) messages
                  (let ((len (length notes)))
                    (format "%d %s%s" len (dime-severity-label sev)
                            (if (= len 1) "" "s")))))
@@ -2563,12 +2547,12 @@ PREDICATE is executed in the buffer to test."
 (defun dime-recompile-locations (locations cont)
   (dime-eval-async
    `(swank:compile-multiple-strings-for-emacs
-     ',(loop for loc in locations collect
-             (save-excursion
-               (dime-goto-source-location loc)
-               (destructuring-bind (start end)
-                   (dime-region-for-defun-at-point)
-                 (list (buffer-substring-no-properties start end)
+     ',(cl-loop for loc in locations collect
+                (save-excursion
+                  (dime-goto-source-location loc)
+                  (cl-destructuring-bind (start end)
+                  (dime-region-for-defun-at-point)
+                   (list (buffer-substring-no-properties start end)
                        (buffer-name)
                        (dime-current-project)
                        start
@@ -2654,7 +2638,7 @@ Each newlines and following indentation is replaced by a single space."
 (defun dime-maybe-show-compilation-log (notes)
   "Display the log on failed compilations or if NOTES is non-nil."
   (dime-create-compilation-log notes)
-  (with-struct (dime-compilation-result. notes duration successp)
+  (dime--with-struct (dime-compilation-result. notes duration successp)
       dime-last-compilation-result
     (unless successp
       (with-current-buffer (dime-buffer-name :compilation)
@@ -2723,7 +2707,7 @@ This is quite an expensive operation so use carefully."
 
 (defun dime-canonicalized-location-to-string (loc)
   (if loc
-      (destructuring-bind (filename line col) loc
+      (cl-destructuring-bind (filename line col) loc
         (format "%s:%d:%d"
                 (cond ((not filename) "")
                       ((let ((rel (file-relative-name filename)))
@@ -2764,9 +2748,9 @@ This is quite an expensive operation so use carefully."
                     (+default+ (list "" bottom bottom)))
                (sort notes
                      (lambda (n1 n2)
-                       (destructuring-bind (filename1 line1 col1)
+                       (cl-destructuring-bind (filename1 line1 col1)
                            (gethash n1 locs +default+)
-                         (destructuring-bind (filename2 line2 col2)
+                         (cl-destructuring-bind (filename2 line2 col2)
                              (gethash n2 locs +default+)
                            (cond ((string-lessp filename1 filename2) t)
                                  ((string-lessp filename2 filename1) nil)
@@ -2851,7 +2835,7 @@ region around the first element is used.
 Return nil if there's no useful source location."
   (let ((location (dime-note.location note)))
     (when location
-      (destructure-case location
+      (dime--destructuring-case location
         ((:error _) _ nil)                 ; do nothing
         ((:location file pos _hints)
          (cond ((eq (car file) ':source-form) nil)
@@ -2935,7 +2919,7 @@ first element of the source-path redundant."
   (let ((origin (point)))
     (condition-case nil
         (progn
-          (loop for (count . more) on source-path
+          (cl-loop for (count . more) on source-path
                 do (progn
                      (dime-forward-sexp count)
                      (when more (down-list 1))))
@@ -2973,7 +2957,7 @@ E.g. (dime-file-name-merge-source-root
     ;; Starting from the end, we look if one of the TARGET-DIRS exists
     ;; in BUFFER-FILENAME---if so, it and everything left from that dirname
     ;; is considered to be the source root directory of BUFFER-FILENAME.
-    (loop with target-suffix-dirs = nil
+    (cl-loop with target-suffix-dirs = nil
           with buffer-dirs* = (reverse buffer-dirs)
           with target-dirs* = (reverse target-dirs)
           for target-dir in target-dirs*
@@ -3003,7 +2987,7 @@ highlighting face."
     (let ((base-dirs (split-string base-dirname "/" t))
           (contrast-dirs (split-string contrast-dirname "/" t)))
       (with-temp-buffer
-        (loop initially (insert (dime-filesystem-toplevel-directory))
+        (cl-loop initially (insert (dime-filesystem-toplevel-directory))
               for base-dir in base-dirs do
               (let ((pos (cl-position base-dir contrast-dirs :test #'equal)))
                 (if (not pos)
@@ -3063,7 +3047,7 @@ you should check twice before modifying.")
 
 
 (defun dime-goto-location-buffer (buffer)
-  (destructure-case buffer
+  (dime--destructuring-case buffer
     ((:file filename)
      (let ((filename (dime-from-dylan-filename filename)))
        (dime-check-location-filename-sanity filename)
@@ -3090,7 +3074,7 @@ you should check twice before modifying.")
        (goto-char (point-min))))))
 
 (defun dime-goto-location-position (position)
-  (destructure-case position
+  (dime--destructuring-case position
     ((:position pos)
      (goto-char 1)
      (forward-char (- (1- pos) (dime-eol-conversion-fixup (1- pos)))))
@@ -3128,7 +3112,7 @@ you should check twice before modifying.")
   ;; Return the number of \r\n eol markers that we need to cross when
   ;; moving N chars forward.  N is the number of chars but \r\n are
   ;; counted as 2 separate chars.
-  (case (coding-system-eol-type buffer-file-coding-system)
+  (cl-case (coding-system-eol-type buffer-file-coding-system)
     ((1)
      (save-excursion
        (do ((pos (+ (point) n))
@@ -3201,7 +3185,7 @@ are supported:
              | (:function-name <string>)
              | (:source-path <list> <start-position>)
              | (:method <name string> <specializer strings> . <qualifiers strings>)"
-  (destructure-case location
+  (dime--destructuring-case location
     ((:location buffer position hints)
      (dime-goto-location-buffer buffer)
      (let ((pos (dime-location-offset location)))
@@ -3266,10 +3250,10 @@ If multiple matches exist the choose the one nearest to point."
   "Search for the longest substring of STRING using SEARCH-FN.
 SEARCH-FN is either the symbol `search-forward' or `search-backward'."
   (unless (string= string "")
-    (loop for i from 1 to (length string)
+    (cl-loop for i from 1 to (length string)
           while (funcall search-fn (substring string 0 i) nil t)
           for match-data = (match-data)
-          do (case search-fn
+          do (cl-case search-fn
                (search-forward  (goto-char (match-beginning 0)))
                (search-backward (goto-char (1+ (match-end 0)))))
           finally (return (if (null match-data)
@@ -3513,7 +3497,7 @@ Perform completion more similar to Emacs' complete-symbol."
              (beg (dime-symbol-start-pos))
              (prefix (buffer-substring-no-properties beg end))
              (result (dime-simple-completions prefix)))
-        (destructuring-bind (completions partial) result
+        (cl-destructuring-bind (completions partial) result
           (if (null completions)
               (progn (dime-minibuffer-respecting-message
                       "Can't find completion for \"%s\"" prefix)
@@ -3626,11 +3610,11 @@ alist but ignores CDRs."
 (defun dime-xref-has-location-p (xref)
   (dime-location-p (dime-xref.location xref)))
 
-(defun make-dime-buffer-location (buffer-name position &optional hints)
+(defun dime-make-buffer-location (buffer-name position &optional hints)
   `(:location (:buffer ,buffer-name) (:position ,position)
               ,(when hints `(:hints ,hints))))
 
-(defun make-dime-file-location (file-name position &optional hints)
+(defun dime-make-file-location (file-name position &optional hints)
   `(:location (:file ,file-name) (:position ,position)
               ,(when hints `(:hints ,hints))))
 
@@ -3651,7 +3635,7 @@ function name is prompted."
                                   name where)))
 
 (defun dime-edit-definition-cont (xrefs name where)
-  (destructuring-bind (1loc file-alist) (dime-analyze-xrefs xrefs)
+  (cl-destructuring-bind (1loc file-alist) (dime-analyze-xrefs xrefs)
     (cond ((null xrefs)
            (error "No known definition for: %s (in %s)"
                   name dylan-buffer-module))
@@ -3681,7 +3665,7 @@ function name is prompted."
                    (message "No xref information found for %s." symbol))
                   ((and (dime-length= xrefs 1)          ; one group
                         (dime-length= (cdar  xrefs) 1)) ; one ref in group
-                   (destructuring-bind (_ (_ loc)) (first xrefs)
+                   (cl-destructuring-bind (_ (_ loc)) (first xrefs)
                      (dime-push-definition-stack)
                      (dime-pop-to-location loc)))
                   (t
@@ -3702,7 +3686,7 @@ FILE-ALIST is an alist of the form ((FILENAME . (XREF ...)) ...)."
 
 (defun dime-xref-group (xref)
   (cond ((dime-xref-has-location-p xref)
-         (destructure-case (dime-location.buffer (dime-xref.location xref))
+         (dime--destructuring-case (dime-location.buffer (dime-xref.location xref))
            ((:file filename) filename)
            ((:buffer bufname)
             (let ((buffer (get-buffer bufname)))
@@ -3716,7 +3700,7 @@ FILE-ALIST is an alist of the form ((FILENAME . (XREF ...)) ...)."
 
 (defun dime-pop-to-location (location &optional where)
   (dime-goto-source-location location)
-  (ecase where
+  (cl-ecase where
     ((nil)     (switch-to-buffer (current-buffer)))
     (window    (pop-to-buffer (current-buffer) t))
     (frame     (let ((pop-up-frames t)) (pop-to-buffer (current-buffer) t)))))
@@ -3729,9 +3713,9 @@ locations."
   (if (not (dime-xref-has-location-p original-xref))
       (list original-xref)
       (let ((loc (dime-xref.location original-xref)))
-        (destructure-case (dime-location.buffer loc)
+        (dime--destructuring-case (dime-location.buffer loc)
           ((:etags-file tags-file)
-           (destructure-case (dime-location.position loc)
+           (dime--destructuring-case (dime-location.position loc)
              ((:tag &rest tags)
               (visit-tags-table tags-file)
               (mapcar (lambda (xref)
@@ -3784,7 +3768,7 @@ tags table. Return a possibly empty list of dime-locations."
           (goto-char (point-min))
           (while (search-forward name nil t)
             (beginning-of-line)
-            (destructuring-bind (hint line &rest pos) (etags-snarf-tag)
+            (cl-destructuring-bind (hint line &rest pos) (etags-snarf-tag)
               (unless (eq hint t) ; hint==t if we are in a filename line
                 (push `(:location (:file ,(expand-file-name (file-of-tag)))
                                   (:line ,line)
@@ -3893,7 +3877,7 @@ This is for use in the implementation of COMMON-DYLAN:ED."
       (setq dime-ed-frame (make-frame)))
     (select-frame dime-ed-frame))
   (when what
-    (destructure-case what
+    (dime--destructuring-case what
       ((:filename file &key line column position)
        (find-file (dime-from-dylan-filename file))
        (when line (dime-goto-line line))
@@ -3928,7 +3912,7 @@ the display stuff that we neither need nor want."
 Note: If a prefix argument is in effect then the result will be
 inserted in the current buffer."
   (interactive (list (dime-read-from-minibuffer "Dime Eval: ")))
-  (case current-prefix-arg
+  (cl-case current-prefix-arg
     ((nil)
      (dime-eval-with-transcript `(swank:interactive-eval ,string)))
     ((-)
@@ -3959,7 +3943,7 @@ inserted in the current buffer."
   "Eval STRING in Dylan; insert any output and the result at point."
   (dime-eval-async `(swank:eval-and-grab-output ,string)
                     (lambda (result)
-                      (destructuring-bind (output value) result
+                      (cl-destructuring-bind (output value) result
                         (push-mark)
                         (insert output value)))))
 
@@ -3967,7 +3951,7 @@ inserted in the current buffer."
   "Evaluate STRING in Dylan and save the result in the kill ring."
   (dime-eval-async `(swank:eval-and-grab-output ,string)
     (lambda (result)
-      (destructuring-bind (output value) result
+      (cl-destructuring-bind (output value) result
         (let ((string (concat output value)))
           (kill-new string)
           (message "Evaluation finished; pushed result to kill ring."))))))
@@ -4298,7 +4282,7 @@ With prefix argument include internal symbols."
       (assert designator)
       (dime-insert-propertized `(face apropos-symbol) designator))
     (terpri)
-    (loop for (prop namespace)
+    (cl-loop for (prop namespace)
           in '((:variable "Variable")
                (:function "Function")
                (:generic-function "Generic Function")
@@ -4317,7 +4301,7 @@ With prefix argument include internal symbols."
                 (start (point)))
             (when value
               (insert "  " namespace ": ")
-              (princ (etypecase value
+              (princ (cl-etypecase value
                        (string value)
                        ((member :not-documented) "(not documented)")))
               (add-text-properties
@@ -4375,7 +4359,7 @@ The most important commands:
   ([remap next-line] 'dime-xref-next-line)
   ([remap previous-line] 'dime-xref-prev-line))
 
-(defun dime-next-line/not-add-newlines ()
+(defun dime-next-line-not-add-newlines ()
   (interactive)
   (let ((next-line-add-newlines nil))
     (forward-line 1)))
@@ -4401,9 +4385,9 @@ The most important commands:
 XREF-ALIST is of the form ((GROUP . ((LABEL LOCATION) ...)) ...).
 GROUP and LABEL are for decoration purposes.  LOCATION is a
 source-location."
-  (loop for (group . refs) in xref-alist do
+  (cl-loop for (group . refs) in xref-alist do
         (dime-insert-propertized '(face bold) group "\n")
-        (loop for (label location) in refs do
+        (cl-loop for (label location) in refs do
               (dime-insert-propertized
                (list 'dime-location location
                      'face 'font-lock-keyword-face
@@ -4422,7 +4406,7 @@ source-location."
   (dime-xref-show-location (dime-search-property 'dime-location t)))
 
 (defun dime-xref-show-location (loc)
-  (ecase (car loc)
+  (cl-ecase (car loc)
     (:location (dime-show-source-location loc t))
     (:error (message "%s" (cadr loc)))
     ((nil))))
@@ -4561,7 +4545,7 @@ This is used by `dime-goto-next-xref'")
   (let ((xrefs nil))
     (save-excursion
       (goto-char (point-min))
-      (while (ignore-errors (dime-next-line/not-add-newlines) t)
+      (while (ignore-errors (dime-next-line-not-add-newlines) t)
         (when-let (loc (get-text-property (point) 'dime-location))
           (let* ((dspec (dime-xref-dspec-at-point))
                  (xref  (make-dime-xref :dspec dspec :location loc)))
@@ -4674,7 +4658,7 @@ When displaying XREF information, this goes to the previous reference."
     (dime-compilation-finished (dime-aggregate-compilation-results results))
     (save-excursion
       (dime-xref-insert-recompilation-flags
-       dspecs (loop for r in results collect
+       dspecs (cl-loop for r in results collect
                     (or (dime-compilation-result.successp r)
                         (and (dime-compilation-result.notes r)
                              :complained)))))))
@@ -4689,10 +4673,10 @@ When displaying XREF information, this goes to the previous reference."
   (let* ((buffer-read-only nil)
          (max-column (dime-column-max)))
     (goto-char (point-min))
-    (loop for dspec in dspecs
+    (cl-loop for dspec in dspecs
           for result in compilation-results
           do (save-excursion
-               (loop for dspec-at-point = (progn (search-forward dspec)
+               (cl-loop for dspec-at-point = (progn (search-forward dspec)
                                                  (dime-xref-dspec-at-point))
                      until (equal dspec-at-point dspec))
                (end-of-line) ; skip old status information.
@@ -4700,7 +4684,7 @@ When displaying XREF information, this goes to the previous reference."
                  (insert " "))
                (insert " ")
                (insert (format "[%s]"
-                               (case result
+                               (cl-case result
                                  ((t)   :success)
                                  ((nil) :failure)
                                  (t     result))))))))
@@ -4792,7 +4776,7 @@ This variable specifies both what was expanded and how.")
 
 NB: Does not affect dime-eval-macroexpand-expression"
   (interactive)
-  (destructuring-bind (string bounds)
+  (cl-destructuring-bind (string bounds)
       (dime-sexp-at-point-for-macroexpansion)
     (lexical-let* ((start (car bounds))
                    (end (cdr bounds))
@@ -4947,8 +4931,7 @@ argument is given, with CL:MACROEXPAND."
 
 ;; some macros that we need to define before the first use
 
-;; FIXME: rename
-(defmacro in-dime-debug-face (name string)
+(defmacro dime--in-debug-face (name string)
   "Return STRING propertised with face dime-debug-NAME-face."
   (declare (indent 1))
   (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name))))
@@ -5028,7 +5011,7 @@ Full list of commands:
   ((kbd "RET") 'dime-debug-default-action)
   ("\C-m"      'dime-debug-default-action)
   ([return] 'dime-debug-default-action)
-  ([mouse-2]  'dime-debug-default-action/mouse)
+  ([mouse-2]  'dime-debug-default-action-mouse)
   ([follow-link] 'mouse-face)
   ("\C-i" 'dime-debug-cycle)
   ("h"    'describe-mode)
@@ -5133,10 +5116,10 @@ CONTS is a list of pending Emacs continuations."
       (setq dime-debug-restarts restarts)
       (setq dime-debug-continuations conts)
       (dime-debug-insert-condition condition)
-      (insert "\n\n" (in-dime-debug-face section "Restarts:") "\n")
+      (insert "\n\n" (dime--in-debug-face section "Restarts:") "\n")
       (setq dime-debug-restart-list-start-marker (point-marker))
       (dime-debug-insert-restarts restarts 0 dime-debug-initial-restart-limit)
-      (insert "\n" (in-dime-debug-face section "Backtrace:") "\n")
+      (insert "\n" (dime--in-debug-face section "Backtrace:") "\n")
       (setq dime-debug-backtrace-start-marker (point-marker))
       (save-excursion
         (if frames
@@ -5194,11 +5177,11 @@ If LEVEL isn't the same as in the buffer reinitialize the buffer."
   "Insert the text for CONDITION.
 CONDITION should be a list (MESSAGE TYPE EXTRAS).
 EXTRAS is currently used for the stepper."
-  (destructuring-bind (message type extras) condition
+  (cl-destructuring-bind (message type extras) condition
     (dime-insert-propertized '(dime-debug-default-action dime-debug-inspect-condition)
-                              (in-dime-debug-face topline message)
+                              (dime--in-debug-face topline message)
                               "\n"
-                              (in-dime-debug-face condition type))
+                              (dime--in-debug-face condition type))
     (dime-debug-dispatch-extras extras)))
 
 (defvar dime-debug-extras-hooks)
@@ -5206,7 +5189,7 @@ EXTRAS is currently used for the stepper."
 (defun dime-debug-dispatch-extras (extras)
   ;; this is (mis-)used for the stepper
   (dolist (extra extras)
-    (destructure-case extra
+    (dime--destructuring-case extra
       ((:show-frame-source n)
        (dime-debug-show-frame-source n))
       (t
@@ -5219,15 +5202,15 @@ EXTRAS is currently used for the stepper."
 RESTARTS should be a list ((NAME DESCRIPTION) ...)."
   (let* ((len (length restarts))
          (end (if count (min (+ start count) len) len)))
-    (loop for (name string) in (cl-subseq restarts start end)
+    (cl-loop for (name string) in (cl-subseq restarts start end)
           for number from start
           do (dime-insert-propertized
                `(,@nil restart ,number
                        dime-debug-default-action dime-debug-invoke-restart
                        mouse-face highlight)
-               " " (in-dime-debug-face restart-number (number-to-string number))
-               ": ["  (in-dime-debug-face restart-type name) "] "
-               (in-dime-debug-face restart string))
+               " " (dime--in-debug-face restart-number (number-to-string number))
+               ": ["  (dime--in-debug-face restart-type name) "] "
+               (dime--in-debug-face restart string))
              (insert "\n"))
     (when (< end len)
       (let ((pos (point)))
@@ -5243,13 +5226,13 @@ RESTARTS should be a list ((NAME DESCRIPTION) ...)."
     (dime-debug-insert-restarts restarts start nil)))
 
 (defun dime-debug-frame.string (frame)
-  (destructuring-bind (_ str &optional _) frame str))
+  (cl-destructuring-bind (_ str &optional _) frame str))
 
 (defun dime-debug-frame.number (frame)
-  (destructuring-bind (n _ &optional _) frame n))
+  (cl-destructuring-bind (n _ &optional _) frame n))
 
 (defun dime-debug-frame.plist (frame)
-  (destructuring-bind (_ _ &optional plist) frame plist))
+  (cl-destructuring-bind (_ _ &optional plist) frame plist))
 
 (defun dime-debug-frame-restartable-p (frame)
   (and (plist-get (dime-debug-frame.plist frame) :restartable) t))
@@ -5259,7 +5242,7 @@ RESTARTS should be a list ((NAME DESCRIPTION) ...)."
 Regexp heuristics are used to avoid showing SWANK-internal frames."
   (let* ((case-fold-search t)
          (rx "^\\([() ]\\|lambda\\)*swank\\>"))
-    (or (loop for frame in frames
+    (or (cl-loop for frame in frames
               until (string-match rx (dime-debug-frame.string frame))
               collect frame)
         frames)))
@@ -5294,7 +5277,7 @@ If FACE is nil, `dime-debug-compute-frame-face' is used to determine the face."
         (props `(frame ,frame dime-debug-default-action dime-debug-toggle-details)))
     (dime-propertize-region props
       (dime-propertize-region '(mouse-face highlight)
-        (insert " " (in-dime-debug-face frame-label (format "%2d:" number)) " ")
+        (insert " " (dime--in-debug-face frame-label (format "%2d:" number)) " ")
         (dime-insert-indented
          (dime-add-face face string)))
       (insert "\n"))))
@@ -5382,7 +5365,7 @@ Called on the `point-entered' text-property hook."
     (save-selected-window
       (select-window window)
       (goto-char position)
-      (ecase recenter
+      (cl-ecase recenter
         (top    (recenter 0))
         (center (recenter))
         ((nil)
@@ -5468,10 +5451,10 @@ This is 0 if START and END at the same line."
   (let ((fn (get-text-property (point) 'dime-debug-default-action)))
     (if fn (funcall fn))))
 
-(defun dime-debug-default-action/mouse (event)
+(defun dime-debug-default-action-mouse (event)
   "Invoke the action pointed at by the mouse."
   (interactive "e")
-  (destructuring-bind (mouse-1 (w pos &rest _)) event
+  (cl-destructuring-bind (mouse-1 (w pos &rest _)) event
     (save-excursion
       (goto-char pos)
       (let ((fn (get-text-property (point) 'dime-debug-default-action)))
@@ -5517,7 +5500,7 @@ This is 0 if START and END at the same line."
   (dime-eval-async
    `(swank:frame-source-location ,frame-number)
    (lambda (source-location)
-     (destructure-case source-location
+     (dime--destructuring-case source-location
        ((:error message)
         (message "%s" message)
         (ding))
@@ -5557,7 +5540,7 @@ The details include local variable bindings and CATCH-tags."
 
 (defun dime-debug-show-frame-details ()
   ;; fetch and display info about local variables and catch tags
-  (destructuring-bind (start end frame locals catches) (dime-debug-frame-details)
+  (cl-destructuring-bind (start end frame locals catches) (dime-debug-frame-details)
     (dime-save-coordinates start
       (delete-region start end)
       (dime-propertize-region `(frame ,frame details-visible-p t)
@@ -5567,14 +5550,14 @@ The details include local variable bindings and CATCH-tags."
                                      'dime-debug-detailed-frame-line-face))
         (let ((indent1 "      ")
               (indent2 "        "))
-          (insert indent1 (in-dime-debug-face section
+          (insert indent1 (dime--in-debug-face section
                             (if locals "Locals:" "[No Locals]")) "\n")
           (dime-debug-insert-locals locals indent2 frame)
           (when catches
-            (insert indent1 (in-dime-debug-face section "Catch-tags:") "\n")
+            (insert indent1 (dime--in-debug-face section "Catch-tags:") "\n")
             (dolist (tag catches)
               (dime-propertize-region `(catch-tag ,tag)
-                (insert indent2 (in-dime-debug-face catch-tag (format "%s" tag))
+                (insert indent2 (dime--in-debug-face catch-tag (format "%s" tag))
                         "\n"))))
           (setq end (point)))))
     (dime-debug-recenter-region start end)))
@@ -5583,7 +5566,7 @@ The details include local variable bindings and CATCH-tags."
   ;; Return a list (START END FRAME LOCALS CATCHES) for frame at point.
   (let* ((frame (get-text-property (point) 'frame))
          (num (car frame)))
-    (destructuring-bind (start end) (dime-debug-frame-region)
+    (cl-destructuring-bind (start end) (dime-debug-frame-region)
       (list* start end frame
              (dime-eval `(swank:frame-locals-and-catch-tags ,num))))))
 
@@ -5593,24 +5576,24 @@ The details include local variable bindings and CATCH-tags."
 (defun dime-debug-insert-locals (vars prefix frame)
   "Insert VARS and add PREFIX at the beginning of each inserted line.
 VAR should be a plist with the keys :name, :id, and :value."
-  (loop for i from 0
+  (cl-loop for i from 0
         for var in vars do
-        (destructuring-bind (&key name id value) var
+        (cl-destructuring-bind (&key name id value) var
           (dime-propertize-region (list 'dime-debug-default-action 'dime-debug-inspect-var
                                          'var i)
             (insert prefix
-                    (in-dime-debug-face local-name
+                    (dime--in-debug-face local-name
                       (concat name (if (zerop id) "" (format "#%d" id))))
                     " = ")
             (funcall dime-debug-insert-frame-variable-value-function value frame i)
             (insert "\n")))))
 
 (defun dime-debug-insert-frame-variable-value (value frame index)
-  (insert (in-dime-debug-face local-value value)))
+  (insert (dime--in-debug-face local-value value)))
 
 (defun dime-debug-hide-frame-details ()
   ;; delete locals and catch tags, but keep the function name and args.
-  (destructuring-bind (start end) (dime-debug-frame-region)
+  (cl-destructuring-bind (start end) (dime-debug-frame-region)
     (let ((frame (get-text-property (point) 'frame)))
       (dime-save-coordinates start
         (delete-region start end)
@@ -5865,7 +5848,7 @@ was called originally."
    `(swank:frame-source-location ,(dime-debug-frame-number-at-point))
    (lexical-let ((policy (dime-compute-policy raw-prefix-arg)))
      (lambda (source-location)
-       (destructure-case source-location
+       (dime--destructuring-case source-location
          ((:error message)
           (message "%s" message)
           (ding))
@@ -5907,7 +5890,7 @@ was called originally."
 (defun dime-longest-lines (list-of-lines)
   (let ((lengths (make-list (length (car list-of-lines)) 0)))
     (cl-flet ((process-line (line)
-             (loop for element in line
+             (cl-loop for element in line
                    for length on lengths
                    do (setf (car length)
                             (max (length (prin1-to-string element t))
@@ -5956,7 +5939,7 @@ was called originally."
         (move-to-column old-column)
         (dime-move-point (point))))))
 
-(defvar *dime-threads-table-properties*
+(defvar dime-threads-table-properties
   '(nil (face bold)))
 
 (defun dime-format-threads-labels (threads)
@@ -5967,11 +5950,11 @@ was called originally."
 
 (defun dime-insert-thread (thread longest-lines)
   (unless (bolp) (insert "\n"))
-  (loop for i from 0
+  (cl-loop for i from 0
         for align in longest-lines
         for element in thread
         for string = (prin1-to-string element t)
-        for property = (nth i *dime-threads-table-properties*)
+        for property = (nth i dime-threads-table-properties)
         do
         (if property
             (dime-insert-propertized property string)
@@ -5981,14 +5964,14 @@ was called originally."
 (defun dime-insert-threads (threads)
   (let* ((threads (dime-format-threads-labels threads))
          (longest-lines (dime-longest-lines threads))
-         (labels (let (*dime-threads-table-properties*)
+         (labels (let (dime-threads-table-properties)
                    (with-temp-buffer
                      (dime-insert-thread (car threads) longest-lines)
                      (buffer-string)))))
     (setq header-line-format
           (concat (propertize " " 'display '((space :align-to 0)))
                   labels))
-    (loop for index from 0
+    (cl-loop for index from 0
           for thread in (cdr threads)
           do
           (dime-propertize-region `(thread-id ,index)
@@ -6020,7 +6003,7 @@ was called originally."
   (call-interactively 'dime-update-threads-buffer))
 
 (defun dime-get-region-properties (prop start end)
-  (loop for position = (if (get-text-property start prop)
+  (cl-loop for position = (if (get-text-property start prop)
                            start
                            (next-single-property-change start prop))
         then (next-single-property-change position prop)
@@ -6214,7 +6197,7 @@ KILL-BUFFER hooks for the inspector buffer."
     (setq dime-buffer-connection (dime-current-connection))
     (let ((inhibit-read-only t))
       (erase-buffer)
-      (destructuring-bind (&key id title content) inspected-parts
+      (cl-destructuring-bind (&key id title content) inspected-parts
         (macrolet ((fontify (face string)
                             `(dime-inspector-fontify ,face ,string)))
           (dime-propertize-region
@@ -6247,7 +6230,7 @@ KILL-BUFFER hooks for the inspector buffer."
 (defun dime-inspector-insert-chunk (chunk prev next)
   "Insert CHUNK at point.
 If PREV resp. NEXT are true insert more-buttons as needed."
-  (destructuring-bind (ispecs len start end) chunk
+  (cl-destructuring-bind (ispecs len start end) chunk
     (when (and prev (> start 0))
       (dime-inspector-insert-more-button start t))
     (mapc #'dime-inspector-insert-ispec ispecs)
@@ -6257,7 +6240,7 @@ If PREV resp. NEXT are true insert more-buttons as needed."
 (defun dime-inspector-insert-ispec (ispec)
   (if (stringp ispec)
       (insert ispec)
-    (destructure-case ispec
+    (dime--destructuring-case ispec
       ((:value string id)
        (dime-propertize-region
            (list 'dime-part-number id
@@ -6287,7 +6270,7 @@ position of point in the current buffer."
   (let ((properties '(dime-part-number dime-range-button
                       dime-action-number)))
     (cl-flet ((find-property (point)
-             (loop for property in properties
+             (cl-loop for property in properties
                    for value = (get-text-property point property)
                    when value
                    return (list property value))))
@@ -6308,9 +6291,9 @@ that value.
         (new-opener (lambda (parts)
                       (when parts
                         (dime-open-inspector parts)))))
-    (destructuring-bind (property value)
+    (cl-destructuring-bind (property value)
         (dime-inspector-property-at-point)
-        (case property
+        (cl-case property
           (dime-part-number
            (dime-eval-async `(swank:inspect-nth-part ,value)
                               new-opener)
@@ -6374,7 +6357,7 @@ LIMIT is the maximum or minimum position in the current buffer.
 Return a list of two values: If an object could be found, the
 starting position of the found object and T is returned;
 otherwise LIMIT and NIL is returned."
-  (let ((finder (ecase direction
+  (let ((finder (cl-ecase direction
                   (next 'next-single-property-change)
                   (prev 'previous-single-property-change))))
     (let ((prop nil) (curpos (point)))
@@ -6393,7 +6376,7 @@ If ARG is negative, move backwards."
         (previously-wrapped-p nil))
     ;; Forward.
     (while (> arg 0)
-      (destructuring-bind (pos foundp)
+      (cl-destructuring-bind (pos foundp)
           (dime-find-inspectable-object 'next maxpos)
         (if foundp
             (progn (goto-char pos) (setq arg (1- arg))
@@ -6403,7 +6386,7 @@ If ARG is negative, move backwards."
                 (error "No inspectable objects")))))
     ;; Backward.
     (while (< arg 0)
-      (destructuring-bind (pos foundp)
+      (cl-destructuring-bind (pos foundp)
           (dime-find-inspectable-object 'prev minpos)
         ;; DIME-OPEN-INSPECTOR inserts the title of an inspector page
         ;; as a presentation at the beginning of the buffer; skip
@@ -6479,7 +6462,7 @@ If ARG is negative, move forwards."
         (dime-inspector-fetch-more button)))))
 
 (defun dime-inspector-fetch-more (button)
-  (destructuring-bind (index prev) button
+  (cl-destructuring-bind (index prev) button
     (dime-inspector-fetch-chunk
      (list '() (1+ index) index index) prev
      (dime-rcurry
@@ -6493,7 +6476,7 @@ If ARG is negative, move forwards."
   (dime-inspector-fetch chunk dime-inspector-limit prev cont))
 
 (defun dime-inspector-fetch (chunk limit prev cont)
-  (destructuring-bind (from to) (dime-inspector-next-range chunk limit prev)
+  (cl-destructuring-bind (from to) (dime-inspector-next-range chunk limit prev)
     (cond ((and from to)
            (dime-eval-async
             `(swank:inspector-range ,from ,to)
@@ -6505,7 +6488,7 @@ If ARG is negative, move forwards."
           (t (funcall cont chunk)))))
 
 (defun dime-inspector-next-range (chunk limit prev)
-  (destructuring-bind (_ len start end) chunk
+  (cl-destructuring-bind (_ len start end) chunk
     (let ((count (- end start)))
       (cond ((and prev (< 0 start) (or (not limit) (< count limit)))
              (list (if limit (max (- end limit) 0) 0) start))
@@ -6514,8 +6497,8 @@ If ARG is negative, move forwards."
             (t '(nil nil))))))
 
 (defun dime-inspector-join-chunks (chunk1 chunk2)
-  (destructuring-bind (i1 l1 s1 e1) chunk1
-    (destructuring-bind (i2 l2 s2 e2) chunk2
+  (cl-destructuring-bind (i1 l1 s1 e1) chunk1
+    (cl-destructuring-bind (i2 l2 s2 e2) chunk2
       (cond ((= e1 s2)
              (list (append i1 i2) l2 s1 e2))
             ((= e2 s1)
@@ -6560,7 +6543,7 @@ The user is prompted for a single character indicating the method by
 which to choose a new buffer. The `?' character describes the
 available methods.
 
-See `def-dime-selector-method' for defining new methods."
+See `define-dime-selector-method' for defining new methods."
   (interactive)
   (message "Select [%s]: "
            (apply #'string (mapcar #'car dime-selector-methods)))
@@ -6578,7 +6561,7 @@ See `def-dime-selector-method' for defining new methods."
            (discard-input)
            (dime-selector)))))
 
-(defmacro def-dime-selector-method (key description &rest body)
+(defmacro define-dime-selector-method (key description &rest body)
   "Define a new `dime-select' buffer selection method.
 
 KEY is the key the user will enter to choose this method.
@@ -6605,11 +6588,11 @@ switch-to-buffer."
                           (cl-remove ,key dime-selector-methods :key #'car))
                     #'< :key #'car))))
 
-(def-dime-selector-method ?? "Selector help buffer."
+(define-dime-selector-method ?? "Selector help buffer."
   (ignore-errors (kill-buffer "*Select Help*"))
   (with-current-buffer (get-buffer-create "*Select Help*")
     (insert "Select Methods:\n\n")
-    (loop for (key line function) in dime-selector-methods
+    (cl-loop for (key line function) in dime-selector-methods
           do (insert (format "%c:\t%s\n" key line)))
     (goto-char (point-min))
     (help-mode)
@@ -6620,46 +6603,46 @@ switch-to-buffer."
 (pushnew (list ?4 "Select in other window" (lambda () (dime-selector t)))
          dime-selector-methods :key #'car)
 
-(def-dime-selector-method ?q "Abort."
+(define-dime-selector-method ?q "Abort."
   (top-level))
 
-(def-dime-selector-method ?i
+(define-dime-selector-method ?i
   "*inferior-dylan* buffer."
   (cond ((and (dime-connected-p) (dime-process))
          (process-buffer (dime-process)))
         (t
          "*inferior-dylan*")))
 
-(def-dime-selector-method ?v
+(define-dime-selector-method ?v
   "*dime-events* buffer."
   dime-event-buffer-name)
 
-(def-dime-selector-method ?l
+(define-dime-selector-method ?l
   "most recently visited dylan-mode buffer."
   (dime-recently-visited-buffer 'dylan-mode))
 
-(def-dime-selector-method ?d
+(define-dime-selector-method ?d
   "*dime-debug* buffer for the current connection."
   (or (dime-debug-get-default-buffer)
       (error "No debug buffer")))
 
-(def-dime-selector-method ?e
+(define-dime-selector-method ?e
   "most recently visited emacs-dylan-mode buffer."
   (dime-recently-visited-buffer 'emacs-dylan-mode))
 
-(def-dime-selector-method ?c
+(define-dime-selector-method ?c
   "Dime connections buffer."
   (dime-list-connections)
   dime-connections-buffer-name)
 
-(def-dime-selector-method ?n
+(define-dime-selector-method ?n
   "Cycle to the next Dylan connection."
   (dime-cycle-connections)
   (concat "*dime-repl "
           (dime-connection-name (dime-current-connection))
           "*"))
 
-(def-dime-selector-method ?t
+(define-dime-selector-method ?t
   "Dime threads buffer."
   (dime-list-threads)
   dime-threads-buffer-name)
@@ -6667,7 +6650,7 @@ switch-to-buffer."
 (defun dime-recently-visited-buffer (mode)
   "Return the most recently visited buffer whose major-mode is MODE.
 Only considers buffers that are not already visible."
-  (loop for buffer in (buffer-list)
+  (cl-loop for buffer in (buffer-list)
         when (and (with-current-buffer buffer (eq major-mode mode))
                   (not (string-match "^ " (buffer-name buffer)))
                   (null (get-buffer-window buffer 'visible)))
@@ -6708,13 +6691,13 @@ Only considers buffers that are not already visible."
 
 (defmacro define-dime-contrib (name docstring &rest clauses)
   (declare (indent 1) (doc-string 2))
-  (destructuring-bind (&key dime-dependencies
+  (cl-destructuring-bind (&key dime-dependencies
                             swank-dependencies
                             on-load
                             on-unload
                             authors
                             license)
-      (loop for (key . value) in clauses append `(,key ,value))
+      (cl-loop for (key . value) in clauses append `(,key ,value))
     (let ((enable (intern (concat (symbol-name name) "-init")))
           (disable (intern (concat (symbol-name name) "-unload"))))
     `(progn
@@ -6732,7 +6715,7 @@ Only considers buffers that are not already visible."
              :enable ',enable :disable ',disable))))))
 
 (defun dime-all-contribs ()
-  (loop for (name val) on (symbol-plist 'dime-contribs) by #'cddr
+  (cl-loop for (name val) on (symbol-plist 'dime-contribs) by #'cddr
         when (dime-contrib-p val)
         collect val))
 
@@ -6740,7 +6723,7 @@ Only considers buffers that are not already visible."
   (get 'dime-contribs name))
 
 (defun dime-read-contrib-name ()
-  (let ((names (loop for c in (dime-all-contribs) collect
+  (let ((names (cl-loop for c in (dime-all-contribs) collect
                      (symbol-name (dime-contrib-name c)))))
     (intern (completing-read "Contrib: " names nil t))))
 
@@ -6822,8 +6805,7 @@ Only considers buffers that are not already visible."
       "--"
       [ "Interrupt Command"        dime-interrupt ,C ]
       [ "Abort Async. Command"     dime-quit ,C ]
-      [ "Sync Project & Directory" dime-sync-project-and-default-directory ,C]
-      )))
+      [ "Sync Project & Directory" dime-sync-project-and-default-directory ,C])))
 
 (defvar dime-debug-easy-menu
   (let ((C '(dime-connected-p)))
@@ -6847,8 +6829,7 @@ Only considers buffers that are not already visible."
        [ "Abort"    dime-debug-abort ,C ]
        [ "Step"      dime-debug-step ,C ]
        [ "Step next" dime-debug-next ,C ]
-       [ "Step out"  dime-debug-out ,C ]
-       )
+       [ "Step out"  dime-debug-out ,C ])
       "--"
       [ "Quit (throw)" dime-debug-quit ,C ]
       [ "Break With Default Debugger" dime-debug-break-with-default-debugger ,C ])))
@@ -6942,7 +6923,7 @@ Only considers buffers that are not already visible."
                          (integerp (aref binding 0)))
                 (push binding key-bindings)))
             (push (mapconcat 'key-description key-bindings " or ") keys)))
-        (loop
+        (cl-loop
            with key-length = (apply 'max (mapcar 'length keys))
            with desc-length = (apply 'max (mapcar 'length descriptions))
            for key in (nreverse keys)
@@ -6998,14 +6979,14 @@ keys."
 	    (push e (cdr probe))
             (push (cons k (list e)) alist))))
     ;; Put them back in order.
-    (loop for (key . value) in (reverse alist)
+    (cl-loop for (key . value) in (reverse alist)
           collect (cons key (reverse value)))))
 
 ;;;;; Misc.
 
 (defun dime-length= (seq n)
   "Return (= (length SEQ) N)."
-  (etypecase seq
+  (cl-etypecase seq
     (list
      (cond ((zerop n) (null seq))
            ((let ((tail (nthcdr (1- n) seq)))
@@ -7015,7 +6996,7 @@ keys."
 
 (defun dime-length> (seq n)
   "Return (> (length SEQ) N)."
-  (etypecase seq
+  (cl-etypecase seq
     (list (nthcdr n seq))
     (sequence (> (length seq) n))))
 
@@ -7037,7 +7018,7 @@ keys."
 (defun dime-column-max ()
   (save-excursion
     (goto-char (point-min))
-    (loop for column = (prog2 (end-of-line) (current-column) (forward-line))
+    (cl-loop for column = (prog2 (end-of-line) (current-column) (forward-line))
           until (= (point) (point-max))
           maximizing column)))
 
@@ -7137,7 +7118,7 @@ and skips comments."
          (memq (dime-keywordify e) (dime-dylan-features)))
         ((and (consp e) (symbolp (car e)))
          (funcall (let ((head (dime-keywordify (car e))))
-                    (case head
+                    (cl-case head
                       (:and #'every)
                       (:or #'some)
                       (:not
@@ -7230,7 +7211,7 @@ The result is unspecified if there isn't a symbol under the point."
                ;; Keep stepping over blanks and sexps until the end of
                ;; buffer is reached or an error occurs. Tolerate extra
                ;; close parens.
-               (loop do (skip-chars-forward " \t\r\n)")
+               (cl-loop do (skip-chars-forward " \t\r\n)")
                      until (eobp)
                      do (forward-sexp))
                t)))
