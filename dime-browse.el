@@ -19,6 +19,7 @@
 (require 'dime)
 
 (defun dime-browse--expand-subclass-node (widget)
+  "Internal function to expand a subclass node in WIDGET."
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
         (loop for kid in (dime-eval `(swank:dylan-subclasses ,name))
@@ -28,6 +29,7 @@
                         :has-children t)))))
 
 (defun dime-browse--expand-superclass-node (widget)
+  "Internal function to expand a superclass node in WIDGET."
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
         (loop for kid in (dime-eval `(swank:dylan-superclasses ,name))
@@ -41,9 +43,10 @@
     (set-keymap-parent map widget-keymap)
     (define-key map "q" 'bury-buffer)
     map)
-  "Keymap for tree widget browsers")
+  "Keymap for the Dime class browser.")
 
 (defun dime-browse--with-expander (name expander)
+  "Internal function to browse class NAME using EXPANDER."
   (let ((project (dime-current-project))
         (module  dylan-buffer-module))
     (switch-to-buffer "*Dime class browser*")
@@ -64,12 +67,12 @@
     (widget-setup)))
 
 (defun dime-browse-subclasses (name)
-  "Read the name of a class and show its subclasses."
+  "Read the NAME of a class and show its subclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-browse--with-expander name 'dime-browse--expand-subclass-node))
 
 (defun dime-browse-superclasses (name)
-  "Read the name of a class and show its superclasses."
+  "Read the NAME of a class and show its superclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-browse--with-expander name 'dime-browse--expand-superclass-node))
 
