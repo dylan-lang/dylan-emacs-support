@@ -110,6 +110,9 @@ Each entry has 3 elements:
 - The dylan-opt-face-* face name used in Emacs.
 - The human-readable title shown in mouse pop-ups.")
 
+(defvar-local dylan-opt--regions '()
+  "Optimization regions parsed from the Dylan compiler.")
+
 ;; TODO: `dylan-opt--remove-overlays' should use ELisp search
 ;; functions to find all optimization overlays in the buffer.  We
 ;; shouldn't have to manually keep track of them in this list.
@@ -122,7 +125,7 @@ Each entry has 3 elements:
     (condition-case _ (while t (push (read stream) forms))
       (end-of-file (reverse forms)))))
 
-(defun dylan-opt--parse-opt-file (opt-file)
+(defun dylan-opt--parse-regions (opt-file)
   "Parse Dylan optimization information from OPT-FILE."
   (cl-flet ((check (x) (unless x
                          (error
@@ -151,12 +154,16 @@ Each entry has 3 elements:
                       (push (cons opt-type oregion) regions))
                     oregions))))))))
 
-(defun dylan-opt--add-overlays (regions)
-  "Add some Dylan optimization faces to the current buffer.
+(defun dylan-opt--remove-overlays ()
+  "Remove all Dylan optimization faces from the current buffer."
+  (mapc #'delete-overlay dylan-opt--overlays)
+  (setq dylan-opt--overlays '()))
 
-REGIONS is a list from `dylan-opt--parse-opt-file'."
+(defun dylan-opt--add-overlays ()
+  "Add some Dylan optimization faces to the current buffer."
   (save-excursion
-    (dolist (region regions)
+    (dylan-opt--remove-overlays)
+    (dolist (region dylan-opt--regions)
       (cl-destructuring-bind (opt-type sl sc el ec) region
         (goto-char 1)
         (forward-line (1- sl))
@@ -191,10 +198,17 @@ REGIONS is a list from `dylan-opt--parse-opt-file'."
               (overlay-put over 'help-echo opt-help)
               (push over dylan-opt--overlays))))))))
 
-(defun dylan-opt--remove-overlays ()
-  "Remove all Dylan optimization faces from the current buffer."
-  (mapc #'delete-overlay dylan-opt--overlays)
-  (setq dylan-opt--overlays '()))
+;;;###autoload
+(define-minor-mode dylan-opt-mode
+  ""
+  :lighter " Opt"
+  :global nil
+  (cond ((not dylan-opt-mode)
+         (dylan-opt--remove-overlays))
+        ((not (null dylan-opt--regions))
+         (dylan-opt--add-overlays))
+        (t
+         (message "Use `dylan-opt' to load optimization information"))))
 
 (defun dylan-opt--default-file-name ()
   "Guess a default optimization file to match the current buffer."
@@ -206,20 +220,17 @@ REGIONS is a list from `dylan-opt--parse-opt-file'."
      (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
              "/build/" library "/" stem ".el"))))
 
-(defun dylan-opt-from-file (opt-file)
+(defun dylan-opt (opt-file)
   "Show optimization faces according to OPT-FILE."
-  (interactive (list
-                (let ((opt-file (dylan-opt--default-file-name)))
-                  (read-file-name "Color optimization file: "
-                                  (file-name-directory opt-file)
-                                  nil
-                                  t
-                                  (file-name-nondirectory opt-file)
-                                  (lambda (x) (string-match ".*\\.el" x))))))
-  (let ((regions (dylan-opt--parse-opt-file opt-file)))
-    (dylan-opt--remove-overlays)
-    (dylan-opt--add-overlays regions)
-    (message "Using optimization file: %s" opt-file)))
+  (interactive
+   (list (let ((default (dylan-opt--default-file-name)))
+           (read-file-name
+            "Dylan optimization file: "
+            (file-name-directory default) nil t
+            (file-name-nondirectory default)
+            (lambda (x) (string-match ".*\\.el" x))))))
+  (setq dylan-opt--regions (dylan-opt--parse-regions opt-file))
+  (dylan-opt-mode 1))
 
 (provide 'dylan-opt)
 
