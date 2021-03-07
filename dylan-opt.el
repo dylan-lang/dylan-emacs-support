@@ -124,9 +124,9 @@
 
 (defun dylan-opt--default-file-name ()
   (let* ((path (buffer-file-name))
-	 (name (file-name-nondirectory path))
-	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
-	 (library dylan-buffer-library))
+         (name (file-name-nondirectory path))
+         (stem (substring name 0 (string-match "\\.[^.]*$" name)))
+         (library dylan-buffer-library))
     (expand-file-name
      (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
              "/build/" library "/" stem ".el"))))
