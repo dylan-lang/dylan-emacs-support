@@ -2,47 +2,47 @@
 
 ; major problem: if one coloring of the same type is contained in another, you can't recognize the inner one - make the color lighter/darker/a white background at the borders? any good ideas here?
 
-(defface face-not-all-methods-known
+(defface dylan-opt-face-not-all-methods-known
   `((t (:background "magenta")))
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-failed-to-select-where-all-known
+(defface dylan-opt-face-failed-to-select-where-all-known
   `((t (:background "red")))
   "Bla bla bla"
   :group  'dime-mode-faces)
 
-(defface face-lambda-call
+(defface dylan-opt-face-lambda-call
   `((t (:background "lightskyblue")))
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-inlining
+(defface dylan-opt-face-inlining
   `((t (:background "dimgray"))) ; should be darkgrey...
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-slot-accessor-fixed-offset
+(defface dylan-opt-face-slot-accessor-fixed-offset
   `((t (:background "forestgreen")))
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-eliminated
+(defface dylan-opt-face-eliminated
   `((t (:background "pink"))) ; should be lightgrey according to documentation
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-dynamic-extent
+(defface dylan-opt-face-dynamic-extent
   `((t (:background "DarkTurquoise"))) ; no documentation for this :/
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-program-notes
+(defface dylan-opt-face-program-notes
   `((t (:background "yellow")))
   "Bla bla bla"
   :group 'dime-mode-faces)
 
-(defface face-bogus-upgrade
+(defface dylan-opt-face-bogus-upgrade
   `((t (:background "orange"))) ; no documentation for that - and according to source only relevant for dylan library?
   "Bla bla bla"
   :group 'dime-mode-faces)
@@ -88,23 +88,23 @@
                     (push over2 dylan-buffer-highlighting-overlays))))
             (let ((over (make-overlay start end)))
               (if (string= color "not-all-known")
-                  (overlay-put over 'face 'face-not-all-methods-known)
+                  (overlay-put over 'face 'dylan-opt-face-not-all-methods-known)
                 (if (string= color "failed-to-select")
-                    (overlay-put over 'face 'face-failed-to-select-where-all-known)
+                    (overlay-put over 'face 'dylan-opt-face-failed-to-select-where-all-known)
                   (if (string= color "lambda-call")
-                      (overlay-put over 'face 'face-lambda-call)
+                      (overlay-put over 'face 'dylan-opt-face-lambda-call)
                     (if (string= color "inlined")
-                      (overlay-put over 'face 'face-inlining)
+                      (overlay-put over 'face 'dylan-opt-face-inlining)
                       (if (string= color "accessor-fixed-offset")
-                          (overlay-put over 'face 'face-slot-accessor-fixed-offset)
+                          (overlay-put over 'face 'dylan-opt-face-slot-accessor-fixed-offset)
                         (if (string= color "eliminated")
-                            (overlay-put over 'face 'face-eliminated)
+                            (overlay-put over 'face 'dylan-opt-face-eliminated)
                           (if (string= color "dynamic-extent")
-                              (overlay-put over 'face 'face-dynamic-extent)
+                              (overlay-put over 'face 'dylan-opt-face-dynamic-extent)
                             (if (string= color "program-note")
-                                (overlay-put over 'face 'face-program-notes)
+                                (overlay-put over 'face 'dylan-opt-face-program-notes)
                               (if (string= color "bogus-upgrade")
-                                  (overlay-put over 'face 'face-bogus-upgrade))))))))))
+                                  (overlay-put over 'face 'dylan-opt-face-bogus-upgrade))))))))))
               (overlay-put over 'help-echo color)
               (push over dylan-buffer-highlighting-overlays)))))
       (setq l (cdr l)))))
