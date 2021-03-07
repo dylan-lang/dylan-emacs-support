@@ -16,6 +16,8 @@
 ;; lighter/darker/a white background at the borders? any good ideas
 ;; here?
 
+(require 'cl-lib)
+
 (require 'dylan-mode)
 
 (defgroup dylan-opt nil
@@ -72,28 +74,98 @@
   "Face for Dylan optimization information."
   :group 'dylan-opt)
 
+(defconst dylan-opt--type-alist
+  '((color-not-all-methods-known
+     dylan-opt-face-not-all-methods-known
+     "Not all methods known")
+    (color-failed-to-select-where-all-known
+     dylan-opt-face-failed-to-select-where-all-known
+     "Failed to select where all known")
+    (color-lambda-call
+     dylan-opt-face-lambda-call
+     "Lambda call")
+    (color-inlining
+     dylan-opt-face-inlining
+     "Inlining")
+    (color-slot-accessor-fixed-offset
+     dylan-opt-face-slot-accessor-fixed-offset
+     "Slot accessor fixed offset")
+    (color-eliminated
+     dylan-opt-face-eliminated
+     "Eliminated")
+    (color-dynamic-extent
+     dylan-opt-face-dynamic-extent
+     "Dynamic extent")
+    (color-program-notes
+     dylan-opt-face-program-notes
+     "Program note")
+    (color-bogus-upgrade
+     dylan-opt-face-bogus-upgrade
+     "Bogus upgrade"))
+  "List of optimization types emitted by the Dylan compiler.
+
+Each entry has 3 elements:
+
+- The color-* symbol used in the compiler's dump file format.
+- The dylan-opt-face-* face name used in Emacs.
+- The human-readable title shown in mouse pop-ups.")
+
 ;; TODO: `dylan-opt--remove-overlays' should use ELisp search
 ;; functions to find all optimization overlays in the buffer.  We
 ;; shouldn't have to manually keep track of them in this list.
 (defvar-local dylan-opt--overlays '()
   "All Dylan optimization overlays for the current buffer.")
 
-(defun dylan-opt--add-overlays (which specs)
+(defun dylan-opt--read-all (stream)
+  "Helper to read all Emacs Lisp forms from STREAM."
+  (let ((forms '()))
+    (condition-case _ (while t (push (read stream) forms))
+      (end-of-file (reverse forms)))))
+
+(defun dylan-opt--parse-opt-file (opt-file)
+  "Parse Dylan optimization information from OPT-FILE."
+  (cl-flet ((check (x) (unless x
+                         (error
+                          "Dylan optimization file uses unknown format"))))
+    (save-match-data
+      (with-temp-buffer
+        (insert-file-contents opt-file)
+        (check (looking-at (regexp-quote "; HQNDYLANCOLRINFO 1 0")))
+        (goto-char (match-end 0))
+        (let ((forms (dylan-opt--read-all (current-buffer)))
+              (regions '()))
+          (dolist (form forms (reverse regions))
+            (check (listp form))
+            (check (equal 3 (cl-list-length form)))
+            (check (memq (nth 0 form) '(color-backgrounds color-foregrounds)))
+            (let* ((opt-type (nth 1 form))
+                   (oregions (nth 2 form)))
+              (check (and (symbolp opt-type) (not (null opt-type))))
+              (check (equal 2 (cl-list-length oregions)))
+              (check (eq 'quote (nth 0 oregions)))
+              (setq oregions (nth 1 oregions))
+              (mapc (lambda (oregion)
+                      (check (listp oregion))
+                      (check (equal 4 (cl-list-length oregion)))
+                      (check (cl-every #'integerp oregion))
+                      (push (cons opt-type oregion) regions))
+                    oregions))))))))
+
+(defun dylan-opt--add-overlays (regions)
   "Add some Dylan optimization faces to the current buffer.
 
-WHICH says which face to add.  SPECS is a list of buffer regions
-to add them to."
+REGIONS is a list from `dylan-opt--parse-opt-file'."
   (save-excursion
-    (dolist (spec specs)
-      (let* ((sl (car spec))
-             (sc (car (cdr spec)))
-             (el (car (cdr (cdr spec))))
-             (ec (car (cdr (cdr (cdr spec))))))
+    (dolist (region regions)
+      (cl-destructuring-bind (opt-type sl sc el ec) region
         (goto-char 1)
         (forward-line (1- sl))
         (forward-char sc)
-        (let ((start (point))
-              (overlay (overlays-at (point))))
+        (let* ((start (point))
+               (overlay (overlays-at (point)))
+               (opt-data (assq opt-type dylan-opt--type-alist))
+               (opt-face (nth 1 opt-data))
+               (opt-help (nth 2 opt-data)))
           (goto-char 1)
           (forward-line (1- el))
           (forward-char ec)
@@ -115,29 +187,8 @@ to add them to."
                   (push over1 dylan-opt--overlays)
                   (push over2 dylan-opt--overlays))))
             (let ((over (make-overlay start end)))
-              (cond ((string= which "not-all-known")
-                     (overlay-put over 'face
-                                  'dylan-opt-face-not-all-methods-known))
-                    ((string= which "failed-to-select")
-                     (overlay-put
-                      over 'face
-                      'dylan-opt-face-failed-to-select-where-all-known))
-                    ((string= which "lambda-call")
-                     (overlay-put over 'face 'dylan-opt-face-lambda-call))
-                    ((string= which "inlined")
-                     (overlay-put over 'face 'dylan-opt-face-inlining))
-                    ((string= which "accessor-fixed-offset")
-                     (overlay-put over 'face
-                                  'dylan-opt-face-slot-accessor-fixed-offset))
-                    ((string= which "eliminated")
-                     (overlay-put over 'face 'dylan-opt-face-eliminated))
-                    ((string= which "dynamic-extent")
-                     (overlay-put over 'face 'dylan-opt-face-dynamic-extent))
-                    ((string= which "program-note")
-                     (overlay-put over 'face 'dylan-opt-face-program-notes))
-                    ((string= which "bogus-upgrade")
-                     (overlay-put over 'face 'dylan-opt-face-bogus-upgrade)))
-              (overlay-put over 'help-echo which)
+              (overlay-put over 'face opt-face)
+              (overlay-put over 'help-echo opt-help)
               (push over dylan-opt--overlays))))))))
 
 (defun dylan-opt--remove-overlays ()
@@ -165,10 +216,10 @@ to add them to."
                                   t
                                   (file-name-nondirectory opt-file)
                                   (lambda (x) (string-match ".*\\.el" x))))))
-  (message "Using optimization file: %s" opt-file)
-  (dylan-opt--remove-overlays)
-  (load-file opt-file)
-  (message "Using optimization file: %s" opt-file))
+  (let ((regions (dylan-opt--parse-opt-file opt-file)))
+    (dylan-opt--remove-overlays)
+    (dylan-opt--add-overlays regions)
+    (message "Using optimization file: %s" opt-file)))
 
 (provide 'dylan-opt)
 
