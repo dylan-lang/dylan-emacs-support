@@ -77,7 +77,6 @@
                       (oldmsg (overlay-get (car overlay) 'help-echo)))
                   (delete-overlay (car overlay))
                   (setq dylan-opt--overlays (remove (car overlay) dylan-opt--overlays))
-                  ;; remove from
                   (let ((over1 (make-overlay oldstart start))
                         (over2 (make-overlay end oldend)))
                     (overlay-put over1 'face oldface)
