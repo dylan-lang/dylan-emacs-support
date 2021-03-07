@@ -1,10 +1,12 @@
-;;; dylan-mode.el --- Major mode for the Dylan programming language. http://opendylan.org
+;;; dylan-mode.el --- Major mode for the Dylan programming language
 
 ;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
 ;; Copyright (C) 2004, 2005, 2007  Chris Page
-
+;; SPDX-License-Identifier: GPL-1.0-or-later
 ;; Author: Robert Stockton (rgs@cs.cmu.edu), others, then Chris Page
 ;; Maintainer: Chris Page <cpage@opendylan.org>  (no longer valid)
+;; URL: https://opendylan.org/
+;; Package-Requires: ((emacs "25.1"))
 ;; Version: 1.22
 
 ;; This file is *NOT* part of GNU Emacs.
@@ -146,16 +148,16 @@ whitespace prefix."
 
 ;;; Regular expressions -- See https://opendylan.org/books/drm/Lexical_Grammar
 
-(defconst graphic-character "!&*<>|^$%@_")
-(defconst special-character "-+~?/=")   ; code may assume '-' comes first
+(defconst dylan-graphic-character "!&*<>|^$%@_")
+(defconst dylan-special-character "-+~?/=")   ; code may assume '-' comes first
 
 ;;; For Dylan `name` BNF special care has to be taken to handle leading
 ;;; numerics and leading graphics.
 (defconst dylan-name-pattern
   (format "\\([a-zA-Z]\\|[0-9][a-zA-Z][a-zA-Z]\\|[%s][a-zA-Z]\\)[%s%sa-zA-Z0-9]*"
-          graphic-character
-          special-character             ; intentionally follows '[' in regex
-          graphic-character))
+          dylan-graphic-character
+          dylan-special-character             ; intentionally follows '[' in regex
+          dylan-graphic-character))
 
 (defconst dylan-keyword-symbol-pattern
   (format "%s:" dylan-name-pattern))
