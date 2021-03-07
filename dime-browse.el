@@ -34,26 +34,6 @@
 				    :expander dime-browse--expand-superclass-node
 				    :has-children t)))))
 
-(defun dime-browse-subclasses (name)
-  "Read the name of a class and show its subclasses."
-  (interactive (list (dime-read-symbol-name "Class Name: ")))
-  (dime-browse--call-with-setup
-   "*Dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
-   (lambda ()
-     (widget-create 'tree-widget :tag name
-                    :expander 'dime-browse--expand-subclass-node
-                    :has-echildren t))))
-
-(defun dime-browse-superclasses (name)
-  "Read the name of a class and show its superclasses."
-  (interactive (list (dime-read-symbol-name "Class Name: ")))
-  (dime-browse--call-with-setup
-   "*Dime class browser*" (dime-current-project) dylan-buffer-module "Class Browser"
-   (lambda ()
-     (widget-create 'tree-widget :tag name
-                    :expander 'dime-browse--expand-superclass-node
-                    :has-echildren t))))
-
 (defvar dime-browse-map nil
   "Keymap for tree widget browsers")
 
@@ -62,19 +42,35 @@
   (set-keymap-parent dime-browse-map widget-keymap)
   (define-key dime-browse-map "q" 'bury-buffer))
 
-(defun dime-browse--call-with-setup (buffer project module title fn)
-  (switch-to-buffer buffer)
-  (kill-all-local-variables)
-  (setq dime-buffer-project project)
-  (setq dylan-buffer-module module)
-  (let ((inhibit-read-only t)) (erase-buffer))
-  (widget-insert title "\n\n")
-  (save-excursion
-    (funcall fn))
-  (lisp-mode-variables t)
-  (dime-mode t)
-  (use-local-map dime-browse-map)
-  (widget-setup))
+(defun dime-browse--with-expander (name expander)
+  (let ((project (dime-current-project))
+        (module  dylan-buffer-module))
+    (switch-to-buffer "*Dime class browser*")
+    (kill-all-local-variables)
+    (setq dime-buffer-project project)
+    (setq dylan-buffer-module module)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (widget-insert "Class Browser" "\n\n")
+      (save-excursion
+        (widget-create 'tree-widget
+                       :tag name
+                       :expander expander
+                       :has-echildren t)))
+    (lisp-mode-variables t)
+    (dime-mode t)
+    (use-local-map dime-browse-map)
+    (widget-setup)))
+
+(defun dime-browse-subclasses (name)
+  "Read the name of a class and show its subclasses."
+  (interactive (list (dime-read-symbol-name "Class Name: ")))
+  (dime-browse--with-expander name 'dime-browse--expand-subclass-node))
+
+(defun dime-browse-superclasses (name)
+  "Read the name of a class and show its superclasses."
+  (interactive (list (dime-read-symbol-name "Class Name: ")))
+  (dime-browse--with-expander name 'dime-browse--expand-superclass-node))
 
 (provide 'dime-browse)
 
