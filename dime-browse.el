@@ -36,13 +36,12 @@
 			:expander dime-browse--expand-superclass-node
 			:has-children t)))))
 
-(defvar dime-browse-map nil
+(defvar dime-browse-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map widget-keymap)
+    (define-key map "q" 'bury-buffer)
+    map)
   "Keymap for tree widget browsers")
-
-(unless dime-browse-map
-  (setq dime-browse-map (make-sparse-keymap))
-  (set-keymap-parent dime-browse-map widget-keymap)
-  (define-key dime-browse-map "q" 'bury-buffer))
 
 (defun dime-browse--with-expander (name expander)
   (let ((project (dime-current-project))
