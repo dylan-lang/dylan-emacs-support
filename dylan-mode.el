@@ -7,7 +7,7 @@
 ;; Maintainer: Chris Page <cpage@opendylan.org>  (no longer valid)
 ;; URL: https://opendylan.org/
 ;; Package-Requires: ((emacs "25.1"))
-;; Version: 1.22
+;; Package-Version: 3.0
 
 ;; This file is *NOT* part of GNU Emacs.
 
@@ -30,8 +30,6 @@
 
 ;; Dylan mode is a major mode for editing Dylan programs. It provides
 ;; indenting and syntax highlighting support.
-;;
-;; This code requires Emacs 24 or newer.
 
 ;; Testing
 ;;
@@ -61,18 +59,6 @@
 ;;   BNF when it should match all graphic chars.
 
 ;;; Code:
-
-
-(defconst dylan-mode-version "2.0"
-  "Dylan Mode version number.")
-
-(defun dylan-mode-version ()
-  "Return a string describing the version of Dylan mode.
-When called interactively, displays the version."
-  (interactive)
-  (if (called-interactively-p 'interactive)
-      (message "dylan-mode version %s" dylan-mode-version)
-    dylan-mode-version))
 
 
 ;;; Customization:
