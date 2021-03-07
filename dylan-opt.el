@@ -111,7 +111,7 @@
   (mapc #'delete-overlay dylan-opt--overlays)
   (setq dylan-opt--overlays '()))
 
-(defun dylan-opt-file-name ()
+(defun dylan-opt--default-file-name ()
   (let* ((path (buffer-file-name))
 	 (name (file-name-nondirectory path))
 	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
@@ -123,12 +123,12 @@
 (defun dylan-opt-from-file (file)
   "Color the current Dylan buffer with recorded optimization information"
   (interactive (list
-                (let ((color-file (dylan-opt-file-name)))
+                (let ((opt-file (dylan-opt--default-file-name)))
                   (read-file-name "Color optimization file: "
-                                  (file-name-directory color-file)
+                                  (file-name-directory opt-file)
                                   nil
                                   t
-                                  (file-name-nondirectory color-file)
+                                  (file-name-nondirectory opt-file)
                                   (lambda (x) (string-match ".*\\.el" x))))))
   (message "Using color file: %s" file)
   (dylan-opt-remove-overlays)
