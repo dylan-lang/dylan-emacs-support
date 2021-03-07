@@ -1,24 +1,22 @@
 ;;; dime-browse.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
-;; URL: https://opendylan.org/
 ;; Package-Requires: ((emacs "25.1"))
+;; URL: https://opendylan.org/
+;; Author: Rui Patrocínio <rui.patrocinio@netvisao.pt>
+;; Author: Hannes Mehnert <hannes@opendylan.org>
 ;; SPDX-License-Identifier: GPL-2.0-or-later
 
 ;;; Commentary:
 
-;; Support code for Dime.
+;; Dylan class browser for Dime.
 
 ;;; Code:
 
+;; Originally adapted from `slime-xref-browser.el'.
+
+(require 'tree-widget)
+
 (require 'dime)
-
-
-;;; Source modified from slime-xref-browser.el
-;;; slime-xref-browser.el --- xref browsing with tree-widget
-;;
-;; Author: Rui Patrocínio <rui.patrocinio@netvisao.pt>
-;; Licencse: GNU GPL (same license as Emacs)
-;; Modified by Hannes Mehnert <hannes@opendylan.org>
 
 (defun dime-browse--expand-subclass-node (widget)
   (or (widget-get widget :args)
@@ -59,7 +57,6 @@
 (defvar dime-browse-map nil
   "Keymap for tree widget browsers")
 
-(require 'tree-widget)
 (unless dime-browse-map
   (setq dime-browse-map (make-sparse-keymap))
   (set-keymap-parent dime-browse-map widget-keymap)
