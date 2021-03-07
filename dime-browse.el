@@ -21,20 +21,20 @@
 (defun dime-browse--expand-subclass-node (widget)
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
-	(loop for kid in (dime-eval `(swank:dylan-subclasses ,name))
-	      collect `(tree-widget
+        (loop for kid in (dime-eval `(swank:dylan-subclasses ,name))
+              collect `(tree-widget
                         :tag ,kid
-			:expander dime-browse--expand-subclass-node
-			:has-children t)))))
+                        :expander dime-browse--expand-subclass-node
+                        :has-children t)))))
 
 (defun dime-browse--expand-superclass-node (widget)
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
-	(loop for kid in (dime-eval `(swank:dylan-superclasses ,name))
-	      collect `(tree-widget
+        (loop for kid in (dime-eval `(swank:dylan-superclasses ,name))
+              collect `(tree-widget
                         :tag ,kid
-			:expander dime-browse--expand-superclass-node
-			:has-children t)))))
+                        :expander dime-browse--expand-superclass-node
+                        :has-children t)))))
 
 (defvar dime-browse-map
   (let ((map (make-sparse-keymap)))
