@@ -1,4 +1,15 @@
-;; Interface to optimization coloring.
+;;; dylan-opt.el --- Dylan optimization faces -*- lexical-binding: t -*-
+
+;; Package-Requires: ((emacs "25.1"))
+;; URL: https://opendylan.org/
+
+;;; Commentary:
+
+;; Read optimization information emitted by the Dylan compiler.  Add
+;; extra faces on top of the ordinary `dylan-mode' faces to indicate
+;; which parts of the source code were optimized in what ways.
+
+;;; Code:
 
 ;; TODO: major problem: if one coloring of the same type is contained
 ;; in another, you can't recognize the inner one - make the color
@@ -13,58 +24,65 @@
 
 (defface dylan-opt-face-not-all-methods-known
   `((t (:background "magenta")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 (defface dylan-opt-face-failed-to-select-where-all-known
   `((t (:background "red")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 (defface dylan-opt-face-lambda-call
   `((t (:background "lightskyblue")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 ;; should be darkgray...
 (defface dylan-opt-face-inlining
   `((t (:background "dimgray")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 (defface dylan-opt-face-slot-accessor-fixed-offset
   `((t (:background "forestgreen")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 ;; should be lightgray according to documentation
 (defface dylan-opt-face-eliminated
   `((t (:background "pink")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 ;; no documentation for this :/
 (defface dylan-opt-face-dynamic-extent
   `((t (:background "DarkTurquoise")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 (defface dylan-opt-face-program-notes
   `((t (:background "yellow")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
 ;; no documentation for that - and according to source only relevant
 ;; for dylan library?
 (defface dylan-opt-face-bogus-upgrade
   `((t (:background "orange")))
-  "Bla bla bla"
+  "Face for Dylan optimization information."
   :group 'dylan-opt)
 
+;; TODO: `dylan-opt--remove-overlays' should use ELisp search
+;; functions to find all optimization overlays in the buffer.  We
+;; shouldn't have to manually keep track of them in this list.
 (defvar-local dylan-opt--overlays '()
-  "Highlighting overlays of current buffer.")
+  "All Dylan optimization overlays for the current buffer.")
 
 (defun dylan-opt--add-overlays (which specs)
+  "Add some Dylan optimization faces to the current buffer.
+
+WHICH says which face to add.  SPECS is a list of buffer regions
+to add them to."
   (save-excursion
     (dolist (spec specs)
       (let* ((sl (car spec))
@@ -123,11 +141,12 @@
               (push over dylan-opt--overlays))))))))
 
 (defun dylan-opt--remove-overlays ()
-  "Uncolor the current Dylan buffer of optimization information"
+  "Remove all Dylan optimization faces from the current buffer."
   (mapc #'delete-overlay dylan-opt--overlays)
   (setq dylan-opt--overlays '()))
 
 (defun dylan-opt--default-file-name ()
+  "Guess a default optimization file to match the current buffer."
   (let* ((path (buffer-file-name))
          (name (file-name-nondirectory path))
          (stem (substring name 0 (string-match "\\.[^.]*$" name)))
@@ -136,8 +155,8 @@
      (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
              "/build/" library "/" stem ".el"))))
 
-(defun dylan-opt-from-file (file)
-  "Color the current Dylan buffer with recorded optimization information"
+(defun dylan-opt-from-file (opt-file)
+  "Show optimization faces according to OPT-FILE."
   (interactive (list
                 (let ((opt-file (dylan-opt--default-file-name)))
                   (read-file-name "Color optimization file: "
@@ -146,9 +165,11 @@
                                   t
                                   (file-name-nondirectory opt-file)
                                   (lambda (x) (string-match ".*\\.el" x))))))
-  (message "Using color file: %s" file)
+  (message "Using optimization file: %s" opt-file)
   (dylan-opt--remove-overlays)
-  (load-file file)
-  (message "Used color file: %s" file))
+  (load-file opt-file)
+  (message "Using optimization file: %s" opt-file))
 
 (provide 'dylan-opt)
+
+;;; dylan-opt.el ends here
