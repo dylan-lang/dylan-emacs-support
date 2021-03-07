@@ -233,6 +233,7 @@ can be used to toggle the optimization highlighting on and off."
      (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
              "/build/" library "/" stem ".el"))))
 
+;;;###autoload
 (defun dylan-opt (opt-file)
   "Show Dylan optimization faces according to OPT-FILE.
 
