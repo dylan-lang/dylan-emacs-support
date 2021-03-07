@@ -1,6 +1,9 @@
 ;; Interface to optimization coloring.
 
-; major problem: if one coloring of the same type is contained in another, you can't recognize the inner one - make the color lighter/darker/a white background at the borders? any good ideas here?
+;; TODO: major problem: if one coloring of the same type is contained
+;; in another, you can't recognize the inner one - make the color
+;; lighter/darker/a white background at the borders? any good ideas
+;; here?
 
 (require 'dylan-mode)
 
@@ -74,7 +77,7 @@
                       (oldmsg (overlay-get (car overlay) 'help-echo)))
                   (delete-overlay (car overlay))
                   (setq dylan-opt--overlays (remove (car overlay) dylan-opt--overlays))
-                  ; remove from
+                  ;; remove from
                   (let ((over1 (make-overlay oldstart start))
                         (over2 (make-overlay end oldend)))
                     (overlay-put over1 'face oldface)
