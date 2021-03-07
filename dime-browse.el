@@ -71,11 +71,13 @@
     (use-local-map dime-browse-map)
     (widget-setup)))
 
+;;;###autoload
 (defun dime-browse-subclasses (name)
   "Read the NAME of a class and show its subclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
   (dime-browse--with-expander name 'dime-browse--expand-subclass-node))
 
+;;;###autoload
 (defun dime-browse-superclasses (name)
   "Read the NAME of a class and show its superclasses."
   (interactive (list (dime-read-symbol-name "Class Name: ")))
