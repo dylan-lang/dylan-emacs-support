@@ -611,7 +611,7 @@ This list of flushed between commands.")
 ;;;
 ;;;;; Syntactic sugar
 
-(defmacro dime-destructuring-case (value &rest patterns)
+(defmacro dime--destructuring-case (value &rest patterns)
   "Dispatch VALUE to one of PATTERNS.
 A cross between `cl-case' and `cl-destructuring-bind'.
 The pattern syntax is:
