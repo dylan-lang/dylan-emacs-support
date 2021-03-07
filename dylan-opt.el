@@ -1,5 +1,8 @@
 ;;; dylan-opt.el --- Dylan optimization faces -*- lexical-binding: t -*-
 
+;; Author: Hannes Mehnert
+;; Author: Lassi Kortela
+;; SPDX-License-Identifier: GPL-2.0-or-later
 ;; Package-Requires: ((emacs "25.1"))
 ;; URL: https://opendylan.org/
 
