@@ -1,16 +1,5 @@
 ;; Interface to optimization coloring.
 
-(defvar color-not-all-methods-known            "not-all-known")
-(defvar color-failed-to-select-where-all-known "failed-to-select")
-(defvar color-lambda-call                      "lambda-call")
-(defvar color-inlining                         "inlined")
-(defvar color-slot-accessor-fixed-offset       "accessor-fixed-offset")
-(defvar color-eliminated                       "eliminated")
-(defvar color-dynamic-extent                   "dynamic-extent")
-(defvar color-program-notes                    "program-note")
-(defvar color-background                       "background")
-(defvar color-bogus-upgrade                    "bogus-upgrade")
-
 ; major problem: if one coloring of the same type is contained in another, you can't recognize the inner one - make the color lighter/darker/a white background at the borders? any good ideas here?
 
 (defface face-not-all-methods-known
