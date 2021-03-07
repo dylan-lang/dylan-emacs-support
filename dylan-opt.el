@@ -26,8 +26,9 @@
   "Bla bla bla"
   :group 'dylan-opt)
 
+;; should be darkgray...
 (defface dylan-opt-face-inlining
-  `((t (:background "dimgray"))) ; should be darkgrey...
+  `((t (:background "dimgray")))
   "Bla bla bla"
   :group 'dylan-opt)
 
@@ -36,13 +37,15 @@
   "Bla bla bla"
   :group 'dylan-opt)
 
+;; should be lightgray according to documentation
 (defface dylan-opt-face-eliminated
-  `((t (:background "pink"))) ; should be lightgrey according to documentation
+  `((t (:background "pink")))
   "Bla bla bla"
   :group 'dylan-opt)
 
+;; no documentation for this :/
 (defface dylan-opt-face-dynamic-extent
-  `((t (:background "DarkTurquoise"))) ; no documentation for this :/
+  `((t (:background "DarkTurquoise")))
   "Bla bla bla"
   :group 'dylan-opt)
 
@@ -51,8 +54,10 @@
   "Bla bla bla"
   :group 'dylan-opt)
 
+;; no documentation for that - and according to source only relevant
+;; for dylan library?
 (defface dylan-opt-face-bogus-upgrade
-  `((t (:background "orange"))) ; no documentation for that - and according to source only relevant for dylan library?
+  `((t (:background "orange")))
   "Bla bla bla"
   :group 'dylan-opt)
 
