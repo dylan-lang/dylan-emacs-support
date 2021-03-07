@@ -203,12 +203,14 @@ Each entry has 3 elements:
 
 ;;;###autoload
 (define-minor-mode dylan-opt-mode
-  "Toggle the Dylan Opt minor mode for optimization info.
+  "Toggle Dylan-Opt minor mode for optimization info.
 
-This mode shows how different regions of a source file have been
-optimized by the Dylan compiler.  The compiler can produce a dump
-file (*.el) as a byproduct.  Use the `opt-file' command to feed
-that file to Emacs and enable optimization highlighting.
+This mode can be used on top of `dylan-mode'.  It shows how
+different regions of a Dylan source file have been optimized by
+the compiler.  The Dylan compiler can produce an optimization dump
+file (*.el) as a byproduct of normal compilation.  Use the
+`dylan-opt' command to feed that file to Emacs and to enable
+highlighting.
 
 Once the dump file has been loaded, the `dylan-opt-mode' command
 can be used to toggle the optimization highlighting on and off."
@@ -232,7 +234,9 @@ can be used to toggle the optimization highlighting on and off."
              "/build/" library "/" stem ".el"))))
 
 (defun dylan-opt (opt-file)
-  "Show optimization faces according to OPT-FILE."
+  "Show Dylan optimization faces according to OPT-FILE.
+
+See the command `dylan-opt-mode', which this command enables."
   (interactive
    (list (let ((default (dylan-opt--default-file-name)))
            (read-file-name
