@@ -3,6 +3,8 @@
 ;; Copyright (C) 2014 Erik Charlebois
 ;; SPDX-License-Identifier: GPL-1.0-or-later
 ;; Author: Erik Charlebois (erikcharlebois@gmail.com)
+;; URL: https://opendylan.org/
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is *NOT* part of GNU Emacs.
 
