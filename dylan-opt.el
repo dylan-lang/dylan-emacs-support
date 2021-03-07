@@ -131,7 +131,7 @@
                                   (file-name-nondirectory opt-file)
                                   (lambda (x) (string-match ".*\\.el" x))))))
   (message "Using color file: %s" file)
-  (dylan-opt-remove-overlays)
+  (dylan-opt--remove-overlays)
   (load-file file)
   (message "Used color file: %s" file))
 
