@@ -12,40 +12,6 @@
 
 (require 'dime)
 
-;;;; Arglist Display
-
-(defun dime-dylan-arglist-magic (n)
-  "Insert a space and print some relevant information (function arglist).
-Designed to be bound to the SPC key.  Prefix argument can be used to insert
-more than one space."
-  (interactive "p")
-  (self-insert-command n)
-  (when (dime-background-activities-enabled-p)
-    (dime-dylan-show-arglist)))
-
-(defun dime-dylan-show-arglist ()
-  (let ((op (dime-dylan-operator-before-point)))
-    (when op
-      (dime-eval-async `(swank:operator-arglist ,op ,(dime-current-project))
-                       (lambda (arglist)
-                         (when arglist
-                           (dime-message "%s" arglist)))))))
-
-(defun dime-dylan-operator-before-point ()
-  (ignore-errors
-    (save-excursion
-      (backward-up-list 1)
-      (backward-sexp 1)
-      (thing-at-point 'dime-symbol))))
-
-(defun dime-dylan-init ()
-  (add-hook 'dylan-mode-hook 'dime-dylan-bind-keys))
-
-(defun dime-dylan-bind-keys ()
-  (define-key dime-mode-map (kbd "SPC") 'dime-dylan-arglist-magic)
-  (local-set-key (kbd ",") 'dime-dylan-arglist-magic)
-  (local-set-key (kbd "(") 'dime-dylan-arglist-magic))
-
 
 ;;; Source modified from slime-xref-browser.el
 ;;; slime-xref-browser.el --- xref browsing with tree-widget
