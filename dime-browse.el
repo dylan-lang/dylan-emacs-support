@@ -14,29 +14,34 @@
 
 ;; Originally adapted from `slime-xref-browser.el'.
 
+(require 'cl-lib)
 (require 'tree-widget)
 
 (require 'dime)
 
-(defun dime-browse--expand-subclass-node (widget)
-  "Internal function to expand a subclass node in WIDGET."
+(defun dime-browse--expand-node (expander swank widget)
+  "Helper to expand a node in WIDGET using EXPANDER and SWANK command."
   (or (widget-get widget :args)
       (let ((name (widget-get widget :tag)))
-        (loop for kid in (dime-eval `(swank:dylan-subclasses ,name))
-              collect `(tree-widget
-                        :tag ,kid
-                        :expander dime-browse--expand-subclass-node
-                        :has-children t)))))
+        (cl-loop for kid in (dime-eval `(,swank ,name))
+                 collect `(tree-widget
+                           :tag ,kid
+                           :expander ',expander
+                           :has-children t)))))
+
+(defun dime-browse--expand-subclass-node (widget)
+  "Helper to expand a subclass node in WIDGET."
+  (dime-browse--expand-node
+   'dime-browse--expand-subclass-node
+   'swank:dylan-subclasses
+   widget))
 
 (defun dime-browse--expand-superclass-node (widget)
-  "Internal function to expand a superclass node in WIDGET."
-  (or (widget-get widget :args)
-      (let ((name (widget-get widget :tag)))
-        (loop for kid in (dime-eval `(swank:dylan-superclasses ,name))
-              collect `(tree-widget
-                        :tag ,kid
-                        :expander dime-browse--expand-superclass-node
-                        :has-children t)))))
+  "Helper to expand a superclass node in WIDGET."
+  (dime-browse--expand-node
+   'dime-browse--expand-superclass-node
+   'swank:dylan-superclasses
+   widget))
 
 (defvar dime-browse-map
   (let ((map (make-sparse-keymap)))
