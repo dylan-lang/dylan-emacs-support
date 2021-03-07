@@ -2,50 +2,56 @@
 
 ; major problem: if one coloring of the same type is contained in another, you can't recognize the inner one - make the color lighter/darker/a white background at the borders? any good ideas here?
 
+(require 'dylan-mode)
+
+(defgroup dylan-opt nil
+  "Major mode for editing Dylan source code."
+  :group 'dylan)
+
 (defface dylan-opt-face-not-all-methods-known
   `((t (:background "magenta")))
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-failed-to-select-where-all-known
   `((t (:background "red")))
   "Bla bla bla"
-  :group  'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-lambda-call
   `((t (:background "lightskyblue")))
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-inlining
   `((t (:background "dimgray"))) ; should be darkgrey...
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-slot-accessor-fixed-offset
   `((t (:background "forestgreen")))
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-eliminated
   `((t (:background "pink"))) ; should be lightgrey according to documentation
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-dynamic-extent
   `((t (:background "DarkTurquoise"))) ; no documentation for this :/
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-program-notes
   `((t (:background "yellow")))
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defface dylan-opt-face-bogus-upgrade
   `((t (:background "orange"))) ; no documentation for that - and according to source only relevant for dylan library?
   "Bla bla bla"
-  :group 'dime-mode-faces)
+  :group 'dylan-opt)
 
 (defun dylan-color-file ()
   (let* ((path (buffer-file-name))
