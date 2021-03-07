@@ -138,4 +138,4 @@
   (mapc #'delete-overlay dylan-buffer-highlighting-overlays)
   (setq dylan-buffer-highlighting-overlays '()))
 
-(provide 'dylan-optimization-coloring)
+(provide 'dylan-opt)

@@ -69,7 +69,7 @@
 
 (require 'dylan-mode)
 (require 'dylan-lid)
-(require 'dylan-optimization-coloring)
+(require 'dylan-opt)
 
 (defvar dime-buffer-project nil)
 (defvar dime-buffer-connection nil)
