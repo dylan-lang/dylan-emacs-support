@@ -61,9 +61,8 @@
 
 (defun dylan-opt--add-overlays (which specs)
   (save-excursion
-    (while specs
-      (let* ((spec (car specs))
-             (sl (car spec)) (sc (car (cdr spec)))
+    (dolist (spec specs)
+      (let* ((sl (car spec)) (sc (car (cdr spec)))
              (el (car (cdr (cdr spec)))) (ec (car (cdr (cdr (cdr spec))))))
         (goto-char 1) (forward-line (1- sl)) (forward-char sc)
         (let ((start (point))
@@ -105,8 +104,7 @@
                     ((string= which "bogus-upgrade")
                      (overlay-put over 'face 'dylan-opt-face-bogus-upgrade)))
               (overlay-put over 'help-echo which)
-              (push over dylan-opt--overlays)))))
-      (setq specs (cdr specs)))))
+              (push over dylan-opt--overlays))))))))
 
 (defun dylan-opt--remove-overlays ()
   "Uncolor the current Dylan buffer of optimization information"
