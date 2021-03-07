@@ -9,8 +9,6 @@ activated for `.dylan` files. Otherwise, add the following to your .emacs file::
   (add-to-list 'load-path "/path/to/dylan-mode")
   (require 'dime)
 
-This requires GNU Emacs 24.3 or later.
-
 
 DIME/dswank
 ===========
@@ -38,20 +36,6 @@ You will also want to add your own source registries to the
 by semicolons on Windows and colons elsewhere.
 
 
-etags.regex
-===========
-
-This file may be used to create an emacs TAGS file for Dylan code. See the
-comment in the file for usage.
-
-
-dtags
-=====
-
-This script uses the `Gema <http://gema.sourceforge.net>`_ macro
-processor to generate an emacs TAGS file.
-
-
 License
 =======
 
@@ -60,6 +44,6 @@ This code is distributed under the GNU GPL.
 It originates from different sources:
 
 * dylan-mode.el is from CMU
-* dylan-optimization-coloring.el from Harlequin
+* dylan-opt.el from Harlequin
 * dylan-dime.el from Dylan Hackers
 * dime.el, dime-repl.el, dime-compiler-notes-tree.el from SLIME
