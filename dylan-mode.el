@@ -46,7 +46,7 @@
 ;;
 ;; With so many cascading defvars and the fact that eval-buffer doesn't reset
 ;; their values, frequently the easiest way to test changes is to start a new
-;; emacs.
+;; Emacs.
 
 ;; Bugs / to-do list
 ;;
@@ -58,12 +58,14 @@
 ;; * It appears as though some code matches only some of the graphic-character
 ;;   BNF when it should match all graphic chars.
 
+;;; Code:
+
 
 (defconst dylan-mode-version "2.0"
   "Dylan Mode version number.")
 
 (defun dylan-mode-version ()
-  "Returns a string describing the version of Dylan mode.
+  "Return a string describing the version of Dylan mode.
 When called interactively, displays the version."
   (interactive)
   (if (called-interactively-p 'interactive)
@@ -83,15 +85,18 @@ When called interactively, displays the version."
   :group 'dylan)
 
 (defcustom dylan-continuation-indent 2
-  "*Number of additional spaces to indent each continued line. A continued line
-may be, for example, a method parameter list started on the line following the
-'define method', the 2nd and subsequent lines of a method call, the 2nd and
-subsequent lines of a module 'use' statement, etc."
+  "*Number of additional spaces to indent each continued line.
+
+A continued line may be, for example, a method parameter list
+started on the line following the 'define method', the 2nd and
+subsequent lines of a method call, the 2nd and subsequent lines
+of a module 'use' statement, etc."
   :type  'integer
   :group 'dylan)
 
 (defcustom dylan-highlight-function-calls nil
   "*Whether to highlight function calls in Font Lock mode.
+
 Applies only in Font Lock decoration level 2 or higher.
 
 This uses a very simple regular expression that highlights just
@@ -175,9 +180,10 @@ whitespace prefix."
     "C-subtype" "C-mapped-subtype")
   ;; TODO(cgay): It seems like a lie that these are parameterized "like 'define method'".
   ;; The superclass is a type spec only, without a variable name.
-  "Words that introduce type definitions like \"define class\". These are
-also parameterized like \"define method\" and are appended to
-`dylan-other-parameterized-definition-words'.")
+  "Words that introduce type definitions like \"define class\".
+
+These are also parameterized like \"define method\" and are
+appended to `dylan-other-parameterized-definition-words'.")
 
 (defvar dylan-other-parameterized-definition-words
   '(;; Dylan
@@ -186,20 +192,26 @@ also parameterized like \"define method\" and are appended to
     "test" "benchmark" "suite"
     ;; C-FFI
     "C-variable" "C-address")
-  "Words that introduce trickier definitions like \"define method\". These
-require special definitions to be added to `dylan-body-start-expressions'.")
+  "Words that introduce trickier definitions like \"define method\".
+
+These require special definitions to be added to
+`dylan-body-start-expressions'.")
 
 (defvar dylan-constant-simple-definition-words
   '(;; Dylan
     "constant")
-  "Words that introduce module constant definitions. These must also be
-simple definitions and are appended to `dylan-other-simple-definition-words'.")
+  "Words that introduce module constant definitions.
+
+These must also be simple definitions and are appended to
+`dylan-other-simple-definition-words'.")
 
 (defvar dylan-variable-simple-definition-words
   '(;; Dylan
     "variable")
-  "Words that introduce module variable definitions. These must also be
-simple definitions and are appended to `dylan-other-simple-definition-words'.")
+  "Words that introduce module variable definitions.
+
+These must also be simple definitions and are appended to
+`dylan-other-simple-definition-words'.")
 
 (defvar dylan-other-simple-definition-words
   '(;; Dylan
@@ -228,8 +240,10 @@ simple definitions and are appended to `dylan-other-simple-definition-words'.")
 
 (defvar dylan-separator-words
   '("afterwards" "cleanup" "exception" "else" "elseif" "finally")
-  "These are the patterns that act as separators in compound statements. This
-may include any general pattern that must be indented specially.")
+  "These are the patterns that act as separators in compound statements.
+
+This may include any general pattern that must be indented
+specially.")
 
 (defvar dylan-other-words
   '(;; Dylan
@@ -238,17 +252,21 @@ may include any general pattern that must be indented specially.")
     "slot" "subclass" "then" "to"
     ;; Extensions
     "keyed-by" "virtual")
-  "Keywords that do not require special indentation handling, but which
-should be highlighted.")
+  "Keywords that do not require special indentation handling.
+
+But which should be highlighted anyway.")
 
 ;;; See also dylan-skip-star-comment-backward and -forward.
 (defvar dylan-comment-pattern "//.*$"
-  "Internal pattern for finding comments in Dylan code. Currently only
-handles end-of-line comments.")
+  "Internal pattern for finding comments in Dylan code.
+
+Currently only handles `//' comments.")
 
 (defun dylan-make-pattern (start &rest list)
-  "Build a search pattern that matches any of the patterns passed to it.
-Makes sure that it doesn't match partial words."
+  "Build a search pattern matching any of the patterns in LIST.
+
+Makes sure that it doesn't match partial words. START is one word
+that appears as a prefix of all potential matches."
   (let ((str (concat "\\_<" start "\\_>")))
     (while list
       (setq str (concat str "\\|\\_<" (car list) "\\_>"))
@@ -256,9 +274,10 @@ Makes sure that it doesn't match partial words."
     str))
 
 (defvar dylan-body-start-expressions '()
-  "Patterns that match the portion of a compound statement that
-precedes the body. This is used to determine where the first
-statement begins for indentation purposes.
+  "Patterns matching the part of a compound statement before the body.
+
+This is used to determine where the first statement begins for
+indentation purposes.
 
 Contains a list of patterns, each of which is either a regular
 expression or a list of regular expressions. A set of balanced
@@ -346,26 +365,31 @@ parens will be matched between each list element.")
     (,(concat "^"
               "[ \t]*\n")               ; tail space
      . 'dylan-header-separator))
- "Value to which `font-lock-keywords' should be set when
-fontifying Dylan interchange file headers in Dylan Mode.")
+ "Font-lock keywords for Dylan interchange file headers in Dylan Mode.
+
+See `font-lock-keywords'.")
 
 (defvar dylan-font-lock-keywords nil
-  "Value to which `font-lock-keywords' should be set when in
-Dylan Mode, for Font Lock decoration level 0.")
+  "Keywords for Dylan Mode in Font Lock decoration level 0.
+
+See `font-lock-keywords'.")
 
 (defvar dylan-font-lock-keywords-1 nil
-  "Value to which `font-lock-keywords' should be set when in
-Dylan Mode, for Font Lock decoration level 1.")
+  "Keywords for Dylan Mode in Font Lock decoration level 1.
+
+See `font-lock-keywords'.")
 
 (defvar dylan-font-lock-keywords-2 nil
-  "Value to which `font-lock-keywords' should be set when in
-Dylan Mode, for Font Lock decoration level 2.")
+  "Keywords for Dylan Mode in Font Lock decoration level 2.
+
+See `font-lock-keywords'.")
 
 (defconst dylan-define-pattern
   (format "define\\([[:blank:]]+%s\\)*[[:blank:]]+" dylan-name-pattern)
-  "Pattern that matches `define' and adjectives. A sub-pattern
-designed to be followed by patterns that match the define word or
-other parts of the definition macro call.")
+  "Pattern that matches `define' and adjectives.
+
+A sub-pattern designed to be followed by patterns that match the
+define word or other parts of the definition macro call.")
 
 (defvar dylan-other-definition-words
   (append dylan-unnamed-definition-words
@@ -429,8 +453,10 @@ other parts of the definition macro call.")
 (defvar dylan-beginning-of-form-pattern nil)
 
 (defun dylan-mode-init-keyword-patterns ()
-  "Construct Dylan Mode keyword patterns (used for indenting and highlighting),
-using the values of the various keyword list variables."
+  "Build Dylan Mode keyword patterns.
+
+Used for indenting and highlighting. The patterns are built from
+the various keyword list variables."
   ;; Define regular expression patterns using the word lists.
   (setq dylan-keyword-pattern
         ;; We disallow newlines in "define foo" patterns because it allows the
@@ -500,8 +526,9 @@ using the values of the various keyword list variables."
                 "\\|" dylan-separator-word-pattern)))
 
 (defun dylan-mode-init-font-lock-keywords ()
-  ;; Construct Dylan Mode font-lock keyword variables, using the values of the
-  ;; various pattern variables.
+  "Build Dylan Mode font-lock keyword variables.
+
+Uses the values of the various pattern variables."
 
   ;; Decoration level 0: Don't highlight anything, currently -- mostly useful
   ;; for testing. Think about how to best differentiate between 0 and 1 by
@@ -612,11 +639,11 @@ using the values of the various keyword list variables."
                      1 font-lock-function-name-face))))))
 
 (defun dylan-look-back (regexp)
-  "Attempt to find a match for REGEXP immediately preceding the
-current point. Returns t if a match was found, nil otherwise.
-In order for this to work properly, the search string must end
-with \"$\". Also note that this will only work within the
-current line."
+  "Attempt to find a match for REGEXP right before point.
+
+Returns t if a match was found, nil otherwise. In order for this
+to work properly, the search string must end with \"$\". Also
+note that this will only work within the current line."
   (save-excursion
     (save-restriction
       (let ((dot (point)))
@@ -625,17 +652,19 @@ current line."
         (re-search-forward regexp nil t)))))
 
 (defvar dylan-find-keyword-pattern nil
-  "A pattern that matches the beginnings and ends of various \"blocks\",
-including parenthesized expressions.")
+  "Pattern to match the beginning and end of various \"blocks\".
+
+Including parenthesized expressions.")
 
 (defvar dylan-beginning-of-form-pattern nil
-  "Like `dylan-find-keyword-pattern', but matches statement terminators as
-well.")
+  "Like `dylan-find-keyword-pattern', but also matches statement terminators.")
 
 (defun dylan-header-end ()
-  "Get the position of the end of the interchange file header. Dylan
-interchange file headers end at the first empty line in the buffer,
-containing no whitespace. Note that a well-formed header would match
+  "Get the position of the end of the interchange file header.
+
+Dylan interchange file headers end at the first empty line in the
+buffer, containing no whitespace. Note that a well-formed header
+would match
 
     \"\\`\\([a-zA-Z][-a-zA-Z0-9]*:.*\n\\([ \t]+.+\n\\)*\\)*\n\"
 
@@ -646,15 +675,19 @@ so we can handle them separately, whether they are well-formed or not."
       (widen)
       (goto-char 1)
       (or (and (re-search-forward "^[ \t]*\\(\n\\|\\'\\)" nil t)
-               ;; in Emacs 18, the search just returns `t', not the point.
+               ;; in Emacs 18, the search just returns `t', not point.
                (point))
           (point-max)))))
 
 (defun dylan-backward-find-keyword (&optional match-statement-end in-case no-commas
                                               start)
-  "Move the point backward to the beginning of the innermost
-enclosing compound statement or set of parentheses. Return t on
-success and nil otherwise."
+  "Find the previous keyword.
+
+Move point backward to the beginning of the innermost enclosing
+compound statement or set of parentheses. Return t on success and
+nil otherwise.
+
+TODO: Document MATCH-STATEMENT-END, IN-CASE, NO-COMMAS, START."
   ;; don't go back into the interchange file header
   (let ((header-end (dylan-header-end))
         (result 'not-found))
@@ -747,9 +780,12 @@ success and nil otherwise."
          (>= (point) header-end))))
 
 (defun dylan-find-end (&optional match-statement-end in-case no-commas)
-  "Move the point forward to the end of the innermost enclosing
-compound statement or set of parentheses. Returns t on success
-and nil otherwise."
+  "Move point forward to the end of the enclosing construct.
+
+Find the end of the innermost compound statement or set of
+parentheses. Returns t on success and nil otherwise.
+
+TODO: Document MATCH-STATEMENT-END, IN-CASE, NO-COMMAS."
   (let ((result 'not-found))
     (while (eq result 'not-found)
       (setq
@@ -814,9 +850,10 @@ and nil otherwise."
     result))
 
 (defun dylan-skip-star-comment-backward ()
-  "Utility function for `dylan-skip-whitespace-backward'. Find beginning of
-enclosing block comment. Deals properly with nested block comments and with
-comments inside strings."
+  "Helper for `dylan-skip-whitespace-backward'.
+
+Find beginning of enclosing block comment. Deals properly with
+nested block comments and with comments inside strings."
   (re-search-backward "/\\*\\|\\*/")
   (while (cond ((dylan-look-back dylan-comment-pattern)
                 (goto-char (match-beginning 0)))
@@ -827,9 +864,10 @@ comments inside strings."
   t)
 
 (defun dylan-skip-star-comment-forward ()
-  "Utility function for `dylan-skip-whitespace-forward'. Find end of enclosing
-block comment. Deals properly with nested block comments and comments inside
-strings."
+  "Helper for `dylan-skip-whitespace-forward'.
+
+Find end of enclosing block comment. Deals properly with nested
+block comments and comments inside strings."
   (re-search-forward "/\\*\\|\\*/")
   (while (cond ((dylan-look-back dylan-comment-pattern)
                 (end-of-line))
@@ -870,7 +908,7 @@ strings."
     (skip-syntax-forward " >")))
 
 (defun dylan-aux-find-body-start (clauses)
-  "Helper function for `dylan-find-body-start'."
+  "Helper for `dylan-find-body-start' to find one of CLAUSES."
   (save-excursion
     (cond ((null clauses) (point))
           ((looking-at (car clauses))
@@ -882,9 +920,11 @@ strings."
                   (dylan-aux-find-body-start (cdr clauses))))))))
 
 (defun dylan-find-body-start (exprs)
-  "When passed `dylan-body-start-expressions', processes it to find the
-beginning of the first statement in the compound statement that
-starts at the current point."
+  "Helper to find the innermost enclosing statement belonging to EXPRS.
+
+When passed `dylan-body-start-expressions', processes it to find
+the beginning of the first statement in the compound statement
+that starts at the current point."
   (let ((start (cond ((null exprs) (point-max))
                      ((listp (car exprs))
                       (or (dylan-aux-find-body-start (car exprs))
@@ -903,9 +943,12 @@ starts at the current point."
       (point))))
 
 (defun dylan-backward-statement (&optional in-case no-commas)
-  "Moves the cursor to some undefined point between the previous statement
-and the current one. If we are already between statements, move back one
-more."
+  "Move point between the previous statement and the current one.
+
+The precise point is undefined. If we are already between
+statements, move back one more.
+
+TODO: Document IN-CASE, NO-COMMAS."
   ;; don't go back into the interchange file header
   (let ((header-end (dylan-header-end)))
     (unless (< (point) header-end)
@@ -951,16 +994,20 @@ more."
                        (goto-char (match-beginning 0)))))))))))
 
 (defun dylan-beginning-of-form ()
-  "Finds the beginning of the innermost statement that contains or
-terminates at the current point."
+  "Find the beginning of the innermost statement.
+
+That contains or terminates at the current point."
   (interactive)
   (dylan-backward-statement)
   (dylan-skip-whitespace-forward))
 
 (defun dylan-forward-statement (&optional in-case no-commas)
-  "Moves the cursor to some undefined point between the current statement
-and the next one. If we are already between statements, move forward one
-more."
+  "Move the cursor between this statement and the next one.
+
+The precise point is undefined.  If we are already between
+statements, move forward one more.
+
+TODO: Document IN-CASE, NO-COMMAS."
   (dylan-skip-whitespace-forward)
   (let ((dot (point)))
     ;; skip over "separator words"
@@ -978,8 +1025,9 @@ more."
         ((looking-at "=>") (forward-word 1))))
 
 (defun dylan-end-of-form ()
-  "Finds the end of the innermost statement that contains or begins
-at the current point."
+  "Find the end of the innermost statement.
+
+That contains or begins at the current point."
   (interactive)
   (dylan-forward-statement))
 
@@ -987,7 +1035,7 @@ at the current point."
 ;;; Indentation:
 
 (defun dylan-indent-line ()
-  "Indents a line of dylan code according to its nesting."
+  "Indent a line of Dylan code according to its nesting."
   (interactive)
 
   ;; If we're inside the interchange file header, let the user indent as
@@ -1086,6 +1134,7 @@ at the current point."
           (indent-to-column indent))))))
 
 (defun dylan-find-indent-context ()
+  "Helper to find context for Dylan indentation."
   (let* ((start-pos (point))
          (body-start)
          ;; This may be treated as a boolean, but when true its value is a string
@@ -1137,11 +1186,17 @@ at the current point."
     (cl-values body-start in-paren paren-indent in-case block-indent)))
 
 (defun dylan-indent-if-continuation (term-char line-start block-start &optional in-case)
-  "The amount of extra indent (possibly negative) when in an unfinished construct?
-`term-char' is normally \",\" if in parentheses or \";\" otherwise.
-`line-start' is the position of the first non-whitespace character on the line being
-indented. `block-start' is the position of the start of the enclosing block, but does
-not encompass any whitespace at the start of the block."
+  "Calculate extra indent (maybe negative) for an unfinished construct.
+
+TERM-CHAR is normally \",\" if in parentheses or \";\" otherwise.
+
+LINE-START is the position of the first non-whitespace character
+on the line being indented.
+
+BLOCK-START is the position of the start of the enclosing block,
+but does not encompass any whitespace at the start of the block.
+
+TODO: Document IN-CASE."
   (save-excursion
     (goto-char line-start)
     (dylan-skip-whitespace-backward)
@@ -1180,8 +1235,9 @@ not encompass any whitespace at the start of the block."
 ;; This intensely DWIMish function tries to insert whatever text is needed to
 ;; finish off the enclosing indentation context.
 (defun dylan-insert-block-end ()
-  "Insert whatever text is needed to finish off the enclosing indentation
-context (e.g. \"end method foo;\"). Makes educated guesses about whether
+  "Insert whatever is needed to finish off enclosing indentation context.
+
+E.g. \"end method foo;\".  Makes educated guesses about whether
 newlines and closing punctuation are needed."
   (interactive)
   (let* ((here (point))
@@ -1268,14 +1324,18 @@ newlines and closing punctuation are needed."
 ;;; Font locking:
 
 (defun dylan-font-lock-fontify-region (beg end loudly)
-  "Dylan Mode font lock fontification. Handles fontification of
-interchange file headers separately from the file body; they have
-entirely separate character and keyword syntaxes.
+  "Fontify the region of Dylan code between BEG and END.
+
+Handles fontification of interchange file headers separately from
+the file body; they have entirely separate character and keyword
+syntaxes.
 
 This is particularly important since headers can contain
 apostrophes, for example, that would otherwise confuse the
 first-pass, character syntax-based fontification and cause it to
-treat code in the file body as the interior of a string."
+treat code in the file body as the interior of a string.
+
+LOUDLY is as for `font-lock-fontify-region'."
   (let ((header-end (dylan-header-end)))
     ;; If the region overlaps the header, fontify the header with the
     ;; appropriate keyword patterns and character syntax table.
@@ -1306,6 +1366,7 @@ treat code in the file body as the interior of a string."
   "Module of the current buffer.")
 
 (defun dylan-find-buffer-module ()
+  "Return the name of the Dylan module in the current buffer."
   (let ((case-fold-search t)
         (regexp "^module:[ \t]*\\([^ \n\r\t]+\\)"))
     (save-excursion
@@ -1313,7 +1374,12 @@ treat code in the file body as the interior of a string."
                 (re-search-forward regexp nil t))
         (match-string-no-properties 1)))))
 
-(defun dylan-find-buffer-library (path inc)
+(defun dylan-find-buffer-library (path depth)
+  "Return the name of the Dylan library the current buffer is in.
+
+Look up libraries in PATH.
+
+DEPTH is the current lookup nesting depth."
   (let ((lid-files (directory-files path t ".*\\.lid" t)))
     (if lid-files
       (let ((try-lid (car lid-files)))
@@ -1325,8 +1391,8 @@ treat code in the file body as the interior of a string."
                 (buffer-substring
                  (match-beginning 1)
                  (match-end 1))))))
-      (when (< inc 5)
-        (dylan-find-buffer-library (concat path "/..") (1+ inc))))))
+      (when (< depth 5)
+        (dylan-find-buffer-library (concat path "/..") (1+ depth))))))
 
 
 ;;; dylan-mode:
@@ -1417,5 +1483,6 @@ during initialization.
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dylan\\'" . dylan-mode))
 
-
 (provide 'dylan-mode)
+
+;;; dylan-mode.el ends here
