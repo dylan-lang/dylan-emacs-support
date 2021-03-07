@@ -129,7 +129,7 @@ Each entry has 3 elements:
       (end-of-file (reverse forms)))))
 
 (defun dylan-opt--parse-regions (opt-file)
-  "Parse Dylan optimization information from OPT-FILE."
+  "Parse Dylan optimization regions from OPT-FILE."
   (cl-flet ((check (x) (unless x
                          (error
                           "Dylan optimization file uses unknown format"))))
@@ -158,12 +158,12 @@ Each entry has 3 elements:
                     oregions))))))))
 
 (defun dylan-opt--remove-overlays ()
-  "Remove all Dylan optimization faces from the current buffer."
+  "Remove Dylan optimization faces from the current buffer."
   (mapc #'delete-overlay dylan-opt--overlays)
   (setq dylan-opt--overlays '()))
 
 (defun dylan-opt--add-overlays ()
-  "Add some Dylan optimization faces to the current buffer."
+  "Add Dylan optimization faces to the current buffer."
   (save-excursion
     (dylan-opt--remove-overlays)
     (dolist (region dylan-opt--regions)
@@ -203,7 +203,15 @@ Each entry has 3 elements:
 
 ;;;###autoload
 (define-minor-mode dylan-opt-mode
-  ""
+  "Toggle the Dylan Opt minor mode for optimization info.
+
+This mode shows how different regions of a source file have been
+optimized by the Dylan compiler.  The compiler can produce a dump
+file (*.el) as a byproduct.  Use the `opt-file' command to feed
+that file to Emacs and enable optimization highlighting.
+
+Once the dump file has been loaded, the `dylan-opt-mode' command
+can be used to toggle the optimization highlighting on and off."
   :lighter " Opt"
   :global nil
   (cond ((not dylan-opt-mode)
