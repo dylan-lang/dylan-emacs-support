@@ -53,15 +53,6 @@
   "Bla bla bla"
   :group 'dylan-opt)
 
-(defun dylan-opt-file-name ()
-  (let* ((path (buffer-file-name))
-	 (name (file-name-nondirectory path))
-	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
-	 (library dylan-buffer-library))
-    (expand-file-name
-     (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
-             "/build/" library "/" stem ".el"))))
-
 (defvar-local dylan-opt--overlays '()
   "Highlighting overlays of current buffer.")
 
@@ -115,6 +106,20 @@
               (push over dylan-opt--overlays)))))
       (setq l (cdr l)))))
 
+(defun dylan-opt--remove-overlays ()
+  "Uncolor the current Dylan buffer of optimization information"
+  (mapc #'delete-overlay dylan-opt--overlays)
+  (setq dylan-opt--overlays '()))
+
+(defun dylan-opt-file-name ()
+  (let* ((path (buffer-file-name))
+	 (name (file-name-nondirectory path))
+	 (stem (substring name 0 (string-match "\\.[^.]*$" name)))
+	 (library dylan-buffer-library))
+    (expand-file-name
+     (concat (or (getenv "OPEN_DYLAN_USER_ROOT") "_build")
+             "/build/" library "/" stem ".el"))))
+
 (defun dylan-opt-from-file (file)
   "Color the current Dylan buffer with recorded optimization information"
   (interactive (list
@@ -129,10 +134,5 @@
   (dylan-opt-remove-overlays)
   (load-file file)
   (message "Used color file: %s" file))
-
-(defun dylan-opt--remove-overlays ()
-  "Uncolor the current Dylan buffer of optimization information"
-  (mapc #'delete-overlay dylan-opt--overlays)
-  (setq dylan-opt--overlays '()))
 
 (provide 'dylan-opt)
