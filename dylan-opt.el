@@ -109,7 +109,7 @@
 
 Each entry has 3 elements:
 
-- The color-* symbol used in the compiler's dump file format.
+- The color-* symbol used in the compiler's map file format.
 - The dylan-opt-face-* face name used in Emacs.
 - The human-readable title shown in mouse pop-ups.")
 
@@ -216,12 +216,12 @@ Line numbers count from 1; column numbers count from 0."
 
 This mode can be used on top of `dylan-mode'.  It shows how
 different regions of a Dylan source file have been optimized by
-the compiler.  The Dylan compiler can produce an optimization dump
+the compiler.  The Dylan compiler can produce an optimization map
 file as a byproduct of normal compilation.  The default file name
 is `_build/build/<library>/<filename>.el'.  Use the `dylan-opt'
 command to feed that file to Emacs and to enable highlighting.
 
-Once the dump file has been loaded, the `dylan-opt-mode' command
+Once the map file has been loaded, the `dylan-opt-mode' command
 can be used to toggle the optimization highlighting on and off."
   :lighter " Opt"
   :global nil
