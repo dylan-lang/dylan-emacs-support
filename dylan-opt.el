@@ -129,7 +129,16 @@ Each entry has 3 elements:
       (end-of-file (reverse forms)))))
 
 (defun dylan-opt--parse-regions (opt-file)
-  "Parse Dylan optimization regions from OPT-FILE."
+  "Parse Dylan optimization regions from OPT-FILE.
+
+Returns a list of entries where each entry is of the form:
+
+    (opt-type start-line start-column end-line end-column)
+
+`opt-type' is a symbol; recognized optimization types are
+collected in `dylan-opt--type-alist'.
+
+Line numbers count from 1; column numbers count from 0."
   (cl-flet ((check (x) (unless x
                          (error
                           "Dylan optimization file uses unknown format"))))
@@ -208,9 +217,9 @@ Each entry has 3 elements:
 This mode can be used on top of `dylan-mode'.  It shows how
 different regions of a Dylan source file have been optimized by
 the compiler.  The Dylan compiler can produce an optimization dump
-file (*.el) as a byproduct of normal compilation.  Use the
-`dylan-opt' command to feed that file to Emacs and to enable
-highlighting.
+file as a byproduct of normal compilation.  The default file name
+is `_build/build/<library>/<filename>.el'.  Use the `dylan-opt'
+command to feed that file to Emacs and to enable highlighting.
 
 Once the dump file has been loaded, the `dylan-opt-mode' command
 can be used to toggle the optimization highlighting on and off."
