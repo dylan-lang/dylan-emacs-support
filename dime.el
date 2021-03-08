@@ -88,7 +88,8 @@ Emacs Lisp package."))
 
 ;;;###autoload
 (defun dime-setup (&optional contribs)
-  "Setup Emacs so that dylan-mode buffers always use Dime.
+  "Setup Emacs so that `dylan-mode' buffers always use Dime.
+
 CONTRIBS is a list of contrib packages to load."
   (when (member 'dylan-mode dime-dylan-modes)
     (add-hook 'dylan-mode-hook 'dime-dylan-mode-hook))
@@ -104,6 +105,7 @@ CONTRIBS is a list of contrib packages to load."
         (funcall init)))))
 
 (defun dime-dylan-mode-hook ()
+  "Hook function to enable Dime in `dylan-mode-hook'."
   (dime-mode 1))
 
 (eval-and-compile
@@ -296,7 +298,7 @@ argument."
   :group 'dime-mode-faces)
 
 (defun dime-face-inheritance-possible-p ()
-  "Return true if the :inherit face attribute is supported."
+  "Return non-nil if the :inherit face attribute is supported."
   (assq :inherit custom-face-attributes))
 
 (defface dime-highlight-face
@@ -319,7 +321,8 @@ argument."
 
 (defmacro define-dime-debug-faces (&rest faces)
   "Define the set of dime-debug faces.
-Each face specifiation is (NAME DESCRIPTION &optional PROPERTIES).
+
+Each specifiation in FACES is (NAME DESCRIPTION &optional PROPERTIES).
 NAME is a symbol; the face will be called dime-debug-NAME-face.
 DESCRIPTION is a one-liner for the customization buffer.
 PROPERTIES specifies any default face properties."
@@ -327,6 +330,9 @@ PROPERTIES specifies any default face properties."
                      collect `(define-dime-debug-face ,@face))))
 
 (defmacro define-dime-debug-face (name description &optional default)
+  "Helper to define Dime debug face.
+
+NAME, DESCRIPTION, DEFAULT are as for `defface'."
   (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name)))))
     `(defface ,facename
        (list (list t ,default))
@@ -362,8 +368,9 @@ PROPERTIES specifies any default face properties."
 ;;;;; dime-mode
 
 (defvar dime-mode-indirect-map (make-sparse-keymap)
-  "Empty keymap which has `dime-mode-map' as it's parent.
-This is a hack so that we can reinitilize the real dime-mode-map
+  `"Empty keymap which has `dime-mode-map' as its parent.
+
+This is a hack so that we can reinitilize the real `dime-mode-map'
 more easily. See `dime-init-keymaps'.")
 
 (define-minor-mode dime-mode
@@ -482,8 +489,9 @@ information."
     ("\C-w"  dime-who-map)))
 
 (defvar dime-editing-map nil
-  "These keys are useful for buffers where the user can insert and
-edit s-exprs, e.g. for source buffers and the REPL.")
+  "Dime keys for buffers where the user can edit S-expressions.
+
+E.g. source buffers and the REPL.")
 
 (defvar dime-editing-keys
   `(;; Arglist display & completion
@@ -505,7 +513,7 @@ edit s-exprs, e.g. for source buffers and the REPL.")
     ))
 
 (defvar dime-mode-map nil
-  "Keymap for dime-mode.")
+  "Dime mode keymap.")
 
 (defvar dime-keys
   '( ;; Compiler notes
@@ -544,7 +552,7 @@ edit s-exprs, e.g. for source buffers and the REPL.")
     (?a dime-who-specializes)))
 
 (defun dime-init-keymaps ()
-  "(Re)initialize the keymaps for `dime-mode'."
+  "(Re)initialize the keymaps for Dime mode."
   (interactive)
   (dime-init-keymap 'dime-doc-map t t dime-doc-bindings)
   (dime-init-keymap 'dime-who-map t t dime-who-bindings)
@@ -557,6 +565,7 @@ edit s-exprs, e.g. for source buffers and the REPL.")
   (set-keymap-parent dime-mode-indirect-map dime-mode-map))
 
 (defun dime-init-keymap (keymap-name prefixp bothp bindings)
+  "Helper to initialize one of the Dime keymaps."
   (set keymap-name (make-sparse-keymap))
   (when prefixp (define-prefix-command keymap-name))
   (dime-bind-keys (eval keymap-name) bothp bindings))
@@ -594,6 +603,7 @@ This list of flushed between commands.")
   (setq dime-pre-command-actions nil))
 
 (defun dime-post-command-hook ()
+  "Install Dime `pre-command-hook'."
   (when (null pre-command-hook) ; sometimes this is lost
     (add-hook 'pre-command-hook 'dime-pre-command-hook)))
 
@@ -645,7 +655,8 @@ corresponding values in the CDR of VALUE."
 		     key-command)))
 
 (cl-defmacro dime--with-struct ((conc-name &rest slots) struct &body body)
-  "Like with-slots but works only for structs.
+  "Like `with-slots' but works only for structs.
+
 \(fn (CONC-NAME &rest SLOTS) STRUCT &body BODY)"
   (declare (indent 2))
   (cl-flet ((reader (slot) (intern (concat (symbol-name conc-name)
