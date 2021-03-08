@@ -952,9 +952,13 @@ last activated the buffer."
 
 ;;;;; Entry points
 
-;; We no longer load inf-dylan, but we use this variable for backward
-;; compatibility.
-(defvar inferior-dylan-program "dylan-compiler"
+;; TODO: We used to use the inf-dylan variable
+;; `inferior-dylan-program' for compatibility. However, our variable
+;; has now been renamed to `dime-dylan-program' so it has the same
+;; symbol prefix as everything else defined in this file. We should
+;; probably get rid of this variable altogether, and use
+;; `dime-default-dylan' and `dime-dylan-implementations' instead.
+(defvar dime-dylan-program "dylan-compiler"
   "*Program name for invoking an inferior Dylan with for Inferior Dylan mode.")
 
 (defvar dime-dylan-implementations nil
@@ -983,13 +987,13 @@ See `dime-dylan-implementations'")
   "Start Dylan and connect to its Swank server."
   (interactive)
 
-  (let ((inferior-dylan-program (or command inferior-dylan-program))
+  (let ((dime-dylan-program (or command dime-dylan-program))
         (dime-net-coding-system (or coding-system dime-net-coding-system)))
     (dime-start* (cond ((and command (symbolp command))
                          (dime-dylan-options command))
                         (t (dime-read-interactive-args))))))
 
-(defvar dime-inferior-dylan-program-history '()
+(defvar dime-dime-dylan-program-history '()
   "History list of command strings.  Used by `dime'.")
 
 (defun dime-read-interactive-args ()
@@ -999,7 +1003,7 @@ The rules for selecting the arguments are rather complicated:
 
 - In the most common case, i.e. if there's no prefix-arg in
   effect and if `dime-dylan-implementations' is nil, use
-  `inferior-dylan-program' as fallback.
+  `dime-dylan-program' as fallback.
 
 - If the table `dime-dylan-implementations' is non-nil use the
   implementation with name `dime-default-dylan' or if that's nil
@@ -1022,8 +1026,8 @@ The rules for selecting the arguments are rather complicated:
           (t
            (cl-destructuring-bind (program &rest program-args)
                (split-string (read-string
-                              "Run dylan: " inferior-dylan-program
-                              'dime-inferior-dylan-program-history))
+                              "Run dylan: " dime-dylan-program
+                              'dime-dime-dylan-program-history))
              (let ((coding-system
                     (if (eq 16 (prefix-numeric-value current-prefix-arg))
                         (read-coding-system "set dime-coding-system: "
@@ -1039,7 +1043,7 @@ The rules for selecting the arguments are rather complicated:
                                                    (or name dime-default-dylan
                                                        (car (car table)))))
           (t (cl-destructuring-bind (program &rest args)
-                 (split-string inferior-dylan-program)
+                 (split-string dime-dylan-program)
                (list :program program :program-args args))))))
 
 (defun dime-lookup-dylan-implementation (table name)
@@ -1052,7 +1056,7 @@ The rules for selecting the arguments are rather complicated:
     (cl-destructuring-bind ((prog &rest args) &rest keys) arguments
       (list* :name name :program prog :program-args args keys))))
 
-(cl-defun dime-start (&key (program inferior-dylan-program) program-args
+(cl-defun dime-start (&key (program dime-dylan-program) program-args
                            directory
                            (coding-system dime-net-coding-system)
                            (init 'dime-init-command)
@@ -1201,7 +1205,7 @@ Return the created process."
     (when directory
       (cd (expand-file-name directory)))
     (if (not (file-exists-p program))
-        (message "please specify either 'inferior-dylan-program' or 'dime-dylan-implementations' in your .emacs!")
+        (message "please specify either 'dime-dylan-program' or 'dime-dylan-implementations' in your .emacs!")
       (comint-mode)
       (let ((process-environment (append env process-environment))
             (process-connection-type nil))
