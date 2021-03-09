@@ -72,6 +72,21 @@
 (defvar dime-buffer-project nil)
 (defvar dime-buffer-connection nil)
 
+(defvar dime-dispatching-connection nil
+  "Network process currently executing.
+This is dynamically bound while handling messages from Dylan; it
+overrides `dime-buffer-connection' and `dime-default-connection'.")
+
+(defvar-local dime-current-thread t
+   "The id of the current thread on the Dylan side.
+t means the \"current\" thread;
+:repl-thread the thread that executes REPL requests;
+fixnum a specific thread.")
+
+(defvar dime-buffer-project nil
+  "The Dylan project associated with the current buffer.
+This is set only in buffers bound to specific projects.")
+
 (eval-and-compile
   (defvar dime-path
     (let ((path (or (locate-library "dime") load-file-name)))
@@ -1615,11 +1630,6 @@ This is more compatible with the CL reader."
 ;;; they can tie a buffer to a specific connection. The rest takes
 ;;; care of itself.
 
-(defvar dime-dispatching-connection nil
-  "Network process currently executing.
-This is dynamically bound while handling messages from Dylan; it
-overrides `dime-buffer-connection' and `dime-default-connection'.")
-
 (defvar-local dime-buffer-connection nil
   "Network connection to use in the current buffer.
 This overrides `dime-default-connection'.")
@@ -1951,16 +1961,6 @@ Return nil if there's no process object for the connection."
 ;;; particular thread", but can also be used to nominate a specific
 ;;; thread. The REPL and the debugger both use this feature to deal
 ;;; with specific threads.
-
-(defvar-local dime-current-thread t
-   "The id of the current thread on the Dylan side.
-t means the \"current\" thread;
-:repl-thread the thread that executes REPL requests;
-fixnum a specific thread.")
-
-(defvar dime-buffer-project nil
-  "The Dylan project associated with the current buffer.
-This is set only in buffers bound to specific projects.")
 
 ;;; `dime-rex' is the RPC primitive which is used to implement both
 ;;; `dime-eval' and `dime-eval-async'. You can use it directly if
