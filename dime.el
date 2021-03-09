@@ -68,8 +68,6 @@
 (require 'timer)
 
 (require 'dylan-mode)
-(require 'dylan-lid)
-(require 'dylan-opt)
 
 (defvar dime-buffer-project nil)
 (defvar dime-buffer-connection nil)
