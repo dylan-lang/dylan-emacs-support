@@ -414,7 +414,7 @@ This is automatically synchronized from Dylan.")
 (dime-define-keys dime-debug-mode-map
   ("\C-y" 'dime-repl-insert-debug-frame-call-to-repl))
 
-(def-dime-selector-method ?r
+(define-dime-selector-method ?r
   "DIME Read-Eval-Print-Loop."
   (dime-repl-output-buffer))
 
@@ -466,19 +466,18 @@ This is automatically synchronized from Dylan.")
 (defun dime-repl-mode-beginning-of-defun (&optional arg)
   (if (and arg (< arg 0))
       (dime-repl-mode-end-of-defun (- arg))
-      (dotimes (i (or arg 1))
+      (dotimes (_i (or arg 1))
         (dime-repl-previous-prompt))))
 
 (defun dime-repl-mode-end-of-defun (&optional arg)
   (if (and arg (< arg 0))
       (dime-repl-mode-beginning-of-defun (- arg))
-      (dotimes (i (or arg 1))
+      (dotimes (_i (or arg 1))
         (dime-repl-next-prompt))))
 
-(defun dime-repl-send-string (string &optional command-string)
-  (cond (dime-repl-read-mode
-         (dime-repl-return-string string))
-        (t (dime-repl-eval-string string))))
+(defun dime-repl-send-string (string &optional _command-string)
+  (if dime-repl-read-mode (dime-repl-return-string string)
+    (dime-repl-eval-string string)))
 
 (defun dime-repl-eval-string (string)
   (dime-rex ()
@@ -1123,7 +1122,7 @@ The handler will use qeuery to ask the use if the error should be ingored."
   (interactive)
   (dime-dispatch-event `(:emacs-interrupt ,(car dime-repl-read-string-threads))))
 
-(defun dime-repl-abort-read (thread tag)
+(defun dime-repl-abort-read (_thread _tag)
   (with-current-buffer (dime-repl-output-buffer)
     (pop dime-repl-read-string-threads)
     (pop dime-repl-read-string-tags)
@@ -1133,7 +1132,7 @@ The handler will use qeuery to ask the use if the error should be ingored."
 
 ;;;;; REPL handlers
 
-(defstruct (dime-repl-shortcut (:conc-name dime-repl-shortcut.))
+(cl-defstruct (dime-repl-shortcut (:conc-name dime-repl-shortcut.))
   symbol names handler one-liner)
 
 (defvar dime-repl-shortcut-table nil
@@ -1490,7 +1489,7 @@ expansion will be added to the REPL's history.)"
            (goto-char (point-max))))))
 
 (defun dime-repl-connected-hook-function ()
-  (cl-destructuring-bind (project prompt)
+  (cl-destructuring-bind (_project prompt)
       (let ((dime-current-thread t))
 	(dime-eval '(swank:create-repl nil)))
     (setf (dime-dylan-project-prompt-string) prompt))
