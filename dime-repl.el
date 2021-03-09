@@ -759,14 +759,14 @@ earlier in the buffer."
   (interactive (list (let* ((p (dime-current-project)))
                        (dime-read-project-name "Project: " p))))
   (with-current-buffer (dime-repl-output-buffer)
-    (let ((previouse-point (- (point) dime-repl-input-start-mark)))
+    (let ((previous-point (- (point) dime-repl-input-start-mark)))
       (cl-destructuring-bind (name prompt-string)
           (dime-repl-shortcut-eval `(swank:set-package ,project))
         (setf (dime-dylan-project-prompt-string) prompt-string)
         (setf dime-buffer-project name)
         (dime-repl-insert-prompt)
-        (when (plusp previouse-point)
-          (goto-char (+ previouse-point dime-repl-input-start-mark)))))))
+        (when (plusp previous-point)
+          (goto-char (+ previous-point dime-repl-input-start-mark)))))))
 
 
 ;;;;; History
