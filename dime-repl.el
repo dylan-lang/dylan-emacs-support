@@ -1005,15 +1005,16 @@ from a user defined filename."
   (let ((file (or filename dime-repl-history-file)))
     (setq dime-repl-input-history (dime-repl-read-history file t))))
 
-(defun dime-repl-read-history (&optional filename noerrer)
+(defun dime-repl-read-history (&optional filename noerror)
   "Read and return the history from FILENAME.
+
 The default value for FILENAME is `dime-repl-history-file'.
-If NOERROR is true return and the file doesn't exits return nil."
-  (let ((file (or filename dime-repl-history-file)))
-    (cond ((not (file-readable-p file)) '())
-          (t (with-temp-buffer
-               (insert-file-contents file)
-               (read (current-buffer)))))))
+If NOERROR is non-nil and the file is not readable return nil."
+  (let ((filename (or filename dime-repl-history-file)))
+    (unless (and noerror (not (file-readable-p filename)))
+      (with-temp-buffer
+        (insert-file-contents filename)
+        (read (current-buffer))))))
 
 (defun dime-repl-read-history-filename ()
   (read-file-name "Use DIME REPL history from file: "
