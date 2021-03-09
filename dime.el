@@ -392,28 +392,28 @@ Dime: Dylan interaction mode for Emacs (minor-mode).
 
 Commands to compile the current buffer's source file and visually
 highlight any resulting compiler notes and warnings:
-\\[dime-compile-and-load-file]	- Compile and load the current buffer's file.
-\\[dime-compile-file]	- Compile (but not load) the current buffer's file.
-\\[dime-compile-defun]	- Compile the top-level form at point.
+\\[dime-compile-and-load-file]  - Compile and load the current buffer's file.
+\\[dime-compile-file]   - Compile (but not load) the current buffer's file.
+\\[dime-compile-defun]  - Compile the top-level form at point.
 
 Commands for visiting compiler notes:
-\\[dime-next-note]	- Goto the next form with a compiler note.
-\\[dime-previous-note]	- Goto the previous form with a compiler note.
-\\[dime-remove-notes]	- Remove compiler-note annotations in buffer.
+\\[dime-next-note]      - Goto the next form with a compiler note.
+\\[dime-previous-note]  - Goto the previous form with a compiler note.
+\\[dime-remove-notes]   - Remove compiler-note annotations in buffer.
 
 Finding definitions:
-\\[dime-edit-definition]	- Edit the definition of the function called at point.
-\\[dime-pop-find-definition-stack]	- Pop the definition stack to go back from a definition.
+\\[dime-edit-definition]        - Edit the definition of the function called at point.
+\\[dime-pop-find-definition-stack]      - Pop the definition stack to go back from a definition.
 
 Documentation commands:
-\\[dime-describe-symbol]	- Describe symbol.
-\\[dime-apropos]	- Apropos search.
-\\[dime-disassemble-symbol]	- Disassemble a function.
+\\[dime-describe-symbol]        - Describe symbol.
+\\[dime-apropos]        - Apropos search.
+\\[dime-disassemble-symbol]     - Disassemble a function.
 
 Evaluation commands:
-\\[dime-eval-defun]	- Evaluate top-level from containing point.
-\\[dime-eval-last-expression]	- Evaluate sexp before point.
-\\[dime-pprint-eval-last-expression]	- Evaluate sexp before point, pretty-print result.
+\\[dime-eval-defun]     - Evaluate top-level from containing point.
+\\[dime-eval-last-expression]   - Evaluate sexp before point.
+\\[dime-pprint-eval-last-expression]    - Evaluate sexp before point, pretty-print result.
 
 Full set of commands:
 \\{dime-mode-map}"
@@ -471,12 +471,12 @@ information."
     ("\M-,"      dime-pop-find-definition-stack)
     ("\M-_"      dime-edit-uses)    ; for German layout
     ("\M-?"      dime-edit-uses)    ; for USian layout
-    ("\C-x4." 	 dime-edit-definition-other-window)
-    ("\C-x5." 	 dime-edit-definition-other-frame)
+    ("\C-x4."    dime-edit-definition-other-window)
+    ("\C-x5."    dime-edit-definition-other-frame)
     ("\C-x\C-e"  dime-eval-last-expression)
     ("\C-\M-x"   dime-eval-defun)
     ;; Include PREFIX keys...
-    ("\C-c"	 dime-prefix-map)))
+    ("\C-c"      dime-prefix-map)))
 
 (defvar dime-prefix-map nil
   "Keymap for commands prefixed with `dime-prefix-key'.")
@@ -644,28 +644,28 @@ VALUE. If one is found, the BODY is executed with ARGS bound to the
 corresponding values in the CDR of VALUE."
   (declare (indent 1))
   (let ((operator (cl-gensym "op-"))
-	(operands (cl-gensym "rand-"))
-	(tmp (cl-gensym "tmp-")))
+        (operands (cl-gensym "rand-"))
+        (tmp (cl-gensym "tmp-")))
     `(let* ((,tmp ,value)
-	    (,operator (car ,tmp))
-	    (,operands (cdr ,tmp)))
+            (,operator (car ,tmp))
+            (,operands (cdr ,tmp)))
        (cl-case ,operator
-	 ,@(mapcar (lambda (clause)
+         ,@(mapcar (lambda (clause)
                      (if (eq (car clause) t)
                          `(t ,@(cdr clause))
                        (cl-destructuring-bind ((op &rest rands) &rest body) clause
                          `(,op (cl-destructuring-bind ,rands ,operands
                                  . ,body)))))
-		   patterns)
-	 ,@(if (eq (caar (last patterns)) t)
-	       '()
-	     `((t (error "ELISP dime--destructuring-case failed: %S" ,tmp))))))))
+                   patterns)
+         ,@(if (eq (caar (last patterns)) t)
+               '()
+             `((t (error "ELISP dime--destructuring-case failed: %S" ,tmp))))))))
 
 (defmacro dime-define-keys (keymap &rest key-command)
   "Define keys in KEYMAP. Each KEY-COMMAND is a list of (KEY COMMAND)."
   (declare (indent 1))
   `(progn . ,(mapcar (lambda (k-c) `(define-key ,keymap . ,k-c))
-		     key-command)))
+                     key-command)))
 
 (cl-defmacro dime--with-struct ((conc-name &rest slots) struct &body body)
   "Like `with-slots' but works only for structs.
@@ -673,17 +673,17 @@ corresponding values in the CDR of VALUE."
 \(fn (CONC-NAME &rest SLOTS) STRUCT &body BODY)"
   (declare (indent 2))
   (cl-flet ((reader (slot) (intern (concat (symbol-name conc-name)
-					(symbol-name slot)))))
+                                        (symbol-name slot)))))
     (let ((struct-var (cl-gensym "struct")))
       `(let ((,struct-var ,struct))
-	 (symbol-macrolet
-	     ,(mapcar (lambda (slot)
-			(cl-etypecase slot
-			  (symbol `(,slot (,(reader slot) ,struct-var)))
-			  (cons `(,(first slot) (,(reader (second slot))
-						 ,struct-var)))))
-		      slots)
-	   . ,body)))))
+         (symbol-macrolet
+             ,(mapcar (lambda (slot)
+                        (cl-etypecase slot
+                          (symbol `(,slot (,(reader slot) ,struct-var)))
+                          (cons `(,(first slot) (,(reader (second slot))
+                                                 ,struct-var)))))
+                      slots)
+           . ,body)))))
 
 ;;;;; Very-commonly-used functions
 
@@ -738,7 +738,7 @@ It should be used for \"background\" messages such as argument lists."
     (completing-read prompt (dime-bogus-completion-alist
                              (dime-eval
                               `(swank:list-all-package-names t)))
-		     nil t initial-value)))
+                     nil t initial-value)))
 
 ;; Interface
 (defun dime-read-symbol-name (prompt &optional query)
@@ -758,7 +758,7 @@ positions before and after executing BODY."
   (let ((start (cl-gensym)))
     `(let ((,start (point)))
        (prog1 (progn ,@body)
-	 (add-text-properties ,start (point) ,props)))))
+         (add-text-properties ,start (point) ,props)))))
 
 (defun dime-add-face (face string)
   (declare (indent 1))
@@ -1418,9 +1418,9 @@ Return nil if the file doesn't exist or is empty; otherwise the
 first line of the file."
   (condition-case _
       (with-temp-buffer
-	(insert-file-contents "~/.dime-secret")
-	(goto-char (point-min))
-	(buffer-substring (point-min) (line-end-position)))
+        (insert-file-contents "~/.dime-secret")
+        (goto-char (point-min))
+        (buffer-substring (point-min) (line-end-position)))
     (file-error nil)))
 
 ;;; Interface
@@ -2034,7 +2034,7 @@ or nil if nothing suitable can be found.")
   "Evaluate EXPR in Dylan and return the result."
   (let* ((tag (cl-gensym (format "dime-result-%d-"
                                  (1+ (dime-continuation-counter)))))
-	 (dime-stack-eval-tags (cons tag dime-stack-eval-tags)))
+         (dime-stack-eval-tags (cons tag dime-stack-eval-tags)))
     (apply
      #'funcall
      (catch tag
@@ -2287,8 +2287,8 @@ Debugged requests are ignored."
 (defun dime-pprint-event (event buffer)
   "Pretty print EVENT in BUFFER with limited depth and width."
   (let ((print-length 20)
-	(print-level 6)
-	(pp-escape-newlines t))
+        (print-level 6)
+        (pp-escape-newlines t))
     (pp event buffer)))
 
 (defun dime-events-buffer ()
@@ -2834,7 +2834,7 @@ The overlay has several properties:
 The help text describes both notes, and the highest of the severities
 is kept."
   (cl-flet ((putp (name value) (overlay-put overlay name value))
-	 (getp (name)       (overlay-get overlay name)))
+         (getp (name)       (overlay-get overlay name)))
     (putp 'severity (dime-most-severe severity (getp 'severity)))
     (putp 'face (dime-severity-face (getp 'severity)))
     (putp 'help-echo (concat (getp 'help-echo) "\n" message))))
@@ -3154,7 +3154,7 @@ you should check twice before modifying.")
                          qualifiers specializers)))
     (or (and (re-search-forward regexp  nil t)
              (goto-char (match-beginning 0)))
-        ;;	(dime-goto-location-position `(:function-name ,name))
+        ;;      (dime-goto-location-position `(:function-name ,name))
         )))
 
 (defun dime-search-call-site (fname)
@@ -3380,9 +3380,9 @@ more than one space."
   (let ((op (dime-operator-before-point)))
     (when op
       (dime-eval-async `(swank:operator-arglist ,op ,dylan-buffer-module)
-			(lambda (arglist)
-			  (when arglist
-			    (dime-message "%s" arglist)))))))
+                        (lambda (arglist)
+                          (when arglist
+                            (dime-message "%s" arglist)))))))
 
 (defun dime-operator-before-point ()
   (ignore-errors
@@ -3582,7 +3582,7 @@ If INITIAL-VALUE is non-nil, it is inserted into the minibuffer before
 reading input.  The result is a string (\"\" if no input was given)."
   (let ((minibuffer-setup-hook (dime-minibuffer-setup-hook)))
     (read-from-minibuffer prompt initial-value dime-minibuffer-map
-			  nil 'dime-minibuffer-history)))
+                          nil 'dime-minibuffer-history)))
 
 (defun dime-bogus-completion-alist (list)
   "Make an alist out of list.
@@ -4046,7 +4046,7 @@ The value is inserted into a temporary buffer for editing and then set
 in Dylan when committed with \\[dime-edit-value-commit]."
   (interactive
    (list (dime-read-from-minibuffer "Edit value (evaluated): "
-				     (dime-sexp-at-point))))
+                                     (dime-sexp-at-point))))
   (dime-eval-async `(swank:value-for-editing ,form-string)
                     (lexical-let ((form-string form-string)
                                   (project (dime-current-project)))
@@ -4122,8 +4122,8 @@ in Dylan when committed with \\[dime-edit-value-commit]."
 (defun dime-load-file (filename)
   "Load the Dylan file FILENAME."
   (interactive (list
-		(read-file-name "Load file: " nil nil
-				nil (if (buffer-file-name)
+                (read-file-name "Load file: " nil nil
+                                nil (if (buffer-file-name)
                                         (file-name-nondirectory
                                          (buffer-file-name))))))
   (let ((dylan-filename (dime-to-dylan-filename (expand-file-name filename))))
@@ -4346,9 +4346,9 @@ With prefix argument include internal symbols."
   "dime-xref-mode: Major mode for cross-referencing.
 \\<dime-xref-mode-map>\
 The most important commands:
-\\[dime-xref-quit]	- Dismiss buffer.
-\\[dime-show-xref]	- Display referenced source and keep xref window.
-\\[dime-goto-xref]	- Jump to referenced source and dismiss xref window.
+\\[dime-xref-quit]      - Dismiss buffer.
+\\[dime-show-xref]      - Display referenced source and keep xref window.
+\\[dime-goto-xref]      - Jump to referenced source and dismiss xref window.
 
 \\{dime-xref-mode-map}
 \\{dime-popup-buffer-mode-map}
@@ -4946,7 +4946,7 @@ argument is given, with CL:MACROEXPAND."
   "Return STRING propertised with face dime-debug-NAME-face."
   (declare (indent 1))
   (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name))))
-	(var (cl-gensym "string")))
+        (var (cl-gensym "string")))
     `(let ((,var ,string))
       (dime-add-face ',facename ,var)
       ,var)))
@@ -5321,12 +5321,12 @@ Called on the `point-entered' text-property hook."
 (defun dime-debug-frame-number-at-point ()
   (let ((frame (get-text-property (point) 'frame)))
     (cond (frame (car frame))
-	  (t (error "No frame at point")))))
+          (t (error "No frame at point")))))
 
 (defun dime-debug-var-number-at-point ()
   (let ((var (get-text-property (point) 'var)))
     (cond (var var)
-	  (t (error "No variable at point")))))
+          (t (error "No variable at point")))))
 
 (defun dime-debug-previous-frame-number ()
   (save-excursion
@@ -5548,7 +5548,7 @@ See `dime-output-target-to-marker'."
     (save-excursion
       (goto-char pos)
       (let ((fn (get-text-property (point) 'dime-debug-default-action)))
-	(if fn (funcall fn))))))
+        (if fn (funcall fn))))))
 
 (defun dime-debug-cycle ()
   "Cycle between restart list and backtrace."
@@ -5606,7 +5606,7 @@ See `dime-output-target-to-marker'."
 (defun dime-highlight-sexp (&optional start end)
   "Highlight the first sexp after point."
   (let ((start (or start (point)))
-	(end (or end (save-excursion (ignore-errors (forward-sexp)) (point)))))
+        (end (or end (save-excursion (ignore-errors (forward-sexp)) (point)))))
     (dime-flash-region start end)))
 
 (defun dime-highlight-line (&optional timeout)
@@ -5625,7 +5625,7 @@ The details include local variable bindings and CATCH-tags."
   (let ((inhibit-read-only t)
         (inhibit-point-motion-hooks t))
     (if (or on (not (dime-debug-frame-details-visible-p)))
-	(dime-debug-show-frame-details)
+        (dime-debug-show-frame-details)
       (dime-debug-hide-frame-details))))
 
 (defun dime-debug-show-frame-details ()
@@ -5696,7 +5696,7 @@ VAR should be a plist with the keys :name, :id, and :value."
   (let ((frame (dime-debug-frame-number-at-point)))
     (dime-eval-async `(swank:dime-debug-disassemble ,frame)
                       (lambda (result)
-			(dime-show-description result nil)))))
+                        (dime-show-description result nil)))))
 
 
 ;;;;;; Dime debug eval and inspect
@@ -5715,8 +5715,8 @@ VAR should be a plist with the keys :name, :id, and :value."
   (interactive (list (dime-read-from-minibuffer "Eval in frame: ")))
   (let* ((number (dime-debug-frame-number-at-point)))
     (dime-eval-async `(swank:pprint-eval-string-in-frame ,string ,number)
-		      (lambda (result)
-			(dime-show-description result nil)))))
+                      (lambda (result)
+                        (dime-show-description result nil)))))
 
 (defun dime-debug-inspect-in-frame (string)
   "Prompt for an expression and inspect it in the selected frame."
@@ -6249,7 +6249,7 @@ was called originally."
   "Eval an expression and inspect the result."
   (interactive
    (list (dime-read-from-minibuffer "Inspect value (evaluated): "
-				     (dime-sexp-at-point))))
+                                     (dime-sexp-at-point))))
   (dime-eval-async `(swank:init-inspector ,string) 'dime-open-inspector))
 
 (define-derived-mode dime-inspector-mode fundamental-mode
@@ -6415,20 +6415,20 @@ that value.
    `(swank:inspector-pop)
    (lambda (result)
      (cond (result
-	    (dime-open-inspector result (pop dime-inspector-mark-stack)))
-	   (t
-	    (message "No previous object")
-	    (ding))))))
+            (dime-open-inspector result (pop dime-inspector-mark-stack)))
+           (t
+            (message "No previous object")
+            (ding))))))
 
 (defun dime-inspector-next ()
   "Inspect the next object in the history."
   (interactive)
   (let ((result (dime-eval `(swank:inspector-next))))
     (cond (result
-	   (push (dime-inspector-position) dime-inspector-mark-stack)
-	   (dime-open-inspector result))
-	  (t (message "No next object")
-	     (ding)))))
+           (push (dime-inspector-position) dime-inspector-mark-stack)
+           (dime-open-inspector result))
+          (t (message "No next object")
+             (ding)))))
 
 (defun dime-inspector-quit (&optional _kill-buffer)
   "Quit the inspector and kill the buffer."
@@ -7065,9 +7065,9 @@ keys."
   (let ((alist '()))
     (dolist (e list)
       (let* ((k (funcall key e))
-	     (probe (cl-assoc k alist :test test)))
-	(if probe
-	    (push e (cdr probe))
+             (probe (cl-assoc k alist :test test)))
+        (if probe
+            (push e (cdr probe))
             (push (cons k (list e)) alist))))
     ;; Put them back in order.
     (cl-loop for (key . value) in (reverse alist)
@@ -7118,7 +7118,7 @@ keys."
 (defun dime-cl-symbol-name (symbol)
   (let ((n (if (stringp symbol) symbol (symbol-name symbol))))
     (if (string-match ":\\([^:]*\\)$" n)
-	(let ((symbol-part (match-string 1 n)))
+        (let ((symbol-part (match-string 1 n)))
           (if (string-match "^|\\(.*\\)|$" symbol-part)
               (match-string 1 symbol-part)
               symbol-part))
@@ -7127,7 +7127,7 @@ keys."
 (defun dime-cl-symbol-project (symbol &optional default)
   (let ((n (if (stringp symbol) symbol (symbol-name symbol))))
     (if (string-match "^\\([^:]*\\):" n)
-	(match-string 1 n)
+        (match-string 1 n)
       default)))
 
 (defun dime-qualify-cl-symbol-name (symbol-or-name)
