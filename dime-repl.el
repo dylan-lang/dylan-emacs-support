@@ -209,7 +209,7 @@ maintain."
   (cl-case target
     ((nil) (dime-repl-emit string))
     (:repl-result (dime-repl-emit-result string))
-    (t (dime-repl-emit-to-target string target))))
+    (t (dime-emit-to-target string target))))
 
 (defvar dime-repl-popup-on-output nil
   "Display the output buffer when some output is written.
@@ -252,40 +252,6 @@ This is set to nil after displaying the buffer.")
                                          rear-nonsticky (face))
             (insert-before-markers string)))))
     (dime-repl-show-maximum-output)))
-
-(defvar dime-repl-last-output-target-id 0
-  "The last integer we used as a TARGET id.")
-
-(defvar dime-repl-output-target-to-marker
-  (make-hash-table)
-  "Map from TARGET ids to Emacs markers.
-The markers indicate where output should be inserted.")
-
-(defun dime-repl-output-target-marker (target)
-  "Return the marker where output for TARGET should be inserted."
-  (cl-case target
-    ((nil)
-     (with-current-buffer (dime-repl-output-buffer)
-       dime-repl-output-end))
-    (:repl-result
-     (with-current-buffer (dime-repl-output-buffer)
-       dime-repl-input-start-mark))
-    (t
-     (gethash target dime-repl-output-target-to-marker))))
-
-(defun dime-repl-emit-to-target (string target)
-  "Insert STRING at target TARGET.
-See `dime-repl-output-target-to-marker'."
-  (let* ((marker (dime-repl-output-target-marker target))
-         (buffer (and marker (marker-buffer marker))))
-    (when buffer
-      (with-current-buffer buffer
-        (save-excursion
-          ;; Insert STRING at MARKER, then move MARKER behind
-          ;; the insertion.
-          (goto-char marker)
-          (insert-before-markers string)
-          (set-marker marker (point)))))))
 
 (defun dime-repl-switch-to-output-buffer ()
   "Select the output buffer, when possible in an existing window.
@@ -1360,24 +1326,6 @@ expansion will be added to the REPL's history.)"
          (set-process-filter proc nil))
         (t
          (dime-repl-output-filter conn string))))
-
-(defun dime-redirect-trace-output ()
-  "Redirect the trace output to a separate Emacs buffer."
-  (interactive)
-  (let ((buffer (get-buffer-create (dime-buffer-name :trace))))
-    (with-current-buffer buffer
-      (let ((marker (copy-marker (buffer-size)))
-            (target (incf dime-repl-last-output-target-id)))
-        (puthash target marker dime-repl-output-target-to-marker)
-        (dime-eval `(swank:redirect-trace-output ,target))))
-    ;; Note: We would like the entries in
-    ;; dime-repl-output-target-to-marker to disappear when the buffers are
-    ;; killed.  We cannot just make the hash-table ":weakness 'value"
-    ;; -- there is no reference from the buffers to the markers in the
-    ;; buffer, so entries would disappear even though the buffers are
-    ;; alive.  Best solution might be to make buffer-local variables
-    ;; that keep the markers. --mkoeppe
-    (pop-to-buffer buffer)))
 
 (defun dime-repl-inspector-copy-down-to-repl (number)
   "Evaluate the inspector slot at point via the REPL (to set `*')."

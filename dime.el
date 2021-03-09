@@ -5468,6 +5468,61 @@ hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker
     (user-error "dime-write-string-function not set"))
   (funcall dime-write-string-function string target))
 
+;;;; Output target tracking
+
+(defvar dime--last-output-target-id 0
+  "The last integer we used as a TARGET id.")
+
+(defvar dime--output-target-to-marker
+  (make-hash-table)
+  "Map from TARGET ids to Emacs markers.
+The markers indicate where output should be inserted.")
+
+(defun dime--output-target-marker (target)
+  "Return the marker where output for TARGET should be inserted."
+  (cl-case target
+    ((nil)
+     (with-current-buffer (dime-repl-output-buffer)
+       dime-repl-output-end))
+    (:repl-result
+     (with-current-buffer (dime-repl-output-buffer)
+       dime-repl-input-start-mark))
+    (t
+     (gethash target dime--output-target-to-marker))))
+
+(defun dime-emit-to-target (string target)
+  "Insert STRING at target TARGET.
+
+See `dime-output-target-to-marker'."
+  (let* ((marker (dime--output-target-marker target))
+         (buffer (and marker (marker-buffer marker))))
+    (when buffer
+      (with-current-buffer buffer
+        (save-excursion
+          ;; Insert STRING at MARKER, then move MARKER behind
+          ;; the insertion.
+          (goto-char marker)
+          (insert-before-markers string)
+          (set-marker marker (point)))))))
+
+(defun dime-redirect-trace-output ()
+  "Redirect the trace output to a separate Emacs buffer."
+  (interactive)
+  (let ((buffer (get-buffer-create (dime-buffer-name :trace))))
+    (with-current-buffer buffer
+      (let ((marker (copy-marker (buffer-size)))
+            (target (incf dime--last-output-target-id)))
+        (puthash target marker dime--output-target-to-marker)
+        (dime-eval `(swank:redirect-trace-output ,target))))
+    ;; Note: We would like the entries in
+    ;; dime--output-target-to-marker to disappear when the buffers are
+    ;; killed.  We cannot just make the hash-table ":weakness 'value"
+    ;; -- there is no reference from the buffers to the markers in the
+    ;; buffer, so entries would disappear even though the buffers are
+    ;; alive.  Best solution might be to make buffer-local variables
+    ;; that keep the markers. --mkoeppe
+    (pop-to-buffer buffer)))
+
 
 ;;;;; Dime debug commands
 
