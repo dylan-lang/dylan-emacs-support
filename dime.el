@@ -1744,11 +1744,11 @@ the binding for `dime-connection'."
        ;; Accessor
        (defun ,varname (&optional process)
          (dime-with-connection-buffer (process) ,real-var))
-       ;; Setf
-       (defsetf ,varname (&optional process) (store)
+       ;; Setter
+       (gv-define-setter ,varname (store &optional process)
          `(dime-with-connection-buffer (,process)
-            (setq (\, (quote (\, real-var))) (\, store))
-            (\, store)))
+            (setq (\, (quote (\, real-var)))
+                  (\, store))))
        '(\, varname))))
 
 (dime-def-connection-var dime-connection-number nil
