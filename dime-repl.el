@@ -474,7 +474,8 @@ This is automatically synchronized from Dylan.")
       (dime-repl-save-marker dime-repl-output-start
         (dime-repl-save-marker dime-repl-output-end
           (goto-char dime-repl-output-end)
-          (insert-before-markers (format "; Evaluation aborted on %s.\n" condition))
+          (insert-before-markers
+           (format "; Evaluation aborted on %s.\n" condition))
           (dime-repl-insert-prompt))))
     (dime-repl-show-maximum-output)))
 
@@ -491,7 +492,8 @@ Return the position of the prompt beginning."
         (dime-propertize-region
             '(face dime-repl-prompt-face read-only t intangible t
                    dime-repl-prompt t
-                   rear-nonsticky (dime-repl-prompt read-only face intangible))
+                   rear-nonsticky
+                   (dime-repl-prompt read-only face intangible))
           (insert-before-markers prompt))
         (set-marker dime-repl-prompt-start-mark prompt-start)
         prompt-start))))
@@ -1012,7 +1014,8 @@ truncated.  That part is untested, though!"
         (hist (or history dime-repl-input-history)))
     (unless (file-writable-p file)
       (error (format "History file not writable: %s" file)))
-    (let ((hist (cl-subseq hist 0 (min (length hist) dime-repl-history-size))))
+    (let ((hist (cl-subseq hist 0 (min (length hist)
+                                       dime-repl-history-size))))
       ;;(message "saving %s to %s\n" hist file)
       (with-temp-file file
         (let ((cs dime-repl-history-file-coding-system)
@@ -1021,7 +1024,8 @@ truncated.  That part is untested, though!"
           (insert (format ";; -*- coding: %s -*-\n" cs))
           (insert ";; History for DIME REPL. Automatically written.\n"
                   ";; Edit only if you know what you're doing\n")
-          (prin1 (mapcar #'substring-no-properties hist) (current-buffer)))))))
+          (prin1 (mapcar #'substring-no-properties hist)
+                 (current-buffer)))))))
 
 (defun dime-repl-save-all-histories ()
   "Save the history in each repl buffer."
@@ -1088,7 +1092,8 @@ The handler will use qeuery to ask the use if the error should be ingored."
 
 (defun dime-repl-read-break ()
   (interactive)
-  (dime-dispatch-event `(:emacs-interrupt ,(car dime-repl-read-string-threads))))
+  (dime-dispatch-event
+   `(:emacs-interrupt ,(car dime-repl-read-string-threads))))
 
 (defun dime-repl-abort-read (_thread _tag)
   (with-current-buffer (dime-repl-output-buffer)
@@ -1154,7 +1159,8 @@ of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
                           ,@(apply #'append options))))
        (setq dime-repl-shortcut-table
              (cl-remove-if (lambda (s)
-                             (member ',(car names) (dime-repl-shortcut.names s)))
+                             (member ',(car names)
+                                     (dime-repl-shortcut.names s)))
                            dime-repl-shortcut-table))
        (push new-shortcut dime-repl-shortcut-table)
        ',edylan-name)))
@@ -1240,7 +1246,8 @@ expansion will be added to the REPL's history.)"
                  (pop dime-repl-directory-stack)))))
   (:one-liner "Restore the last saved directory."))
 
-(define-dime-repl-shortcut nil ("change-project" "change-package" "!p" "in-project" "in")
+(define-dime-repl-shortcut nil
+  ("change-project" "change-package" "!p" "in-project" "in")
   (:handler 'dime-repl-set-project)
   (:one-liner "Change the current project."))
 
@@ -1303,7 +1310,8 @@ expansion will be added to the REPL's history.)"
               (dime-repl-send-input t)))
   (:one-liner "Define a new global, special, variable."))
 
-(define-dime-repl-shortcut dime-repl-compile-and-load ("compile-and-load" "cl")
+(define-dime-repl-shortcut dime-repl-compile-and-load
+  ("compile-and-load" "cl")
   (:handler (lambda (filename)
               (interactive (list (expand-file-name
                                   (read-file-name "File: " nil nil nil nil))))
