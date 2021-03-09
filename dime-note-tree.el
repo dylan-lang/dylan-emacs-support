@@ -169,7 +169,8 @@ are the region to modify."
 
 (defun dime-note-tree--insert (tree prefix)
   "Insert TREE prefixed with PREFIX at point."
-  (with-struct (dime-note-tree-- print-fn kids collapsed-p start-mark end-mark)
+  (dime--with-struct (dime-note-tree--
+                      print-fn kids collapsed-p start-mark end-mark)
       tree
     (let ((line-start (line-beginning-position)))
       (setf start-mark (point-marker))
@@ -196,7 +197,9 @@ are the region to modify."
 
 (defun dime-note-tree--toggle (tree)
   "Toggle the visibility of TREE's children."
-  (with-struct (dime-note-tree-- collapsed-p start-mark end-mark prefix) tree
+  (dime--with-struct (dime-note-tree--
+                      collapsed-p start-mark end-mark prefix)
+      tree
     (setf collapsed-p (not collapsed-p))
     (dime-note-tree--delete tree)
     (insert-before-markers " ") ; move parent's end-mark

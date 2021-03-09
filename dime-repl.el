@@ -1154,7 +1154,7 @@ The handler will use qeuery to ask the use if the error should be ingored."
                                          (dime-repl-list-all-shortcuts))
                                         nil t nil
                                         'dime-repl-shortcut-history))))
-        (with-struct (dime-repl-shortcut. handler) shortcut
+        (dime--with-struct (dime-repl-shortcut. handler) shortcut
           (let ((dime-repl-within-shortcut-handler-p t))
             (call-interactively handler))))))
 
