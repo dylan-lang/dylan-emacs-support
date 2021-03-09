@@ -5461,7 +5461,7 @@ This is 0 if START and END at the same line."
 If TARGET is nil, insert STRING as regular process
 output.  If TARGET is :repl-result, insert STRING as the result of the
 evaluation.  Other values of TARGET map to an Emacs marker via the
-hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker."
+hashtable `dime-output-target-to-marker'; output is inserted at this marker."
   (unless dime-write-string-function
     (user-error "dime-write-string-function not set"))
   (funcall dime-write-string-function string target))
@@ -5490,17 +5490,14 @@ hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker
   "Map from TARGET ids to Emacs markers.
 The markers indicate where output should be inserted.")
 
+(defvar dime-output-target-to-marker-function nil
+  "Function called by dime--output-target-marker.")
+
 (defun dime--output-target-marker (target)
   "Return the marker where output for TARGET should be inserted."
-  (cl-case target
-    ((nil)
-     (with-current-buffer (dime-repl-output-buffer)
-       dime-repl-output-end))
-    (:repl-result
-     (with-current-buffer (dime-repl-output-buffer)
-       dime-repl-input-start-mark))
-    (t
-     (gethash target dime--output-target-to-marker))))
+  (or (and dime-output-target-to-marker-function
+           (funcall dime-output-target-to-marker-function target))
+      (gethash target dime--output-target-to-marker)))
 
 (defun dime-emit-to-target (string target)
   "Insert STRING at target TARGET.

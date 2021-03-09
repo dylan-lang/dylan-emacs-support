@@ -153,6 +153,16 @@ maintain."
                     (dime-repl-insert-prompt))
                   (current-buffer)))))))
 
+(defun dime-repl-target-to-marker (target)
+  (cl-case target
+    ((nil)
+     (with-current-buffer (dime-repl-output-buffer)
+       dime-repl-output-end))
+    (:repl-result
+     (with-current-buffer (dime-repl-output-buffer)
+       dime-repl-input-start-mark))
+    (t nil)))
+
 (defvar dime-repl-banner-function 'dime-repl-insert-banner)
 
 (defun dime-repl-update-banner ()
@@ -1461,6 +1471,7 @@ expansion will be added to the REPL's history.)"
   (remove-hook 'dime-event-hooks 'dime-repl-event-hook-function)
   (remove-hook 'dime-connected-hook 'dime-repl-connected-hook-function))
 
+(setq dime-output-target-to-marker-function 'dime-repl-target-to-marker)
 (add-hook 'dime-repl-mode-hook 'dime-repl-add-easy-menu)
 (add-hook 'dime-sync-project-and-directory-hook
           'dime-repl-sync-project-and-directory)
