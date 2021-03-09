@@ -907,7 +907,6 @@ can restore it later."
   nil
   nil
   '(("q" . dime-popup-buffer-quit-function)
-    ;;("\C-c\C-z" . dime-switch-to-output-buffer)
     ("\M-." . dime-edit-definition)))
 
 (add-to-list 'minor-mode-alist

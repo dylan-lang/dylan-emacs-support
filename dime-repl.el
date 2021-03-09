@@ -287,7 +287,7 @@ See `dime-repl-output-target-to-marker'."
           (insert-before-markers string)
           (set-marker marker (point)))))))
 
-(defun dime-switch-to-output-buffer ()
+(defun dime-repl-switch-to-output-buffer ()
   "Select the output buffer, when possible in an existing window.
 
 Hint: You can use `display-buffer-reuse-frames' and
@@ -362,7 +362,7 @@ This is automatically synchronized from Dylan.")
     map))
 
 (dime-define-keys dime-prefix-map
-  ("\C-z" 'dime-switch-to-output-buffer)
+  ("\C-z" 'dime-repl-switch-to-output-buffer)
   ("\M-p" 'dime-repl-set-project))
 
 (dime-define-keys dime-mode-map
@@ -452,7 +452,7 @@ This is automatically synchronized from Dylan.")
 
 (defun dime-repl ()
   (interactive)
-  (dime-switch-to-output-buffer))
+  (dime-repl-switch-to-output-buffer))
 
 (defun dime-repl-mode-beginning-of-defun (&optional arg)
   (if (and arg (< arg 0))
@@ -1095,7 +1095,7 @@ The handler will use qeuery to ask the use if the error should be ingored."
 (defvar-local dime-repl-read-string-tags nil)
 
 (defun dime-repl-read-string (thread tag)
-  (dime-switch-to-output-buffer)
+  (dime-repl-switch-to-output-buffer)
   (push thread dime-repl-read-string-threads)
   (push tag dime-repl-read-string-tags)
   (goto-char (point-max))
@@ -1391,7 +1391,7 @@ expansion will be added to the REPL's history.)"
   (interactive)
   (let ((call (dime-eval `(swank-backend::frame-call
                            ,(dime-debug-frame-number-at-point)))))
-    (dime-switch-to-output-buffer)
+    (dime-repl-switch-to-output-buffer)
     (if (>= (point) dime-repl-prompt-start-mark)
         (insert call)
       (save-excursion
