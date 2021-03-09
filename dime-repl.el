@@ -332,7 +332,7 @@ This is automatically synchronized from Dylan.")
   ("\M-p" 'dime-repl-set-project))
 
 (dime-define-keys dime-mode-map
-  ("\C-c~" 'dime-sync-project-and-default-directory))
+  ("\C-c~" 'dime-sync-project-and-directory))
 
 (dime-define-keys dime-connection-list-mode-map
   ((kbd "RET") 'dime-repl-goto-connection)
@@ -1358,27 +1358,23 @@ expansion will be added to the REPL's history.)"
     (with-current-buffer (dime-repl-output-buffer)
       (setq default-directory dir))))
 
-(defun dime-sync-project-and-default-directory ()
+(defun dime-repl-sync-project-and-directory
+    (project exists-p directory)
   "Set Dylan's project and directory to the values in current buffer."
   (interactive)
-  (let* ((project (dime-current-project))
-         (exists-p (or (null project)
-                       (dime-eval `(cl:packagep (swank::guess-package ,project)))))
-         (directory default-directory))
-    (when (and project exists-p)
-      (dime-repl-set-project project))
-    (dime-repl-set-default-directory directory)
-    ;; Sync *inferior-dylan* dir
-    (let* ((proc (dime-process))
-           (buffer (and proc (process-buffer proc))))
-      (when buffer
-        (with-current-buffer buffer
-          (setq default-directory directory))))
-    (message "project: %s%s  directory: %s"
-             (with-current-buffer (dime-repl-output-buffer)
-               (dime-current-project))
-             (if exists-p "" (format " (project %s doesn't exist)" project))
-             directory)))
+  (when (and project exists-p)
+    (dime-repl-set-project project))
+  (dime-repl-set-default-directory directory)
+  (let* ((proc (dime-process))
+         (buffer (and proc (process-buffer proc))))
+    (when buffer
+      (with-current-buffer buffer
+        (setq default-directory directory))))
+  (message "project: %s%s  directory: %s"
+           (with-current-buffer (dime-repl-output-buffer)
+             (dime-current-project))
+           (if exists-p "" (format " (project %s doesn't exist)" project))
+           directory))
 
 (defun dime-repl-goto-connection ()
   "Switch to the REPL buffer for the connection at point."
@@ -1407,8 +1403,6 @@ expansion will be added to the REPL's history.)"
   (easy-menu-define menubar-dime dime-repl-mode-map
     "DIME" dime-easy-menu)
   (easy-menu-add dime-repl-easy-menu 'dime-repl-mode-map))
-
-(add-hook 'dime-repl-mode-hook 'dime-repl-add-easy-menu)
 
 (defun dime-repl-hide-inferior-dylan-buffer ()
   "Display the REPL buffer instead of the *inferior-dylan* buffer."
@@ -1466,6 +1460,10 @@ expansion will be added to the REPL's history.)"
 (defun dime-repl-remove-hooks ()
   (remove-hook 'dime-event-hooks 'dime-repl-event-hook-function)
   (remove-hook 'dime-connected-hook 'dime-repl-connected-hook-function))
+
+(add-hook 'dime-repl-mode-hook 'dime-repl-add-easy-menu)
+(add-hook 'dime-sync-project-and-directory-hook
+          'dime-repl-sync-project-and-directory)
 
 (provide 'dime-repl)
 

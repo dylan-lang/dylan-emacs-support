@@ -5468,6 +5468,20 @@ hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker
     (user-error "dime-write-string-function not set"))
   (funcall dime-write-string-function string target))
 
+(defvar dime-sync-project-and-directory-hook nil
+  "Functions run by dime-sync-project-and-directory.")
+
+(defun dime-sync-project-and-directory ()
+  "Set Dylan's project and directory to the values in current buffer."
+  (interactive)
+  (let* ((project (dime-current-project))
+         (exists-p (or (null project)
+                       (dime-eval
+                        `(cl:packagep (swank::guess-package ,project)))))
+         (directory default-directory))
+    (run-hook-with-args 'dime-sync-project-and-directory-hook
+                        project exists-p directory)))
+
 ;;;; Output target tracking
 
 (defvar dime--last-output-target-id 0
@@ -6886,7 +6900,7 @@ Only considers buffers that are not already visible."
       "--"
       [ "Interrupt Command"        dime-interrupt ,C ]
       [ "Abort Async. Command"     dime-quit ,C ]
-      [ "Sync Project & Directory" dime-sync-project-and-default-directory ,C])))
+      [ "Sync Project & Directory" dime-sync-project-and-directory ,C])))
 
 (defvar dime-debug-easy-menu
   (let ((C '(dime-connected-p)))
@@ -6939,7 +6953,8 @@ Only considers buffers that are not already visible."
                 (dime-compile-defun "Compile current top level form")
                 (dime-interactive-eval "Prompt for form and eval it")
                 (dime-compile-and-load-file "Compile and load current file")
-                (dime-sync-project-and-default-directory "Synch default project and directory with current buffer")
+                (dime-sync-project-and-directory
+                 "Sync default project and directory with current buffer")
                 (dime-next-note "Next compiler note")
                 (dime-previous-note "Previous compiler note")
                 (dime-remove-notes "Remove notes")))
