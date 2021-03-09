@@ -205,16 +205,6 @@ maintain."
     (run-hook-with-args 'dime-open-stream-hooks stream)
     stream))
 
-(defvar dime-repl-write-string-function 'dime-repl-write-string)
-
-(defun dime-write-string (string &optional target)
-  "Insert STRING in the REPL buffer or some other TARGET.
-If TARGET is nil, insert STRING as regular process
-output.  If TARGET is :repl-result, insert STRING as the result of the
-evaluation.  Other values of TARGET map to an Emacs marker via the
-hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker."
-  (funcall dime-repl-write-string-function string target))
-
 (defun dime-repl-write-string (string &optional target)
   (cl-case target
     ((nil) (dime-repl-emit string))
@@ -437,6 +427,7 @@ This is automatically synchronized from Dylan.")
   (setq font-lock-defaults nil)
   (setq mode-name "REPL")
   (setq dime-current-thread :repl-thread)
+  (setq dime-write-string-function 'dime-repl-write-string)
   (set (make-local-variable 'scroll-conservatively) 20)
   (set (make-local-variable 'scroll-margin) 0)
   (when dime-repl-history-file

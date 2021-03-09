@@ -5456,6 +5456,19 @@ This is 0 if START and END at the same line."
   (- (count-lines start end)
      (if (save-excursion (goto-char end) (bolp)) 0 1)))
 
+(defvar-local dime-write-string-function nil)
+
+(defun dime-write-string (string &optional target)
+  "Insert STRING in the REPL buffer or some other TARGET.
+
+If TARGET is nil, insert STRING as regular process
+output.  If TARGET is :repl-result, insert STRING as the result of the
+evaluation.  Other values of TARGET map to an Emacs marker via the
+hashtable `dime-repl-output-target-to-marker'; output is inserted at this marker."
+  (unless dime-write-string-function
+    (user-error "dime-write-string-function not set"))
+  (funcall dime-write-string-function string target))
+
 
 ;;;;; Dime debug commands
 
