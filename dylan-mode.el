@@ -668,7 +668,7 @@ so we can handle them separately, whether they are well-formed or not."
           (point-max)))))
 
 (defun dylan-backward-find-keyword (&optional match-statement-end in-case no-commas
-                                              start)
+                                              _start)
   "Find the previous keyword.
 
 Move point backward to the beginning of the innermost enclosing
@@ -997,18 +997,17 @@ statements, move forward one more.
 
 TODO: Document IN-CASE, NO-COMMAS."
   (dylan-skip-whitespace-forward)
-  (let ((dot (point)))
-    ;; skip over "separator words"
-    (if (looking-at dylan-separator-word-pattern)
-        (if (not (looking-at "exception\\|elseif"))
-            (forward-word 1)
-          (goto-char (match-end 0))
-          (condition-case nil (forward-list 1)
-            (error nil))))
-    (cond ((not (dylan-find-end t in-case no-commas))
-           (if (dylan-look-back "\\(define\\|local\\)[ \t]+")   ; hack
-               (goto-char (match-beginning 0))))
-          (t)))
+  ;; skip over "separator words"
+  (if (looking-at dylan-separator-word-pattern)
+      (if (not (looking-at "exception\\|elseif"))
+          (forward-word 1)
+        (goto-char (match-end 0))
+        (condition-case nil (forward-list 1)
+          (error nil))))
+  (cond ((not (dylan-find-end t in-case no-commas))
+         (if (dylan-look-back "\\(define\\|local\\)[ \t]+")   ; hack
+             (goto-char (match-beginning 0))))
+        (t))
   (cond ((looking-at "[,;]$") (forward-char))
         ((looking-at "=>") (forward-word 1))))
 
@@ -1284,7 +1283,7 @@ newlines and closing punctuation are needed."
   "Move backward to next beginning of definition. With ARG, do this ARG times."
   (interactive "p")
   (let ((header-end (dylan-header-end)))
-    (dotimes (i (or arg 1))
+    (dotimes (_i (or arg 1))
       (unless (< (point) header-end)
         (when (re-search-backward dylan-defun-regexp header-end t 1)
           (beginning-of-line))))))
@@ -1292,7 +1291,7 @@ newlines and closing punctuation are needed."
 (defun dylan-end-of-defun (&optional arg)
   "Move forward to next end of function. With ARG, do this ARG times."
   (interactive "p")
-  (dotimes (i (or arg 1))
+  (dotimes (_i (or arg 1))
     (let ((dot (point)))
       (dylan-skip-whitespace-forward)   ; why?
       (end-of-line)
