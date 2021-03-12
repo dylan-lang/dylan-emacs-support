@@ -67,7 +67,7 @@
 (require 'thingatpt)
 (require 'timer)
 
-(require 'dylan-mode)
+(require 'dylan)
 
 (defvar dime-buffer-project nil)
 (defvar dime-buffer-connection nil)

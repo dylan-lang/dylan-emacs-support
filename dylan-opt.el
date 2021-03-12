@@ -21,7 +21,7 @@
 
 (require 'cl-lib)
 
-(require 'dylan-mode)
+(require 'dylan)
 
 (defgroup dylan-opt nil
   "Major mode for editing Dylan source code."

@@ -1,4 +1,4 @@
-;;; dylan-mode.el --- Major mode for the Dylan programming language -*- lexical-binding: t -*-
+;;; dylan.el --- Major mode for the Dylan programming language -*- lexical-binding: t -*-
 
 ;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
 ;; Copyright (C) 2004, 2005, 2007  Chris Page
@@ -33,7 +33,7 @@
 
 ;; Testing
 ;;
-;; dylan-mode-test.dylan contains Dylan code that is indented in the preferred way. One
+;; dylan-test.dylan contains Dylan code that is indented in the preferred way. One
 ;; way to test this code is to open that file and press Tab on each line, or on the
 ;; specific lines you're trying to affect.
 
@@ -1514,6 +1514,6 @@ during initialization.
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dylan\\'" . dylan-mode))
 
-(provide 'dylan-mode)
+(provide 'dylan)
 
-;;; dylan-mode.el ends here
+;;; dylan.el ends here

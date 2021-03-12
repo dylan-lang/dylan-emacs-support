@@ -1,4 +1,4 @@
-Module: dylan-mode-test
+Module: dylan-test
 Synopsis: This file can be used to test dylan-mode indentation, and to some extent
           the highlighting code.  It's not meant to be compiled.  Pressing the Tab
           key on any line in this file should not cause any changes; if it does it's
@@ -151,7 +151,7 @@ define macro foo-definer
  clauses:                       // ***
     { stuff }
  => { other stuff }             // ***
-    
+
 end;
 
 define test foo (option: bar)
