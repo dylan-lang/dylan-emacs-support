@@ -1,4 +1,4 @@
-;;; dylan-lid.el --- Major mode for Dylan LID files -*- lexical-binding: t -*-
+;;; dylan-lid.el --- Dylan LID major mode -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014 Erik Charlebois
 ;; SPDX-License-Identifier: GPL-1.0-or-later

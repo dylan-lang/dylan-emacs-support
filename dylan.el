@@ -1,4 +1,4 @@
-;;; dylan.el --- Major mode for the Dylan programming language -*- lexical-binding: t -*-
+;;; dylan.el --- Dylan programming language modes -*- lexical-binding: t -*-
 
 ;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
 ;; Copyright (C) 2004, 2005, 2007  Chris Page

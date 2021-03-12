@@ -1,4 +1,4 @@
-;;; dylan-opt.el --- Dylan optimization faces -*- lexical-binding: t -*-
+;;; dylan-opt.el --- Dylan optimization minor mode -*- lexical-binding: t -*-
 
 ;; Author: Hannes Mehnert
 ;; Author: Lassi Kortela
