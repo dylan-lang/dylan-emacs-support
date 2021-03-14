@@ -122,7 +122,6 @@ This command is meant to be bound to a mouse EVENT."
           (t
            (dime-show-source-location (dime-note.location note) t)))))
 
-
 ;;;;;; Tree Widget
 
 (cl-defstruct (dime-note-tree (:conc-name dime-note-tree--))

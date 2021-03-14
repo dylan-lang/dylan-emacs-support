@@ -41,7 +41,6 @@
 
 ;;; Code:
 
-
 ;;; Customization:
 
 (defgroup dylan nil
@@ -73,7 +72,6 @@ about anything adjacent to a left-parenthesis."
   :type  'boolean
   :group 'dylan)
 
-
 ;;; Faces:
 
 (defface dylan-header-background
@@ -112,7 +110,6 @@ Valid lines begin with a keyword or a value continuation
 whitespace prefix."
   :group 'dylan)
 
-
 ;;; Regular expressions -- See https://opendylan.org/books/drm/Lexical_Grammar
 
 (defconst dylan-graphic-character "!&*<>|^$%@_")
@@ -1020,7 +1017,6 @@ That contains or begins at the current point."
   (interactive)
   (dylan-forward-statement))
 
-
 ;;; Indentation:
 
 (defun dylan-indent-line ()
@@ -1246,7 +1242,6 @@ TODO: Document IN-CASE."
               (t
                dylan-continuation-indent))))))
 
-
 ;;; Motion:
 
 ;; This intensely DWIMish function tries to insert whatever text is
@@ -1342,7 +1337,6 @@ With ARG, do this ARG times."
                    (beginning-of-line)
                    (backward-char))))))))
 
-
 ;;; Font locking:
 
 (defun dylan-font-lock-fontify-region (beg end loudly)
@@ -1378,7 +1372,6 @@ LOUDLY is as for `font-lock-fontify-region'."
           (narrow-to-region header-end (point-max))
           (font-lock-default-fontify-region beg end loudly))))))
 
-
 ;;; Library and module detection:
 
 (defvar-local dylan-buffer-library nil
@@ -1416,7 +1409,6 @@ DEPTH is the current lookup nesting depth."
       (when (< depth 5)
         (dylan-find-buffer-library (concat path "/..") (1+ depth))))))
 
-
 ;;; dylan-mode:
 
 (defvar dylan-mode-syntax-table

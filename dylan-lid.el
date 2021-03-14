@@ -15,17 +15,14 @@
 ;; for the Dylan programming language. It provides indenting and
 ;; font-lock support.
 
-
 ;;; Code:
 
-
 ;;; Customization:
 
 (defgroup dylan-lid nil
   "Major mode for editing Dylan LID files."
   :group 'languages)
 
-
 ;;; Faces:
 
 (defface dylan-lid-keyword-face
@@ -46,7 +43,6 @@ Valid lines begin with a keyword or a value continuation
 whitespace prefix."
   :group 'dylan-lid)
 
-
 ;;; Regular expressions:
 
 (defvar dylan-lid-font-lock-keywords
@@ -78,7 +74,6 @@ whitespace prefix."
      . 'dylan-lid-error-face))
   "Font lock keywords for ‘dylan-lid--mode’.  See ‘font-lock-keywords’.")
 
-
 ;;; Font locking:
 
 (defun dylan-lid-font-lock-fontify-region (beg end loudly)
@@ -90,7 +85,6 @@ The arguments BEG, END, LOUDLY are as for `font-lock-fontify-region'."
         (font-lock-keywords-only t))
     (font-lock-default-fontify-region beg end loudly)))
 
-
 ;;; Clickable files:
 
 (defun dylan-lid-make-file-link (start end src-dir)
@@ -154,7 +148,6 @@ See `dylan-lid-make-file-link'."
 (defvar dylan-lid-timer-id nil
   "ID of the global Dylan LID timer.")
 
-
 ;;; dylan-lid-mode:
 
 (defvar dylan-lid-mode-syntax-table
@@ -185,7 +178,6 @@ during initialization."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.lid\\'" . dylan-lid-mode))
 
-
 (provide 'dylan-lid)
 
 ;;; dylan-lid.el ends here

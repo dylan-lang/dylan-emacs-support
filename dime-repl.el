@@ -131,7 +131,6 @@ This applies to all ASDF related repl shortcuts."
   (with-current-buffer (dime-repl-output-buffer)
     dime-repl-read-mode))
 
-
 ;;;; Stream output
 
 (dime-def-connection-var dime-connection-output-buffer nil
@@ -281,7 +280,6 @@ the buffer should appear."
   (pop-to-buffer (dime-repl-output-buffer))
   (goto-char (point-max)))
 
-
 ;;;; REPL
 ;;
 ;; The REPL uses some markers to separate input from output.  The
@@ -788,7 +786,6 @@ earlier in the buffer."
         (when (plusp previous-point)
           (goto-char (+ previous-point dime-repl-input-start-mark)))))))
 
-
 ;;;;; History
 
 (defcustom dime-repl-wrap-history nil
@@ -1062,7 +1059,6 @@ The handler will use qeuery to ask the use if the error should be ingored."
          nil
        (signal (car err) (cdr err))))))
 
-
 ;;;;; REPL Read Mode
 
 (define-key dime-repl-mode-map
@@ -1110,7 +1106,6 @@ The handler will use qeuery to ask the use if the error should be ingored."
     (dime-repl-read-mode -1)
     (message "Read aborted")))
 
-
 ;;;;; REPL handlers
 
 (cl-defstruct (dime-repl-shortcut (:conc-name dime-repl-shortcut.))

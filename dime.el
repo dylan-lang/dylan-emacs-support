@@ -39,7 +39,6 @@
 
 ;;; Code:
 
-
 ;;;; Dependencies and setup
 
 (require 'apropos)
@@ -130,7 +129,6 @@ Return nil if the ChangeLog file cannot be found."
 
 (defvar dime-protocol-version "2011-02-13")
 
-
 ;;;; Customize groups
 ;;
 ;;;;; dime
@@ -366,7 +364,6 @@ NAME, DESCRIPTION, DEFAULT are as for `defface'."
   (local-value    "local variable values")
   (catch-tag      "catch tags"))
 
-
 ;;;; Minor modes
 
 ;;;;; dime-mode
@@ -451,7 +448,6 @@ information."
                  ((zerop dime-debugs) (format " %s" pending))
                  (t (format " %s/%s" pending dime-debugs)))))))
 
-
 ;;;;; Key bindings
 
 (defvar dime-parent-map nil
@@ -593,7 +589,6 @@ If BOTHP is true also add bindings with control modifier."
   nil
   dime-editing-map)
 
-
 ;;;; Setup initial `dime-mode' hooks
 
 (defvar-local dime-pre-command-actions nil
@@ -616,7 +611,6 @@ This list of flushed between commands.")
   (add-hook 'pre-command-hook 'dime-pre-command-hook nil t)
   (add-hook 'post-command-hook 'dime-post-command-hook nil t))
 
-
 ;;;; Framework'ey bits
 ;;;
 ;;; This section contains some standard Dime idioms: basic macros,
@@ -802,7 +796,6 @@ This idiom is preferred over `lexical-let'."
   "Like `dime-curry' but ARGS on the right are applied."
   `(lambda (&rest more) (apply ',fun (append more ',args))))
 
-
 ;;;;; Temporary popup buffers
 
 (defvar dime-popup-restore-data nil
@@ -958,7 +951,6 @@ last activated the buffer."
   "Translate the Dylan filename FILENAME to an Emacs filename."
   (funcall dime-from-dylan-filename-function filename))
 
-
 ;;;; Starting Dime
 ;;;
 ;;; This section covers starting an inferior-dylan, compiling and
@@ -1381,7 +1373,6 @@ The default condition handler for timer functions (see
   (eval (nth (random (length dime-words-of-encouragement))
              dime-words-of-encouragement)))
 
-
 ;;;; Networking
 ;;;
 ;;; This section covers the low-level networking: establishing
@@ -1575,7 +1566,6 @@ This is more compatible with the CL reader."
       (prin1 sexp (current-buffer))
       (buffer-string))))
 
-
 ;;;; Connections
 ;;;
 ;;; "Connections" are the high-level Emacs<->Dylan networking concept.
@@ -1916,7 +1906,6 @@ Return nil if there's no process object for the connection."
        (or (not (dime-busy-p))
            (not dime-inhibit-pipelining))))
 
-
 ;;;; Communication protocol
 
 ;;;;; Emacs Lisp programming interface
@@ -2295,7 +2284,6 @@ Debugged requests are ignored."
             (outline-minor-mode)))
         buffer)))
 
-
 ;;;;; Cleanup after a quit
 
 (defun dime-restart-inferior-dylan ()
@@ -2334,7 +2322,6 @@ This is only used by the repl command sayoonara."
               (string-match "^\\*Dime.*\\*$" (buffer-name buf)))
       (kill-buffer buf))))
 
-
 ;;;; Compilation and the creation of compiler-note annotations
 
 (defvar dime-highlight-compiler-notes t
@@ -2535,7 +2522,6 @@ PREDICATE is executed in the buffer to test."
                       (with-current-buffer %buffer
                         (funcall predicate)))
                     (buffer-list)))
-
 ;;;;; Recompilation.
 
 ;; FIXME: This whole idea is questionable since it depends so
@@ -2564,7 +2550,6 @@ PREDICATE is executed in the buffer to test."
      ',dime-compilation-policy)
    cont))
 
-
 ;;;;; Merging together compiler notes in the same location.
 
 (defun dime-merge-notes-for-display (notes)
@@ -2586,7 +2571,6 @@ This operation is \"lossy\" in the broad sense but not for display purposes."
 (defun dime-notes-in-same-location-p (a b)
   (equal (dime-note.location a) (dime-note.location b)))
 
-
 ;;;;; Compiler notes list
 
 (defun dime-one-line-ify (string)
@@ -2776,7 +2760,6 @@ This is quite an expensive operation so use carefully."
 (defun dime-severity-label (severity)
   (cl-subseq (symbol-name severity) 1))
 
-
 ;;;;; Adding a single compiler note
 
 (defun dime-overlay-note (note)
@@ -2930,7 +2913,6 @@ first element of the source-path redundant."
           (thing-at-point--beginning-of-sexp))
       (error (goto-char origin)))))
 
-
 ;; FIXME: really fix this mess
 ;; FIXME: the check shouln't be done here anyway but by M-. itself.
 
@@ -3217,7 +3199,6 @@ are supported:
         (thing-at-point--beginning-of-sexp)))
     (point)))
 
-
 ;;;;; Incremental search
 ;;
 ;; Search for the longest match of a string in either direction.
@@ -3265,7 +3246,6 @@ SEARCH-FN is either the symbol `search-forward' or `search-backward'."
                             (goto-char (match-beginning 0))
                             (- (match-end 0) (match-beginning 0)))))))
 
-
 ;;;;; Visiting and navigating the overlays of compiler notes
 
 (defun dime-next-note ()
@@ -3321,7 +3301,6 @@ The highlighting is automatically undone with a timer."
                   #'overlay-put overlay 'face (overlay-get overlay 'face))
   (overlay-put overlay 'face 'dime-highlight-face))
 
-
 ;;;;; Overlay lookup operations
 
 (defun dime-note-at-point ()
@@ -3347,7 +3326,6 @@ Retuns the note overlay if such a position is found, otherwise nil."
 Retuns the note overlay if such a position is found, otherwise nil."
   (dime-search-property 'dime-note t #'dime-note-at-point))
 
-
 ;;;; Arglist Display
 
 (defun dime-space (n)
@@ -3382,7 +3360,6 @@ more than one space."
       (down-list 1)
       (thing-at-point 'dime-symbol))))
 
-
 ;;;; Completion
 
 (defvar dime-completions-buffer-name "*Completions*")
@@ -3587,7 +3564,6 @@ alist but ignores CDRs."
     (dime-eval
      `(swank:simple-completions ,prefix ',(dime-current-project)))))
 
-
 ;;;; Edit definition
 
 (defun dime-push-definition-stack ()
@@ -3809,7 +3785,6 @@ The result is a (possibly empty) list of definitions."
 ; the future, thus only commenting out -- hannes (Jan 2012)
 ;(add-hook 'dime-mode-hook 'dime-setup-first-change-hook)
 
-
 ;;;; Eval for Dylan
 
 (defun dime-eval-for-dylan (thread tag form-string)
@@ -3853,7 +3828,6 @@ The result is a (possibly empty) list of definitions."
     (error (concat "dime-eval-in-emacs disabled for security."
                    "Set dime-enable-evaluate-in-emacs true to enable it."))))
 
-
 ;;;; `ED'
 
 (defvar dime-ed-frame nil
@@ -4144,7 +4118,6 @@ Return whatever swank:set-default-directory returns."
   (interactive)
   (message "Directory %s" (dime-eval `(swank:default-directory))))
 
-
 ;;;; Profiling
 
 (defun dime-toggle-profile-fdefinition (fname-string)
@@ -4328,7 +4301,6 @@ With prefix argument include internal symbols."
         (message "No dime.info, run `make dime.info' in %s"
                  (expand-file-name "doc/" dime-path)))))
 
-
 ;;;; XREF: cross-referencing
 
 (defvar dime-xref-mode-map)
@@ -4366,7 +4338,6 @@ The most important commands:
   (let ((next-line-add-newlines nil))
     (forward-line 1)))
 
-
 ;;;;; XREF results buffer and window management
 
 (cl-defmacro dime-with-xref-buffer ((_xref-type _symbol &optional project)
@@ -4437,7 +4408,6 @@ This is used by `dime-goto-next-xref'")
       (message "No references found for %s." symbol)
       (dime-show-xref-buffer xrefs type symbol project)))
 
-
 ;;;;; XREF commands
 
 (defun dime-who-calls (symbol)
@@ -4524,7 +4494,6 @@ This is used by `dime-goto-next-xref'")
                  dylan-buffer-module
                  continuation)))
 
-
 ;;;;; XREF navigation
 
 (defun dime-xref-location-at-point ()
@@ -4691,7 +4660,6 @@ When displaying XREF information, this goes to the previous reference."
                                  ((nil) :failure)
                                  (t     result))))))))
 
-
 ;;;; Macroexpansion
 
 (define-minor-mode dime-macroexpansion-minor-mode
@@ -4860,7 +4828,6 @@ argument is given, with CL:MACROEXPAND."
   (dime-eval-macroexpand 'swank:swank-format-string-expand
                           (dime-string-at-point-or-error)))
 
-
 ;;;; Subprocess control
 
 (defun dime-interrupt ()
@@ -4897,7 +4864,6 @@ argument is given, with CL:MACROEXPAND."
     (dime-net-close process)
     (message "Connection closed.")))
 
-
 ;;;; Debugger
 
 (defvar dime-debug-hook nil
@@ -4908,7 +4874,6 @@ argument is given, with CL:MACROEXPAND."
   :group 'dime-debug
   :type 'integer)
 
-
 ;;;;; Local variables in the debug buffer
 
 (defvar-local dime-debug-condition nil
@@ -4942,7 +4907,6 @@ argument is given, with CL:MACROEXPAND."
       (dime-add-face ',facename ,var)
       ,var)))
 
-
 ;;;;; dime-debug-mode
 
 (defvar dime-debug-mode-syntax-table
@@ -5056,7 +5020,6 @@ Full list of commands:
              (dime-debug-invoke-restart ,number)))
     (define-key dime-debug-mode-map (number-to-string number) fname)))
 
-
 ;;;;; Dime debug buffer creation & update
 
 (defun dime-debug-buffers (&optional connection)
@@ -5172,7 +5135,6 @@ If LEVEL isn't the same as in the buffer reinitialize the buffer."
       (when (not dime-debug-level)
         (dime-popup-buffer-quit t)))))
 
-
 ;;;;;; Dime debug buffer insertion
 
 (defun dime-debug-insert-condition (condition)
@@ -5302,7 +5264,6 @@ Called on the `point-entered' text-property hook."
         (dime-debug-insert-frames frames more)
         (goto-char pos)))))
 
-
 ;;;;;; Dime debug examining text props
 
 (defun dime-debug-restart-at-point ()
@@ -5356,7 +5317,6 @@ Called on the `point-entered' text-property hook."
   (interactive)
   (goto-char dime-debug-backtrace-start-marker))
 
-
 ;;;;;; Dime debug recenter & redisplay
 
 ;; FIXME: these functions need factorization
@@ -5523,7 +5483,6 @@ See `dime-output-target-to-marker'."
     ;; that keep the markers. --mkoeppe
     (pop-to-buffer buffer)))
 
-
 ;;;;; Dime debug commands
 
 (defun dime-debug-default-action ()
@@ -5569,7 +5528,6 @@ See `dime-output-target-to-marker'."
         (dime-debug-insert-frames (dime-eval `(swank:backtrace ,(1+ last) nil))
                             nil)))))
 
-
 ;;;;;; Dime debug show source
 
 (defun dime-debug-show-source ()
@@ -5605,7 +5563,6 @@ See `dime-output-target-to-marker'."
                       (line-end-position)
                       timeout))
 
-
 ;;;;;; Dime debug toggle details
 
 (defun dime-debug-toggle-details (&optional on)
@@ -5689,7 +5646,6 @@ VAR should be a plist with the keys :name, :id, and :value."
                       (lambda (result)
                         (dime-show-description result nil)))))
 
-
 ;;;;;; Dime debug eval and inspect
 
 (defun dime-debug-eval-in-frame (string)
@@ -5730,7 +5686,6 @@ VAR should be a plist with the keys :name, :id, and :value."
   (dime-eval-async '(swank:inspect-current-condition)
                     'dime-open-inspector))
 
-
 ;;;;;; Dime debug movement
 
 (defun dime-debug-down ()
@@ -5762,7 +5717,6 @@ VAR should be a plist with the keys :name, :id, and :value."
   (interactive)
   (dime-debug-sugar-move 'dime-debug-down))
 
-
 ;;;;;; Dime debug restarts
 
 (defun dime-debug-quit ()
@@ -5920,7 +5874,6 @@ was called originally."
   (dime-eval-async `(swank:toggle-break-on-signals)
     (lambda (msg) (message "%s" msg))))
 
-
 ;;;;;; Dime debug recompilation commands
 
 (defun dime-debug-recompile-frame-source (&optional raw-prefix-arg)
@@ -5937,7 +5890,6 @@ was called originally."
           (let ((dime-compilation-policy policy))
             (dime-recompile-location source-location))))))))
 
-
 ;;;; Thread control panel
 
 (defvar dime-threads-buffer-name (dime-buffer-name :threads))
@@ -6058,7 +6010,6 @@ was called originally."
           (dime-propertize-region `(thread-id ,index)
             (dime-insert-thread thread longest-lines)))))
 
-
 ;;;;; Major mode
 
 (define-derived-mode dime-thread-control-mode fundamental-mode
@@ -6112,7 +6063,6 @@ was called originally."
   (let ((id (get-text-property (point) 'thread-id)))
     (dime-eval-async `(swank:debug-nth-thread ,id))))
 
-
 ;;;;; Connection listing
 
 (define-derived-mode dime-connection-list-mode fundamental-mode
@@ -6195,7 +6145,6 @@ was called originally."
     (when default
       (goto-char default-pos))))
 
-
 ;;;; Inspector
 
 (defgroup dime-inspector nil
@@ -6607,7 +6556,6 @@ If ARG is negative, move forwards."
   ("." 'dime-inspector-show-source)
   (">" 'dime-inspector-fetch-all))
 
-
 ;;;; Buffer selector
 
 (defvar dime-selector-methods nil
@@ -6738,7 +6686,6 @@ Only considers buffers that are not already visible."
         return buffer
         finally (error "Can't find unshown buffer in %S" mode)))
 
-
 ;;;; Contrib modules
 
 (defvar dime-required-modules '())
@@ -6820,7 +6767,6 @@ Only considers buffers that are not already visible."
                (error "Unknown contrib: %S" name))))
     (funcall (dime-contrib-disable c))))
 
-
 ;;;;; Pull-down menu
 
 (defvar dime-easy-menu
@@ -6929,7 +6875,6 @@ Only considers buffers that are not already visible."
 
 (add-hook 'dime-debug-mode-hook 'dime-debug-add-easy-menu)
 
-
 ;;;; Cheat Sheet
 
 (defvar dime-cheat-sheet-table
@@ -7299,7 +7244,6 @@ The result is unspecified if there isn't a symbol under the point."
                t)))
           (t t))))
 
-
 ;;;; Arglist Display
 
 (defun dime-dylan-arglist-magic (n)
