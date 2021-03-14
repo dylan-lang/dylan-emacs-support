@@ -24,7 +24,7 @@ Dime relies on a backend, `dswank`. To configure Dime and `dswank`,
 add these lines to your .emacs file, changing `YYYY.nn` as appropriate
 for your installed release of Open Dylan::
 
-    (dime-setup '(dime-dylan dime-repl dime-compiler-notes-tree))
+    (dime-setup '(dime-repl dime-note-tree))
     (setq dime-dylan-implementations
           '((opendylan ("/opt/opendylan-YYYY.nn/bin/dswank")
                        :env ("OPEN_DYLAN_USER_REGISTRIES=/opt/opendylan-YYYY.nn/sources/registry"))))
