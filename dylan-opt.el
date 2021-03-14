@@ -1,6 +1,6 @@
 ;;; dylan-opt.el --- Dylan optimization minor mode -*- lexical-binding: t -*-
 
-;; Lineage: Harlequin/Functional Objects
+;; Lineage: Harlequin/Functional Objects, Open Dylan
 
 ;; Copyright (C) 2011, 2012, 2013 Hannes Mehnert
 ;; Copyright (C) 2021 Lassi Kortela
