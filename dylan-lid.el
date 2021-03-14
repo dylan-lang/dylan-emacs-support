@@ -1,5 +1,7 @@
 ;;; dylan-lid.el --- Dylan LID major mode -*- lexical-binding: t -*-
 
+;; Lineage: Open Dylan
+
 ;; Copyright (C) 2014 Erik Charlebois
 ;; Copyright (C) 2017, 2018 Peter Hull
 ;; Copyright (C) 2021 Lassi Kortela

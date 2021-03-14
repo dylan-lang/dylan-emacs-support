@@ -1,5 +1,7 @@
 ;;; dime-repl.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
+;; Lineage: SLIME, Open Dylan
+
 ;; Copyright (C) 20?? Helmut Eller (SLIME)
 ;; Copyright (C) 2011, 2012, 2013 Hannes Mehnert
 ;; Copyright (C) 2021 Lassi Kortela

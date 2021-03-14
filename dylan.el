@@ -1,5 +1,7 @@
 ;;; dylan.el --- Dylan editing modes -*- lexical-binding: t -*-
 
+;; Lineage: CMU Gwydion Project, Harlequin/Functional Objects
+
 ;; Copyright (C) 1994, 1995, 1996, 1997 Carnegie Mellon University (Robert Stockton)
 ;; Copyright (C) 1995, 1996, 1998 Harlequin (David N. Gray)
 ;; Copyright (C) 1999 Eric Kidd

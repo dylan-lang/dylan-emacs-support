@@ -1,5 +1,7 @@
 ;;; dime-browse.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
+;; Lineage: SLIME, Open Dylan
+
 ;; Copyright (C) 20?? Rui Patrocínio (SLIME)
 ;; Copyright (C) 2011, 2012 Hannes Mehnert
 ;; Copyright (C) 2013 Erik Charlebois

@@ -1,5 +1,7 @@
 ;;; dime.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
+;; Lineage: SLIME, Open Dylan
+
 ;; Copyright (C) 2003 Eric Marsden, Luke Gorrie, Helmut Eller (SLIME)
 ;; Copyright (C) 2004, 2005, 2006 Luke Gorrie, Helmut Eller (SLIME)
 ;; Copyright (C) 2007, 2008, 2009 Helmut Eller, Tobias C. Rittweiler (SLIME)
