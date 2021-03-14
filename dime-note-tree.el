@@ -1,7 +1,12 @@
 ;;; dime-note-tree.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
+;; Copyright (C) 2011 Hannes Mehnert
+;; Copyright (C) 2013 Erik Charlebois
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-2.0-or-later
+
 ;; URL: https://opendylan.org/
+
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:

@@ -1,10 +1,12 @@
 ;;; dime-repl.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
-;; Author: Helmut Eller
-;; Contributors: to many to mention
+;; Copyright (C) 20?? Helmut Eller (SLIME)
+;; Copyright (C) 2011, 2012, 2013 Hannes Mehnert
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-2.0-or-later
 
 ;; URL: https://opendylan.org/
+
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
