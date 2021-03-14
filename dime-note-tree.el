@@ -98,7 +98,7 @@ This command is meant to be bound to a mouse EVENT."
       (goto-char pos)
       (let ((fn (get-text-property (point)
                                    'dime-compiler-notes-default-action)))
-	(if fn (funcall fn) (dime-note-tree-show-details))))))
+        (if fn (funcall fn) (dime-note-tree-show-details))))))
 
 (defun dime-note-tree-default-action-or-show-details ()
   "Invoke the action at point, or show details."
@@ -141,19 +141,19 @@ This command is meant to be bound to a mouse EVENT."
 (defun dime-note-tree--decoration (tree)
   "Return decorative prefix for note TREE as a string."
   (cond ((dime-note-tree--leaf-p tree) "-- ")
-	((dime-note-tree--collapsed-p tree) "[+] ")
-	(t "-+  ")))
+        ((dime-note-tree--collapsed-p tree) "[+] ")
+        (t "-+  ")))
 
 (defun dime-note-tree--insert-list (list prefix)
   "Insert LIST of note trees using PREFIX for each."
   (loop for (elt . rest) on list
-	do (cond (rest
-		  (insert prefix " |")
-		  (dime-note-tree--insert elt (concat prefix " |"))
+        do (cond (rest
+                  (insert prefix " |")
+                  (dime-note-tree--insert elt (concat prefix " |"))
                   (insert "\n"))
-		 (t
-		  (insert prefix " `")
-		  (dime-note-tree--insert elt (concat prefix "  "))))))
+                 (t
+                  (insert prefix " `")
+                  (dime-note-tree--insert elt (concat prefix "  "))))))
 
 (defun dime-note-tree--indent-item (start end prefix)
   "Insert PREFIX at the beginning of each line except the first.
@@ -169,7 +169,8 @@ are the region to modify."
 
 (defun dime-note-tree--insert (tree prefix)
   "Insert TREE prefixed with PREFIX at point."
-  (with-struct (dime-note-tree-- print-fn kids collapsed-p start-mark end-mark)
+  (dime--with-struct (dime-note-tree--
+                      print-fn kids collapsed-p start-mark end-mark)
       tree
     (let ((line-start (line-beginning-position)))
       (setf start-mark (point-marker))
@@ -196,7 +197,9 @@ are the region to modify."
 
 (defun dime-note-tree--toggle (tree)
   "Toggle the visibility of TREE's children."
-  (with-struct (dime-note-tree-- collapsed-p start-mark end-mark prefix) tree
+  (dime--with-struct (dime-note-tree--
+                      collapsed-p start-mark end-mark prefix)
+      tree
     (setf collapsed-p (not collapsed-p))
     (dime-note-tree--delete tree)
     (insert-before-markers " ") ; move parent's end-mark
