@@ -69,10 +69,11 @@ maintain."
   :group 'dime-repl)
 
 (defcustom dime-repl-only-save-dylan-buffers t
-  "When T we only attempt to save dylan-mode file buffers. When
-  NIL dime will attempt to save all buffers (as per
-  save-some-buffers). This applies to all ASDF related repl
-  shortcuts."
+  "Save only Dylan buffers, instead of all buffers?
+
+When T we only attempt to save `dylan-mode' file buffers.  When NIL
+dime will attempt to save all buffers (as per `save-some-buffers').
+This applies to all ASDF related repl shortcuts."
   :type '(boolean)
   :group 'dime-repl)
 
@@ -143,7 +144,9 @@ maintain."
   "Marker for end of output. New output is inserted at this mark.")
 
 (defun dime-repl-output-buffer (&optional noprompt)
-  "Return the output buffer, create it if necessary."
+  "Return the output buffer, create it if necessary.
+
+If NOPROMPT is non-nil, omit prompt."
   (let ((buffer (dime-connection-output-buffer)))
     (or (if (buffer-live-p buffer) buffer)
         (setf (dime-connection-output-buffer)
@@ -158,6 +161,7 @@ maintain."
                   (current-buffer)))))))
 
 (defun dime-repl-target-to-marker (target)
+  "Return marker corresponding to the given TARGET, nil if none."
   (cl-case target
     ((nil)
      (with-current-buffer (dime-repl-output-buffer)
