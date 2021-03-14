@@ -17,6 +17,8 @@
 ;;
 ;;  (dime-setup '(dime-repl [others conribs ...]))
 
+;;; Code:
+
 (require 'cl-lib)
 (require 'subr-x)
 
