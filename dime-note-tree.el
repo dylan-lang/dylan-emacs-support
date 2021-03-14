@@ -1,6 +1,6 @@
 ;;; dime-note-tree.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
-;; Lineage: Open Dylan
+;; Lineage: SLIME, Open Dylan
 
 ;; Copyright (C) 2011 Hannes Mehnert
 ;; Copyright (C) 2013 Erik Charlebois
