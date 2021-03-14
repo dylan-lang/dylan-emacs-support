@@ -46,9 +46,9 @@ joined together.")
 
 This contrib implements a Dylan Listener along with some niceties like
 a persistent history and various \"shortcut\" commands.  Nothing here
-depends on comint.el; I/O is multiplexed over DIME's socket.
+depends on comint.el; I/O is multiplexed over Dime's socket.
 
-This used to be the default REPL for DIME, but it was hard to
+This used to be the default REPL for Dime, but it was hard to
 maintain."
   (:authors "too many to mention")
   (:license "GPL-2.0-or-later")
@@ -85,7 +85,7 @@ This applies to all ASDF related repl shortcuts."
     '((((class color) (background light)) (:foreground "Purple"))
       (((class color) (background dark)) (:foreground "Cyan"))
       (t (:weight bold))))
-  "Face for the prompt in the DIME REPL."
+  "Face for the prompt in the Dime REPL."
   :group 'dime-repl)
 
 (defface dime-repl-output-face
@@ -94,17 +94,17 @@ This applies to all ASDF related repl shortcuts."
     '((((class color) (background light)) (:foreground "RosyBrown"))
       (((class color) (background dark)) (:foreground "LightSalmon"))
       (t (:slant italic))))
-  "Face for Dylan output in the DIME REPL."
+  "Face for Dylan output in the Dime REPL."
   :group 'dime-repl)
 
 (defface dime-repl-input-face
   '((t (:bold t)))
-  "Face for previous input in the DIME REPL."
+  "Face for previous input in the Dime REPL."
   :group 'dime-repl)
 
 (defface dime-repl-result-face
   '((t ()))
-  "Face for the result of an evaluation in the DIME REPL."
+  "Face for the result of an evaluation in the Dime REPL."
   :group 'dime-repl)
 
 (defcustom dime-repl-history-file "~/.dime-history.eld"
@@ -183,7 +183,7 @@ If NOPROMPT is non-nil, omit prompt."
 
 (defun dime-repl-insert-banner ()
   (when (zerop (buffer-size))
-    (let ((welcome (concat "; DIME " (or (dime-changelog-date)
+    (let ((welcome (concat "; Dime " (or (dime-changelog-date)
                                          "- ChangeLog file not found"))))
       (insert welcome))))
 
@@ -389,7 +389,7 @@ This is automatically synchronized from Dylan.")
   ("\C-y" 'dime-repl-insert-debug-frame-call-to-repl))
 
 (define-dime-selector-method ?r
-  "DIME Read-Eval-Print-Loop."
+  "Dime Read-Eval-Print-Loop."
   (dime-repl-output-buffer))
 
 (define-minor-mode dime-repl-map-mode
@@ -974,7 +974,7 @@ history entries while navigating the repl history."
             (cl-remove-if test old-hist))))
 
 (defun dime-repl-load-history (&optional filename)
-  "Set the current DIME REPL history.
+  "Set the current Dime REPL history.
 It can be read either from FILENAME or `dime-repl-history-file' or
 from a user defined filename."
   (interactive (list (dime-repl-read-history-filename)))
@@ -993,7 +993,7 @@ If NOERROR is non-nil and the file is not readable return nil."
         (read (current-buffer))))))
 
 (defun dime-repl-read-history-filename ()
-  (read-file-name "Use DIME REPL history from file: "
+  (read-file-name "Use Dime REPL history from file: "
                   dime-repl-history-file))
 
 (defun dime-repl-save-merged-history (&optional filename)
@@ -1009,8 +1009,8 @@ current history in that it tries to detect the unique entries using
         (dime-repl-save-history file hist)))))
 
 (defun dime-repl-save-history (&optional filename history)
-  "Simply save the current DIME REPL history to a file.
-When DIME is setup to always load the old history and one uses only
+  "Simply save the current Dime REPL history to a file.
+When Dime is setup to always load the old history and one uses only
 one instance of dime all the time, there is no need to merge the
 files and this function is sufficient.
 
@@ -1029,7 +1029,7 @@ truncated.  That part is untested, though!"
               (print-length nil) (print-level nil))
           (setq buffer-file-coding-system cs)
           (insert (format ";; -*- coding: %s -*-\n" cs))
-          (insert ";; History for DIME REPL. Automatically written.\n"
+          (insert ";; History for Dime REPL. Automatically written.\n"
                   ";; Edit only if you know what you're doing\n")
           (prin1 (mapcar #'substring-no-properties hist)
                  (current-buffer)))))))
@@ -1294,7 +1294,7 @@ expansion will be added to the REPL's history.)"
               (when (dime-connected-p)
                 (dime-quit-dylan))
               (dime-kill-all-buffers)))
-  (:one-liner "Quit all Dylans and close all DIME buffers."))
+  (:one-liner "Quit all Dylans and close all Dime buffers."))
 
 (define-dime-repl-shortcut dime-repl-quit ("quit")
   (:handler (lambda ()
@@ -1329,7 +1329,7 @@ expansion will be added to the REPL's history.)"
 
 (define-dime-repl-shortcut nil ("restart-inferior-dylan")
   (:handler 'dime-restart-inferior-dylan)
-  (:one-liner "Restart *inferior-dylan* and reconnect DIME."))
+  (:one-liner "Restart *inferior-dylan* and reconnect Dime."))
 
 (defun dime-repl-redirect-inferior-output (&optional noerror)
   "Redirect output of the inferior-process to the REPL buffer."
@@ -1424,7 +1424,7 @@ expansion will be added to the REPL's history.)"
   (easy-menu-define menubar-dime-repl dime-repl-mode-map
     "REPL" dime-repl-easy-menu)
   (easy-menu-define menubar-dime dime-repl-mode-map
-    "DIME" dime-easy-menu)
+    "Dime" dime-easy-menu)
   (easy-menu-add dime-repl-easy-menu 'dime-repl-mode-map))
 
 (defun dime-repl-hide-inferior-dylan-buffer ()
