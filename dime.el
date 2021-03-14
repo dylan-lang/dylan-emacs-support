@@ -410,8 +410,6 @@ Full set of commands:
   dime-mode-indirect-map
   (dime-setup-command-hooks))
 
-
-
 ;;;;;; Modeline
 
 (add-to-list 'minor-mode-alist
@@ -3028,8 +3026,6 @@ you should check twice before modifying.")
   (dime-check-location-filename-sanity
    (buffer-file-name (get-buffer buffer-name))))
 
-
-
 (defun dime-goto-location-buffer (buffer)
   (dime--destructuring-case buffer
     ((:file filename)
@@ -3879,7 +3875,7 @@ the display stuff that we neither need nor want."
                     (dime-read-from-minibuffer prompt initial-value)
                   (quit nil))))
     (dime-dispatch-event `(:emacs-return ,thread ,tag ,answer))))
-
+
 ;;;; Interactive evaluation.
 
 (defun dime-interactive-eval (string)
@@ -4003,7 +3999,7 @@ First make the variable unbound, then evaluate the entire form."
   (dime-eval-print string))
 
 ;;;; Edit Dylan value
-;;;
+
 (defun dime-edit-value (form-string)
   "\\<dime-edit-value-mode-map>\
 Edit the value of a setf'able form in a new buffer.
@@ -4057,7 +4053,7 @@ in Dylan when committed with \\[dime-edit-value-commit]."
                           (lambda (_)
                             (with-current-buffer buffer
                               (dime-popup-buffer-quit t))))))))
-
+
 ;;;; Tracing
 
 (defun dime-untrace-all ()
@@ -4070,8 +4066,6 @@ in Dylan when committed with \\[dime-edit-value-commit]."
   (interactive (list (dime-read-from-minibuffer
                       "(Un)trace: " (thing-at-point 'dime-symbol))))
   (message "%s" (dime-eval `(swank:swank-toggle-trace ,spec))))
-
-
 
 (defun dime-disassemble-symbol (symbol-name)
   "Display the disassembly for SYMBOL-NAME."
@@ -4174,7 +4168,7 @@ If PROJECT is NIL, then search in all projects."
   (let ((project (unless (equal project "") project)))
     (dime-eval-async `(swank:profile-by-substring ,substring ,project)
                       (lambda (r) (message "%s" r)) )))
-
+
 ;;;; Documentation
 
 (defun dime-describe-symbol (symbol-name)
