@@ -49,7 +49,7 @@ depends on comint.el; I/O is multiplexed over DIME's socket.
 This used to be the default REPL for DIME, but it was hard to
 maintain."
   (:authors "too many to mention")
-  (:license "GPL")
+  (:license "GPL-2.0-or-later")
   (:on-load
    (add-hook 'dime-event-hooks 'dime-repl-event-hook-function)
    (add-hook 'dime-connected-hook 'dime-repl-connected-hook-function)

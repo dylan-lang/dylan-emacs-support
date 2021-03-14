@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Erik Charlebois
 ;; Copyright (C) 2017, 2018 Peter Hull
 ;; Copyright (C) 2021 Lassi Kortela
-;; SPDX-License-Identifier: GPL-1.0-or-later
+;; SPDX-License-Identifier: GPL-2.0-or-later
 
 ;; URL: https://opendylan.org/
 

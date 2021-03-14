@@ -29,7 +29,7 @@ grouped by severity.
   `dime-compilation-finished-hook'.
 "
   (:authors "Helmut Eller <heller@common-lisp.net>")
-  (:license "GPL"))
+  (:license "GPL-2.0-or-later"))
 
 (defun dime-note-tree-maybe-show (notes)
   "Show the compiler NOTES if appropriate."

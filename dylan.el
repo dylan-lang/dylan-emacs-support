@@ -10,7 +10,7 @@
 ;; Copyright (C) 2016 Alfredo Beaumont
 ;; Copyright (C) 2018, 2019, 2020 Carl Gay
 ;; Copyright (C) 2021 Lassi Kortela
-;; SPDX-License-Identifier: GPL-1.0-or-later
+;; SPDX-License-Identifier: GPL-2.0-or-later
 
 ;; URL: https://opendylan.org/
 
