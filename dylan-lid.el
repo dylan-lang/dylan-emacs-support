@@ -1,27 +1,13 @@
 ;;; dylan-lid.el --- Dylan LID major mode -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014 Erik Charlebois
+;; Copyright (C) 2017, 2018 Peter Hull
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-1.0-or-later
-;; Author: Erik Charlebois (erikcharlebois@gmail.com)
+
 ;; URL: https://opendylan.org/
+
 ;; Package-Requires: ((emacs "25.1"))
-
-;; This file is *NOT* part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-;; GNU General Public License for more details.
-;;
-;; A copy of the GNU General Public License can be obtained from this
-;; program's author (send electronic mail to "gwydion-bugs@cs.cmu.edu")
-;; or from the Free Software Foundation, Inc., 675 Mass Ave,
-;; Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 

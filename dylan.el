@@ -1,30 +1,21 @@
-;;; dylan.el --- Dylan programming language modes -*- lexical-binding: t -*-
+;;; dylan.el --- Dylan editing modes -*- lexical-binding: t -*-
 
-;; Copyright (C) 1994, 1995, 1996  Carnegie Mellon University
-;; Copyright (C) 2004, 2005, 2007  Chris Page
+;; Copyright (C) 1994, 1995, 1996, 1997 Carnegie Mellon University (Robert Stockton)
+;; Copyright (C) 1995, 1996, 1998 Harlequin (David N. Gray)
+;; Copyright (C) 1999 Eric Kidd
+;; Copyright (C) 2003 Stefan Plantikow
+;; Copyright (C) 2004, 2005, 2007, 2010 Chris Page
+;; Copyright (C) 2011, 2012, 2013 Hannes Mehnert
+;; Copyright (C) 2013 Erik Charlebois
+;; Copyright (C) 2016 Alfredo Beaumont
+;; Copyright (C) 2018, 2019, 2020 Carl Gay
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-1.0-or-later
-;; Author: Robert Stockton (rgs@cs.cmu.edu), others, then Chris Page
-;; Maintainer: Chris Page <cpage@opendylan.org>  (no longer valid)
+
 ;; URL: https://opendylan.org/
-;; Package-Requires: ((emacs "25.1"))
+
 ;; Package-Version: 3.0
-
-;; This file is *NOT* part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-;; GNU General Public License for more details.
-;;
-;; A copy of the GNU General Public License can be obtained from this
-;; program's author (send electronic mail to "gwydion-bugs@cs.cmu.edu")
-;; or from the Free Software Foundation, Inc., 675 Mass Ave,
-;; Cambridge, MA 02139, USA.
+;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
 

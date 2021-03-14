@@ -1,23 +1,28 @@
 ;;; dylan-opt.el --- Dylan optimization minor mode -*- lexical-binding: t -*-
 
-;; Author: Hannes Mehnert
-;; Author: Lassi Kortela
+;; Copyright (C) 2011, 2012, 2013 Hannes Mehnert
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-2.0-or-later
-;; Package-Requires: ((emacs "25.1"))
+
 ;; URL: https://opendylan.org/
+
+;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
 
-;; Read optimization information emitted by the Dylan compiler.  Add
+;; Read optimization information emitted by the Dylan compiler. Add
 ;; extra faces on top of the ordinary `dylan-mode' faces to indicate
 ;; which parts of the source code were optimized in what ways.
 
 ;;; Code:
 
-;; TODO: major problem: if one coloring of the same type is contained
-;; in another, you can't recognize the inner one - make the color
-;; lighter/darker/a white background at the borders? any good ideas
-;; here?
+;; This file started life as dylan-optimization-coloring.el by
+;; Functional Objects (nee Harlequin). Essentially none of the
+;; original code remains.
+
+;; TODO: If one optimization of the same type is contained in another,
+;; you can't recognize the inner one. Make the color lighter or
+;; darker, or add a white background at the borders?
 
 (require 'cl-lib)
 
