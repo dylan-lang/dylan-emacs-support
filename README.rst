@@ -1,9 +1,16 @@
 Dylan support for GNU Emacs
 ===========================
 
+This repo contains two Emacs packages installable from `MELPA
+<https://melpa.org/>`.
+
+The `dylan` package:
+
 * `dylan` -- The `dylan-mode` major mode to edit Dylan code.
 * `dylan-opt` -- The `dylan-opt-mode` minor mode to show compiler optimizations.
 * `dylan-lid` -- The `dylan-lid-mode` major mode to edit LID files.
+
+The `dime` package:
 
 * `dime` -- Interactive development environment (derived from `SLIME
   <https://common-lisp.net/project/slime/>`).
