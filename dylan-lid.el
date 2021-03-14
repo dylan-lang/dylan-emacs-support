@@ -1,4 +1,4 @@
-;;; dylan-lid.el --- Dylan LID major mode -*- lexical-binding: t -*-
+;;; dylan-lid.el --- Dylan editing modes -*- lexical-binding: t -*-
 
 ;; Lineage: Open Dylan
 

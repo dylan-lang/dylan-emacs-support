@@ -1,4 +1,4 @@
-;;; dylan-opt.el --- Dylan optimization minor mode -*- lexical-binding: t -*-
+;;; dylan-opt.el --- Dylan editing modes -*- lexical-binding: t -*-
 
 ;; Lineage: Harlequin/Functional Objects, Open Dylan
 
