@@ -665,7 +665,7 @@ corresponding values in the CDR of VALUE."
              ,(mapcar (lambda (slot)
                         (cl-etypecase slot
                           (symbol `(,slot (,(reader slot) ,struct-var)))
-                          (cons `(,(first slot) (,(reader (second slot))
+                          (cons `(,(first slot) (,(reader (cl-second slot))
                                                  ,struct-var)))))
                       slots)
            . ,body)))))
@@ -1443,12 +1443,12 @@ first line of the file."
     (unless props
       (error "Invalid dime-net-coding-system: %s. %s"
              coding-system (mapcar #'car dime-net-valid-coding-systems)))
-    (when (second props)
+    (when (cl-second props)
       (cl-assert enable-multibyte-characters))
     t))
 
 (defun dime-coding-system-mulibyte-p (coding-system)
-  (second (dime-find-coding-system coding-system)))
+  (cl-second (dime-find-coding-system coding-system)))
 
 (defun dime-coding-system-cl-name (coding-system)
   (cl-third (dime-find-coding-system coding-system)))
@@ -1850,7 +1850,7 @@ This is automatically synchronized from Dylan.")
            for name = dylan-name then (format "%s<%d>" dylan-name i)
            while (cl-find name dime-net-processes
                           :key #'dime-connection-name :test #'equal)
-           finally (return name)))
+           finally (cl-return name)))
 
 (defun dime-connection-close-hook (process)
   (when (eq process dime-default-connection)
@@ -2953,10 +2953,12 @@ E.g. (dime-file-name-merge-source-root
                      (push target-dir target-suffix-dirs)
                      (let* ((target-suffix (concat-dirs target-suffix-dirs)) ; PUSH reversed for us!
                             (buffer-root   (concat-dirs (reverse (nthcdr pos buffer-dirs*)))))
-                       (return (concat (dime-filesystem-toplevel-directory)
-                                       buffer-root
-                                       target-suffix
-                                       (file-name-nondirectory target-filename))))))))))
+                       (cl-return
+                        (concat (dime-filesystem-toplevel-directory)
+                                buffer-root
+                                target-suffix
+                                (file-name-nondirectory
+                                 target-filename))))))))))
 
 (defun dime-highlight-differences-in-dirname (base-dirname contrast-dirname)
   "Returns a copy of BASE-DIRNAME where all differences between
@@ -3113,15 +3115,18 @@ you should check twice before modifying.")
          (name (regexp-quote name))
          (qualifiers (mapconcat (lambda (el) (concat ".+?\\<" el "\\>"))
                                 qualifiers ""))
-         (specializers (mapconcat (lambda (el)
-                                    (if (eql (aref el 0) ?\()
-                                        (let ((spec (read el)))
-                                          (if (eq (car spec) 'EQL)
-                                              (concat ".*?\\n\\{0,1\\}.*?(EQL.*?'\\{0,1\\}"
-                                                      (format "%s" (second spec)) ")")
-                                            (error "don't understand specializer: %s,%s" el (car spec))))
-                                      (concat ".+?\n\\{0,1\\}.+?\\<" el "\\>")))
-                                  (remove "T" specializers) ""))
+         (specializers
+          (mapconcat
+           (lambda (el)
+             (if (eql (aref el 0) ?\()
+                 (let ((spec (read el)))
+                   (if (eq (car spec) 'EQL)
+                       (concat ".*?\\n\\{0,1\\}.*?(EQL.*?'\\{0,1\\}"
+                               (format "%s" (cl-second spec)) ")")
+                       (error "don't understand specializer: %s,%s"
+                              el (car spec))))
+                 (concat ".+?\n\\{0,1\\}.+?\\<" el "\\>")))
+           (remove "T" specializers) ""))
          (regexp (format "\\s *(def\\(\\s_\\|\\sw\\)*\\s +%s\\s +%s%s" name
                          qualifiers specializers)))
     (or (and (re-search-forward regexp  nil t)
@@ -3238,12 +3243,13 @@ SEARCH-FN is either the symbol `search-forward' or `search-backward'."
           do (cl-case search-fn
                (search-forward  (goto-char (match-beginning 0)))
                (search-backward (goto-char (1+ (match-end 0)))))
-          finally (return (if (null match-data)
-                              nil
-                            ;; Finish based on the last successful match
-                            (store-match-data match-data)
-                            (goto-char (match-beginning 0))
-                            (- (match-end 0) (match-beginning 0)))))))
+          finally (cl-return
+                   (if (null match-data)
+                       nil
+                       ;; Finish based on the last successful match
+                       (store-match-data match-data)
+                       (goto-char (match-beginning 0))
+                       (- (match-end 0) (match-beginning 0)))))))
 
 ;;;;; Visiting and navigating the overlays of compiler notes
 
@@ -3757,7 +3763,7 @@ tags table. Return a possibly empty list of dime-locations."
   "Search definitions matching NAME in the tags file.
 The result is a (possibly empty) list of definitions."
   (mapcar (lambda (loc)
-              (make-dime-xref :dspec (second (dime-location.hints loc))
+              (make-dime-xref :dspec (cl-second (dime-location.hints loc))
                                :location loc))
           (dime-etags-to-locations name)))
 
@@ -6241,7 +6247,7 @@ KILL-BUFFER hooks for the inspector buffer."
             (dime-inspector-insert-content content))
           (pop-to-buffer (current-buffer))
           (when point
-            (check-type point cons)
+            (cl-check-type point cons)
             (ignore-errors
               (goto-char (point-min))
               (forward-line (1- (car point)))
@@ -6937,7 +6943,7 @@ Only considers buffers that are not already visible."
           ;; func is eithor the function name or a list (NAME DESCRIPTION)
           (push (if (symbolp func)
                     (prin1-to-string func)
-                    (second func))
+                    (cl-second func))
                 descriptions)
           (let ((all-bindings (where-is-internal (if (symbolp func)
                                                      func

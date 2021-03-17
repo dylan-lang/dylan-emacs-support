@@ -1158,7 +1158,7 @@ of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
      ,(when edylan-name
         `(defun ,edylan-name ()
            (interactive)
-           (call-interactively ,(second (assoc :handler options)))))
+           (call-interactively ,(cl-second (assoc :handler options)))))
      (let ((new-shortcut (make-dime-repl-shortcut
                           :symbol ',edylan-name
                           :names (list ,@names)
