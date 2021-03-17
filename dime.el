@@ -789,7 +789,7 @@ PROP is the name of a text property."
 
 (defun dime-curry (fun &rest args)
   "Partially apply FUN to ARGS.  The result is a new function.
-This idiom is preferred over `lexical-let'."
+This idiom is preferred over `let'."
   `(lambda (&rest more) (apply ',fun (append ',args more))))
 
 (defun dime-rcurry (fun &rest args)
@@ -2158,8 +2158,8 @@ Debugged requests are ignored."
            (dime-ed what))
           ((:inspect what wait-thread wait-tag)
            (let ((hook (when (and wait-thread wait-tag)
-                         (lexical-let ((thread wait-thread)
-                                       (tag wait-tag))
+                         (let ((thread wait-thread)
+                               (tag wait-tag))
                            (lambda ()
                              (dime-send `(:emacs-return ,thread ,tag nil)))))))
              (dime-open-inspector what nil hook)))
@@ -2214,9 +2214,9 @@ Debugged requests are ignored."
 (dime-def-connection-var dime-channels-counter 0
   "Channel serial number counter.")
 
-(defstruct (dime-channel (:conc-name dime-channel.)
-                          (:constructor
-                           dime-make-channel% (operations name id plist)))
+(cl-defstruct (dime-channel (:conc-name dime-channel.)
+                            (:constructor
+                             dime-make-channel% (operations name id plist)))
   operations name id plist)
 
 (defun dime-make-channel (operations &optional name)
@@ -2362,11 +2362,11 @@ region that will be compiled.")
             ((eq arg '-) `((cl:speed . 3)))
             (t           `((cl:speed . ,(between 0 (abs n) 3))))))))
 
-(defstruct (dime-compilation-result
-             (:type list)
-             (:conc-name dime-compilation-result.)
-             (:constructor nil)
-             (:copier nil))
+(cl-defstruct (dime-compilation-result
+               (:type list)
+               (:conc-name dime-compilation-result.)
+               (:constructor nil)
+               (:copier nil))
   tag notes successp duration loadp faslfile)
 
 (defvar dime-last-compilation-result nil
@@ -3534,8 +3534,8 @@ for the most recently enclosed macro or function."
   "History list of expressions read from the minibuffer.")
 
 (defun dime-minibuffer-setup-hook ()
-  (cons (lexical-let ((project (dime-current-project))
-                      (connection (dime-connection)))
+  (cons (let ((project (dime-current-project))
+              (connection (dime-connection)))
           (lambda ()
             (setq dime-buffer-project project)
             (setq dime-buffer-connection connection)
@@ -3573,12 +3573,12 @@ alist but ignores CDRs."
   (interactive)
   (pop-tag-mark))
 
-(defstruct (dime-xref (:conc-name dime-xref.) (:type list))
+(cl-defstruct (dime-xref (:conc-name dime-xref.) (:type list))
   dspec location)
 
-(defstruct (dime-location (:conc-name dime-location.) (:type list)
-                           (:constructor nil)
-                           (:copier nil))
+(cl-defstruct (dime-location (:conc-name dime-location.) (:type list)
+                             (:constructor nil)
+                             (:copier nil))
   tag buffer position hints)
 
 (defun dime-location-p (o) (and (consp o) (eq (car o) :location)))
@@ -4011,8 +4011,8 @@ in Dylan when committed with \\[dime-edit-value-commit]."
    (list (dime-read-from-minibuffer "Edit value (evaluated): "
                                      (dime-sexp-at-point))))
   (dime-eval-async `(swank:value-for-editing ,form-string)
-                    (lexical-let ((form-string form-string)
-                                  (project (dime-current-project)))
+                    (let ((form-string form-string)
+                          (project (dime-current-project)))
                       (lambda (result)
                         (dime-edit-value-callback form-string result
                                                    project)))))
@@ -4049,9 +4049,9 @@ in Dylan when committed with \\[dime-edit-value-commit]."
   (if (null dime-edit-form-string)
       (error "Not editing a value.")
     (let ((value (buffer-substring-no-properties (point-min) (point-max))))
-      (lexical-let ((buffer (current-buffer)))
+      (let ((buffer (current-buffer)))
         (dime-eval-async `(swank:commit-edited-value ,dime-edit-form-string
-                                                      ,value)
+                                                     ,value)
                           (lambda (_)
                             (with-current-buffer buffer
                               (dime-popup-buffer-quit t))))))))
@@ -4744,11 +4744,11 @@ NB: Does not affect dime-eval-macroexpand-expression"
   (interactive)
   (cl-destructuring-bind (string bounds)
       (dime-sexp-at-point-for-macroexpansion)
-    (lexical-let* ((start (car bounds))
-                   (end (cdr bounds))
-                   (point (point))
-                   (project dylan-buffer-module)
-                   (buffer (current-buffer)))
+    (let* ((start (car bounds))
+           (end (cdr bounds))
+           (point (point))
+           (project dylan-buffer-module)
+           (buffer (current-buffer)))
       (dime-eval-async
        `(,expander ,string)
        (lambda (expansion)
@@ -5051,7 +5051,7 @@ The buffer is chosen more or less randomly."
 
 (defun dime-debug-debugged-continuations (connection)
   "Return the debugged continuations for CONNECTION."
-  (lexical-let ((accu '()))
+  (let ((accu '()))
     (dolist (b (dime-debug-buffers))
       (with-current-buffer b
         (when (eq dime-buffer-connection connection)
@@ -5876,7 +5876,7 @@ was called originally."
   (interactive "P")
   (dime-eval-async
    `(swank:frame-source-location ,(dime-debug-frame-number-at-point))
-   (lexical-let ((policy (dime-compute-policy raw-prefix-arg)))
+   (let ((policy (dime-compute-policy raw-prefix-arg)))
      (lambda (source-location)
        (dime--destructuring-case source-location
          ((:error message)
@@ -6310,7 +6310,7 @@ that value.
 2. If point is on an action then call that action.
 3. If point is on a range-button fetch and insert the range."
   (interactive)
-  (let ((opener (lexical-let ((point (dime-inspector-position)))
+  (let ((opener (let ((point (dime-inspector-position)))
                   (lambda (parts)
                     (when parts
                       (dime-open-inspector parts point)))))
@@ -6460,16 +6460,16 @@ If ARG is negative, move forwards."
 (defun dime-inspector-reinspect ()
   (interactive)
   (dime-eval-async `(swank:inspector-reinspect)
-                    (lexical-let ((point (dime-inspector-position)))
-                      (lambda (parts)
-                        (dime-open-inspector parts point)))))
+    (let ((point (dime-inspector-position)))
+      (lambda (parts)
+        (dime-open-inspector parts point)))))
 
 (defun dime-inspector-toggle-verbose ()
   (interactive)
   (dime-eval-async `(swank:inspector-toggle-verbose)
-                    (lexical-let ((point (dime-inspector-position)))
-                      (lambda (parts)
-                        (dime-open-inspector parts point)))))
+    (let ((point (dime-inspector-position)))
+      (lambda (parts)
+        (dime-open-inspector parts point)))))
 
 (defun dime-inspector-insert-more-button (index previous)
   (dime-insert-propertized
@@ -6704,7 +6704,7 @@ Only considers buffers that are not already visible."
       (setf (dime-dylan-modules)
             (dime-eval `(swank:swank-require ',needed))))))
 
-(defstruct dime-contrib
+(cl-defstruct dime-contrib
   name
   dime-dependencies
   swank-dependencies
@@ -7145,13 +7145,13 @@ and skips comments."
                       (:and #'every)
                       (:or #'some)
                       (:not
-                         (lexical-let ((feature-expression e))
-                           (lambda (f l)
-                             (cond
-                               ((dime-length= l 0) t)
-                               ((dime-length= l 1) (not (apply f l)))
-                               (t (signal 'dime-incorrect-feature-expression
-                                          feature-expression))))))
+                       (let ((feature-expression e))
+                         (lambda (f l)
+                           (cond
+                            ((dime-length= l 0) t)
+                            ((dime-length= l 1) (not (apply f l)))
+                            (t (signal 'dime-incorrect-feature-expression
+                                       feature-expression))))))
                       (t (signal 'dime-unknown-feature-expression head))))
                   #'dime-eval-feature-expression
                   (cdr e)))
