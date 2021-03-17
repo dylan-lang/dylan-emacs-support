@@ -676,7 +676,7 @@ corresponding values in the CDR of VALUE."
 
 ;; Interface
 (defun dime-buffer-name (type &optional hidden)
-  (assert (keywordp type))
+  (cl-assert (keywordp type))
   (concat (if hidden " " "")
           (format "*dime-%s*" (substring (symbol-name type) 1))))
 
@@ -783,7 +783,7 @@ Assumes all insertions are made at point."
 (defun dime-property-bounds (prop)
   "Return two the positions of the previous and next changes to PROP.
 PROP is the name of a text property."
-  (assert (get-text-property (point) prop))
+  (cl-assert (get-text-property (point) prop))
   (let ((end (next-single-char-property-change (point) prop)))
     (list (previous-single-char-property-change end prop) end)))
 
@@ -831,7 +831,7 @@ MODE is the name of a major mode which will be enabled.
           (standard-output (dime-make-popup-buffer ,name vars% ,mode)))
      (with-current-buffer standard-output
        (prog1 (progn ,@body)
-         (assert (eq (current-buffer) standard-output))
+         (cl-assert (eq (current-buffer) standard-output))
          (setq buffer-read-only t)
          (set-window-point (dime-display-popup-buffer ,(or select nil))
                            (point))))))
@@ -1044,7 +1044,7 @@ The rules for selecting the arguments are rather complicated:
 
 (defun dime-dylan-options (&optional name)
   (let ((table dime-dylan-implementations))
-    (assert (or (not name) table))
+    (cl-assert (or (not name) table))
     (cond (table (dime-lookup-dylan-implementation dime-dylan-implementations
                                                    (or name dime-default-dylan
                                                        (car (car table)))))
@@ -1338,7 +1338,7 @@ The default condition handler for timer functions (see
       (insert-file-contents (dime-swank-port-file))
       (goto-char (point-min))
       (let ((port (read (current-buffer))))
-        (assert (integerp port))
+        (cl-assert (integerp port))
         port))))
 
 (defun dime-toggle-debug-on-swank-error ()
@@ -1444,7 +1444,7 @@ first line of the file."
       (error "Invalid dime-net-coding-system: %s. %s"
              coding-system (mapcar #'car dime-net-valid-coding-systems)))
     (when (second props)
-      (assert enable-multibyte-characters))
+      (cl-assert enable-multibyte-characters))
     t))
 
 (defun dime-coding-system-mulibyte-p (coding-system)
@@ -1541,7 +1541,7 @@ EVAL'd by Dylan."
   (let* ((length (dime-net-decode-length))
          (start (+ 6 (point)))
          (end (+ start length)))
-    (assert (plusp length))
+    (cl-assert (plusp length))
     (prog1 (save-restriction
              (narrow-to-region start end)
              (read (current-buffer)))
@@ -2122,13 +2122,13 @@ Debugged requests are ignored."
                    (t
                     (error "Unexpected reply: %S %S" id value)))))
           ((:debug-activate thread level &optional select)
-           (assert thread)
+           (cl-assert thread)
            (dime-debug-activate thread level select))
           ((:debug thread level condition restarts frames conts)
-           (assert thread)
+           (cl-assert thread)
            (dime-debug-setup thread level condition restarts frames conts))
           ((:debug-return thread level stepping)
-           (assert thread)
+           (cl-assert thread)
            (dime-debug-exit thread level stepping))
           ((:emacs-interrupt thread)
            (dime-send `(:emacs-interrupt ,thread)))
@@ -2166,7 +2166,7 @@ Debugged requests are ignored."
           ((:background-message message)
            (dime-background-message "%s" message))
           ((:debug-condition thread message)
-           (assert thread)
+           (cl-assert thread)
            (message "%s" message))
           ((:ping thread tag)
            (dime-send `(:emacs-pong ,thread ,tag)))
@@ -2289,13 +2289,13 @@ Debugged requests are ignored."
 (defun dime-restart-inferior-dylan ()
   "Kill and restart the Dylan subprocess."
   (interactive)
-  (assert (dime-inferior-process) () "No inferior dylan process")
+  (cl-assert (dime-inferior-process) () "No inferior dylan process")
   (dime-quit-dylan-internal (dime-connection) 'dime-restart-sentinel t))
 
 (defun dime-restart-sentinel (process _message)
   "Restart the inferior dylan process.
 Also rearrange windows."
-  (assert (process-status process) 'closed)
+  (cl-assert (process-status process) 'closed)
   (let* ((proc (dime-inferior-process process))
          (args (dime-inferior-dylan-args proc))
          (buffer (buffer-name (process-buffer proc)))
@@ -3864,8 +3864,8 @@ This is for use in the implementation of COMMON-DYLAN:ED."
   "Move to line LINE-NUMBER (1-based).
 This is similar to `goto-line' but without pushing the mark and
 the display stuff that we neither need nor want."
-  (assert (= (buffer-size) (- (point-max) (point-min))) ()
-          "dime-goto-line in narrowed buffer")
+  (cl-assert (= (buffer-size) (- (point-max) (point-min))) ()
+             "dime-goto-line in narrowed buffer")
   (goto-char (point-min))
   (forward-line (1- line-number)))
 
@@ -4250,7 +4250,7 @@ With prefix argument include internal symbols."
 (defun dime-print-apropos (plists)
   (dolist (plist plists)
     (let ((designator (plist-get plist :designator)))
-      (assert designator)
+      (cl-assert designator)
       (dime-insert-propertized `(face apropos-symbol) designator))
     (terpri)
     (cl-loop for (prop namespace)
@@ -4852,7 +4852,7 @@ argument is given, with CL:MACROEXPAND."
           (kill-process process))))))
 
 (defun dime-quit-sentinel (process _message)
-  (assert (process-status process) 'closed)
+  (cl-assert (process-status process) 'closed)
   (let* ((inferior (dime-inferior-process process))
          (inferior-buffer (if inferior (process-buffer inferior))))
     (when inferior (delete-process inferior))
@@ -5337,7 +5337,7 @@ Avoid point motions, if possible.
 Minimize scrolling, if CENTER is nil.
 If CENTER is true, scroll enough to center the region in the window."
   (let ((pos (point))  (lines (count-screen-lines start end t)))
-    (assert (and (<= start pos) (<= pos end)))
+    (cl-assert (and (<= start pos) (<= pos end)))
     ;;(sit-for 0)
     (cond ((and (pos-visible-in-window-p start)
                 (pos-visible-in-window-p end)))
@@ -5565,7 +5565,7 @@ See `dime-output-target-to-marker'."
   "Toggle display of details for the current frame.
 The details include local variable bindings and CATCH-tags."
   (interactive)
-  (assert (dime-debug-frame-number-at-point))
+  (cl-assert (dime-debug-frame-number-at-point))
   (let ((inhibit-read-only t)
         (inhibit-point-motion-hooks t))
     (if (or on (not (dime-debug-frame-details-visible-p)))
@@ -5718,7 +5718,8 @@ VAR should be a plist with the keys :name, :id, and :value."
 (defun dime-debug-quit ()
   "Quit to toplevel."
   (interactive)
-  (assert dime-debug-restarts () "dime-debug-quit called outside of dime-debug buffer")
+  (cl-assert dime-debug-restarts ()
+             "dime-debug-quit called outside of dime-debug buffer")
   (dime-rex () ('(swank:throw-to-toplevel))
     ((:ok x) (error "dime-debug-quit returned [%s]" x))
     ((:abort x) x)))
@@ -5726,7 +5727,8 @@ VAR should be a plist with the keys :name, :id, and :value."
 (defun dime-debug-continue ()
   "Invoke the \"continue\" restart."
   (interactive)
-  (assert dime-debug-restarts () "dime-debug-continue called outside of dime-debug buffer")
+  (cl-assert dime-debug-restarts ()
+             "dime-debug-continue called outside of dime-debug buffer")
   (dime-rex ()
       ('(swank:dime-debug-continue))
     ((:ok _)
@@ -5802,7 +5804,7 @@ truly screwed up."
 (defun dime-read-connection (prompt &optional initial-value)
   "Read a connection from the minibuffer. Returns the net
 process, or nil."
-  (assert (memq initial-value dime-net-processes))
+  (cl-assert (memq initial-value dime-net-processes))
   (cl-flet ((connection-identifier (p)
            (format "%s (pid %d)" (dime-connection-name p) (dime-pid p))))
     (let ((candidates (mapcar (lambda (p)

@@ -939,7 +939,7 @@ See `dime-repl-previous-input'."
   (cond ((dime-repl-history-search-in-progress-p)
          dime-repl-history-pattern)
         (use-current-input
-         (assert (<= dime-repl-input-start-mark (point)))
+         (cl-assert (<= dime-repl-input-start-mark (point)))
          (let ((str (dime-repl-current-input t)))
            (cond ((string-match "^[ \t\n]*$" str) nil)
                  (t (concat "^" (regexp-quote str))))))
@@ -1459,7 +1459,7 @@ expansion will be added to the REPL's history.)"
      (dime-write-string output target)
      t)
     ((:read-string thread tag)
-     (assert thread)
+     (cl-assert thread)
      (dime-repl-read-string thread tag)
      t)
     ((:read-aborted thread tag)
