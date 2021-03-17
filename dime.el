@@ -665,8 +665,9 @@ corresponding values in the CDR of VALUE."
              ,(mapcar (lambda (slot)
                         (cl-etypecase slot
                           (symbol `(,slot (,(reader slot) ,struct-var)))
-                          (cons `(,(first slot) (,(reader (cl-second slot))
-                                                 ,struct-var)))))
+                          (cons `(,(cl-first slot)
+                                  (,(reader (cl-second slot))
+                                   ,struct-var)))))
                       slots)
            . ,body)))))
 
@@ -1057,8 +1058,8 @@ The rules for selecting the arguments are rather complicated:
     (unless arguments
       (error "Could not find dylan implementation with the name '%S'" name))
     (when (and (= (length arguments) 1)
-               (functionp (first arguments)))
-      (setf arguments (funcall (first arguments))))
+               (functionp (cl-first arguments)))
+      (setf arguments (funcall (cl-first arguments))))
     (cl-destructuring-bind ((prog &rest args) &rest keys) arguments
       (cl-list* :name name :program prog :program-args args keys))))
 
@@ -1105,10 +1106,10 @@ DIRECTORY change to this directory before starting the process.
 (defun dime-connect (host port &optional coding-system)
   "Connect to a running Swank server. Return the connection."
   (interactive (list (read-from-minibuffer
-                      "Host: " (first dime-connect-host-history)
+                      "Host: " (cl-first dime-connect-host-history)
                       nil nil '(dime-connect-host-history . 1))
                      (string-to-number (read-from-minibuffer
-                      "Port: " (first dime-connect-port-history)
+                      "Port: " (cl-first dime-connect-port-history)
                       nil nil '(dime-connect-port-history . 1)))))
   (when (and (called-interactively-p 'any) dime-net-processes
              (y-or-n-p "Close old connections first? "))
@@ -2651,12 +2652,12 @@ Each newlines and following indentation is replaced by a single space."
         (insert (format "cd %s\n%d compiler notes:\n\n"
                         default-directory (length notes)))
         (dolist (notes grouped-notes)
-          (let ((loc (gethash (first notes) canonicalized-locs-table))
+          (let ((loc (gethash (cl-first notes) canonicalized-locs-table))
                 (start (point)))
             (insert (dime-canonicalized-location-to-string loc) ":")
             (dime-insert-note-group notes)
             (insert "\n")
-            (dime-make-note-overlay (first notes) start (1- (point))))))
+            (dime-make-note-overlay (cl-first notes) start (1- (point))))))
       (set (make-local-variable 'compilation-skip-threshold) 0)
       (setq next-error-last-buffer (current-buffer)))))
 
@@ -3648,7 +3649,7 @@ function name is prompted."
                    (message "No xref information found for %s." symbol))
                   ((and (dime-length= xrefs 1)          ; one group
                         (dime-length= (cdar  xrefs) 1)) ; one ref in group
-                   (cl-destructuring-bind (_ (_ loc)) (first xrefs)
+                   (cl-destructuring-bind (_ (_ loc)) (cl-first xrefs)
                      (dime-push-definition-stack)
                      (dime-pop-to-location loc)))
                   (t
@@ -5221,7 +5222,7 @@ If MORE is non-nil, more frames are on the Dylan stack."
     (dime-insert-propertized
      `(,@nil dime-debug-default-action dime-debug-fetch-more-frames
              dime-debug-previous-frame-number
-             ,(dime-debug-frame.number (first (last frames)))
+             ,(dime-debug-frame.number (cl-first (last frames)))
              point-entered dime-debug-fetch-more-frames
              start-open t
              face dime-debug-section-face
@@ -6946,7 +6947,7 @@ Only considers buffers that are not already visible."
                 descriptions)
           (let ((all-bindings (where-is-internal (if (symbolp func)
                                                      func
-                                                     (first func))
+                                                     (cl-first func))
                                                  (symbol-value mode-map)))
                 (key-bindings '()))
             (dolist (binding all-bindings)
@@ -7150,8 +7151,8 @@ and skips comments."
         ((and (consp e) (symbolp (car e)))
          (funcall (let ((head (dime-keywordify (car e))))
                     (cl-case head
-                      (:and #'every)
-                      (:or #'some)
+                      (:and #'cl-every)
+                      (:or #'cl-some)
                       (:not
                        (let ((feature-expression e))
                          (lambda (f l)
