@@ -4754,7 +4754,6 @@ NB: Does not affect dime-eval-macroexpand-expression"
     (let* ((start (car bounds))
            (end (cdr bounds))
            (point (point))
-           (project dylan-buffer-module)
            (buffer (current-buffer)))
       (dime-eval-async
        `(,expander ,string)
