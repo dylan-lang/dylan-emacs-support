@@ -75,9 +75,9 @@ COLLAPSED-P says whether the tree is initially collapsed."
   "Make a note tree from a list of NOTES."
   (let* ((alist (dime-alistify notes #'dime-note.severity #'eq))
          (collapsed-p (dime-length> alist 1)))
-    (loop for (severity . notes) in alist
-          collect (dime-note-tree--for-severity severity notes
-                                                collapsed-p))))
+    (cl-loop for (severity . notes) in alist
+             collect (dime-note-tree--for-severity severity notes
+                                                   collapsed-p))))
 
 (defvar dime-note-tree-mode-map (make-sparse-keymap)
   "Keymap for Dime note tree mode.")
@@ -152,14 +152,14 @@ This command is meant to be bound to a mouse EVENT."
 
 (defun dime-note-tree--insert-list (list prefix)
   "Insert LIST of note trees using PREFIX for each."
-  (loop for (elt . rest) on list
-        do (cond (rest
-                  (insert prefix " |")
-                  (dime-note-tree--insert elt (concat prefix " |"))
-                  (insert "\n"))
-                 (t
-                  (insert prefix " `")
-                  (dime-note-tree--insert elt (concat prefix "  "))))))
+  (cl-loop for (elt . rest) on list
+           do (cond (rest
+                     (insert prefix " |")
+                     (dime-note-tree--insert elt (concat prefix " |"))
+                     (insert "\n"))
+                    (t
+                     (insert prefix " `")
+                     (dime-note-tree--insert elt (concat prefix "  "))))))
 
 (defun dime-note-tree--indent-item (start end prefix)
   "Insert PREFIX at the beginning of each line except the first.

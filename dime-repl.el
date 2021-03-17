@@ -891,13 +891,13 @@ If EXCLUDE-STRING is specified then it's excluded from the search."
                  (backward 1)))
          (history dime-repl-input-history)
          (len (length history)))
-    (loop for pos = (+ start-pos step) then (+ pos step)
-          if (< pos 0) return -1
-          if (<= len pos) return len
-          for history-item = (nth pos history)
-          if (and (string-match regexp history-item)
-                  (not (equal history-item exclude-string)))
-          return pos)))
+    (cl-loop for pos = (+ start-pos step) then (+ pos step)
+             if (< pos 0) return -1
+             if (<= len pos) return len
+             for history-item = (nth pos history)
+             if (and (string-match regexp history-item)
+                     (not (equal history-item exclude-string)))
+             return pos)))
 
 (defun dime-repl-previous-input ()
   "Cycle backwards through input history.
@@ -1138,8 +1138,8 @@ The handler will use qeuery to ask the use if the error should be ingored."
           (call-interactively handler))))))
 
 (defun dime-repl-list-all-shortcuts ()
-  (loop for shortcut in dime-repl-shortcut-table
-        append (dime-repl-shortcut.names shortcut)))
+  (cl-loop for shortcut in dime-repl-shortcut-table
+           append (dime-repl-shortcut.names shortcut)))
 
 (defun dime-repl-lookup-shortcut (name)
   (cl-find-if (lambda (s) (member name (dime-repl-shortcut.names s)))
