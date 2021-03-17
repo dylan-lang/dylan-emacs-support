@@ -1,10 +1,16 @@
 ;;; dime-browse.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
-;; Package-Requires: ((emacs "25.1"))
-;; URL: https://opendylan.org/
-;; Author: Rui Patrocínio <rui.patrocinio@netvisao.pt>
-;; Author: Hannes Mehnert <hannes@opendylan.org>
+;; Lineage: SLIME, Open Dylan
+
+;; Copyright (C) 20?? Rui Patrocínio (SLIME)
+;; Copyright (C) 2011, 2012 Hannes Mehnert
+;; Copyright (C) 2013 Erik Charlebois
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-2.0-or-later
+
+;; URL: https://opendylan.org/
+
+;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
 

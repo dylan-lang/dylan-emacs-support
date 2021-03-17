@@ -1,27 +1,15 @@
-;;; dylan-lid.el --- Dylan LID major mode -*- lexical-binding: t -*-
+;;; dylan-lid.el --- Dylan editing modes -*- lexical-binding: t -*-
+
+;; Lineage: Open Dylan
 
 ;; Copyright (C) 2014 Erik Charlebois
-;; SPDX-License-Identifier: GPL-1.0-or-later
-;; Author: Erik Charlebois (erikcharlebois@gmail.com)
+;; Copyright (C) 2017, 2018 Peter Hull
+;; Copyright (C) 2021 Lassi Kortela
+;; SPDX-License-Identifier: GPL-2.0-or-later
+
 ;; URL: https://opendylan.org/
+
 ;; Package-Requires: ((emacs "25.1"))
-
-;; This file is *NOT* part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-;; GNU General Public License for more details.
-;;
-;; A copy of the GNU General Public License can be obtained from this
-;; program's author (send electronic mail to "gwydion-bugs@cs.cmu.edu")
-;; or from the Free Software Foundation, Inc., 675 Mass Ave,
-;; Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -29,17 +17,14 @@
 ;; for the Dylan programming language. It provides indenting and
 ;; font-lock support.
 
-
 ;;; Code:
 
-
 ;;; Customization:
 
 (defgroup dylan-lid nil
   "Major mode for editing Dylan LID files."
   :group 'languages)
 
-
 ;;; Faces:
 
 (defface dylan-lid-keyword-face
@@ -60,7 +45,6 @@ Valid lines begin with a keyword or a value continuation
 whitespace prefix."
   :group 'dylan-lid)
 
-
 ;;; Regular expressions:
 
 (defvar dylan-lid-font-lock-keywords
@@ -92,7 +76,6 @@ whitespace prefix."
      . 'dylan-lid-error-face))
   "Font lock keywords for ‘dylan-lid--mode’.  See ‘font-lock-keywords’.")
 
-
 ;;; Font locking:
 
 (defun dylan-lid-font-lock-fontify-region (beg end loudly)
@@ -104,7 +87,6 @@ The arguments BEG, END, LOUDLY are as for `font-lock-fontify-region'."
         (font-lock-keywords-only t))
     (font-lock-default-fontify-region beg end loudly)))
 
-
 ;;; Clickable files:
 
 (defun dylan-lid-make-file-link (start end src-dir)
@@ -168,7 +150,6 @@ See `dylan-lid-make-file-link'."
 (defvar dylan-lid-timer-id nil
   "ID of the global Dylan LID timer.")
 
-
 ;;; dylan-lid-mode:
 
 (defvar dylan-lid-mode-syntax-table
@@ -199,7 +180,6 @@ during initialization."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.lid\\'" . dylan-lid-mode))
 
-
 (provide 'dylan-lid)
 
 ;;; dylan-lid.el ends here

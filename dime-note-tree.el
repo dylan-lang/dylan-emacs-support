@@ -1,7 +1,14 @@
 ;;; dime-note-tree.el --- Dylan interaction mode -*- lexical-binding: t -*-
 
+;; Lineage: SLIME, Open Dylan
+
+;; Copyright (C) 2011 Hannes Mehnert
+;; Copyright (C) 2013 Erik Charlebois
+;; Copyright (C) 2021 Lassi Kortela
 ;; SPDX-License-Identifier: GPL-2.0-or-later
+
 ;; URL: https://opendylan.org/
+
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
@@ -24,7 +31,7 @@ grouped by severity.
   `dime-compilation-finished-hook'.
 "
   (:authors "Helmut Eller <heller@common-lisp.net>")
-  (:license "GPL"))
+  (:license "GPL-2.0-or-later"))
 
 (defun dime-note-tree-maybe-show (notes)
   "Show the compiler NOTES if appropriate."
@@ -117,7 +124,6 @@ This command is meant to be bound to a mouse EVENT."
           (t
            (dime-show-source-location (dime-note.location note) t)))))
 
-
 ;;;;;; Tree Widget
 
 (cl-defstruct (dime-note-tree (:conc-name dime-note-tree--))
