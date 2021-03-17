@@ -2564,8 +2564,8 @@ This operation is \"lossy\" in the broad sense but not for display purposes."
                                   :key #'dime-note.severity))
          (new-message (mapconcat #'dime-note.message notes "\n")))
     (let ((new-note (cl-copy-list (car notes))))
-      (setf (getf new-note :message) new-message)
-      (setf (getf new-note :severity) new-severity)
+      (setf (cl-getf new-note :message) new-message)
+      (setf (cl-getf new-note :severity) new-severity)
       new-note)))
 
 (defun dime-notes-in-same-location-p (a b)
