@@ -1,6 +1,6 @@
 # Dylan support for GNU Emacs
 
-This repo contains two Emacs packages installable from
+This repository contains two Emacs packages installable from
 [MELPA](https://melpa.org/).
 
 The `dylan` package (Dylan editing modes):
