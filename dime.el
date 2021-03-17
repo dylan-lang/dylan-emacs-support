@@ -661,7 +661,7 @@ corresponding values in the CDR of VALUE."
                                         (symbol-name slot)))))
     (let ((struct-var (cl-gensym "struct")))
       `(let ((,struct-var ,struct))
-         (symbol-macrolet
+         (cl-symbol-macrolet
              ,(mapcar (lambda (slot)
                         (cl-etypecase slot
                           (symbol `(,slot (,(reader slot) ,struct-var)))
@@ -851,7 +851,7 @@ The buffer also uses the minor-mode `dime-popup-buffer-mode'."
 
 (defun dime-init-popup-buffer (buffer-vars)
   (dime-popup-buffer-mode 1)
-  (multiple-value-setq (dime-buffer-project dime-buffer-connection)
+  (cl-multiple-value-setq (dime-buffer-project dime-buffer-connection)
     buffer-vars))
 
 (defun dime-display-popup-buffer (select)
@@ -1053,14 +1053,14 @@ The rules for selecting the arguments are rather complicated:
                (list :program program :program-args args))))))
 
 (defun dime-lookup-dylan-implementation (table name)
-  (let ((arguments (rest (assoc name table))))
+  (let ((arguments (cdr (assoc name table))))
     (unless arguments
       (error "Could not find dylan implementation with the name '%S'" name))
     (when (and (= (length arguments) 1)
                (functionp (first arguments)))
       (setf arguments (funcall (first arguments))))
     (cl-destructuring-bind ((prog &rest args) &rest keys) arguments
-      (list* :name name :program prog :program-args args keys))))
+      (cl-list* :name name :program prog :program-args args keys))))
 
 (cl-defun dime-start (&key (program dime-dylan-program) program-args
                            directory
@@ -1451,7 +1451,7 @@ first line of the file."
   (second (dime-find-coding-system coding-system)))
 
 (defun dime-coding-system-cl-name (coding-system)
-  (third (dime-find-coding-system coding-system)))
+  (cl-third (dime-find-coding-system coding-system)))
 
 ;;; Interface
 (defun dime-net-send (sexp proc)
@@ -1541,7 +1541,7 @@ EVAL'd by Dylan."
   (let* ((length (dime-net-decode-length))
          (start (+ 6 (point)))
          (end (+ start length)))
-    (cl-assert (plusp length))
+    (cl-assert (cl-plusp length))
     (prog1 (save-restriction
              (narrow-to-region start end)
              (read (current-buffer)))
@@ -1794,7 +1794,7 @@ This is automatically synchronized from Dylan.")
     (setq dime-connection-counter 0))
   (dime-with-connection-buffer ()
     (setq dime-buffer-connection proc))
-  (setf (dime-connection-number proc) (incf dime-connection-counter))
+  (setf (dime-connection-number proc) (cl-incf dime-connection-counter))
   ;; We do the rest of our initialization asynchronously. The current
   ;; function may be called from a timer, and if we setup the REPL
   ;; from a timer then it mysteriously uses the wrong keymap for the
@@ -2111,7 +2111,7 @@ Debugged requests are ignored."
           ((:emacs-rex form project thread continuation)
            (when (and (dime-use-sigint-for-interrupt) (dime-busy-p))
              (dime-display-oneliner "; pipelined request... %S" form))
-           (let ((id (incf (dime-continuation-counter))))
+           (let ((id (cl-incf (dime-continuation-counter))))
              (dime-send `(:emacs-rex ,form ,project ,thread ,id))
              (push (cons id continuation) (dime-rex-continuations))))
           ((:return value id)
@@ -2220,7 +2220,7 @@ Debugged requests are ignored."
   operations name id plist)
 
 (defun dime-make-channel (operations &optional name)
-  (let* ((id (incf (dime-channels-counter)))
+  (let* ((id (cl-incf (dime-channels-counter)))
          (ch (dime-make-channel% operations name id nil)))
     (push (cons id ch) (dime-channels))
     ch))
@@ -2357,10 +2357,10 @@ region that will be compiled.")
                min
                (if (> n max) max n))))
     (let ((n (prefix-numeric-value arg)))
-      (cond ((not arg)   dime-compilation-policy)
-            ((plusp n)   `((cl:debug . ,(between 0 n 3))))
-            ((eq arg '-) `((cl:speed . 3)))
-            (t           `((cl:speed . ,(between 0 (abs n) 3))))))))
+      (cond ((not arg)    dime-compilation-policy)
+            ((cl-plusp n) `((cl:debug . ,(between 0 n 3))))
+            ((eq arg '-)  `((cl:speed . 3)))
+            (t            `((cl:speed . ,(between 0 (abs n) 3))))))))
 
 (cl-defstruct (dime-compilation-result
                (:type list)
@@ -2597,7 +2597,7 @@ Each newlines and following indentation is replaced by a single space."
         (when fn
           (if file
               (push node (cdr file))
-              (setf xrefs (acons fn (list node) xrefs))))))
+              (setf xrefs (cl-acons fn (list node) xrefs))))))
     xrefs))
 
 (defun dime-maybe-show-xrefs-for-notes (notes)
@@ -2643,7 +2643,7 @@ Each newlines and following indentation is replaced by a single space."
 
 (defun dime-insert-compilation-log (notes)
   "Insert NOTES in format suitable for `compilation-mode'."
-  (multiple-value-bind (grouped-notes canonicalized-locs-table)
+  (cl-multiple-value-bind (grouped-notes canonicalized-locs-table)
       (dime-group-and-sort-notes notes)
     (with-temp-message "Preparing compilation log..."
       (let ((inhibit-read-only t)
@@ -2727,23 +2727,24 @@ This is quite an expensive operation so use carefully."
               (when (dime-location-p loc)
                 (puthash note (dime-canonicalized-location loc) locs))))
           notes)
-    (values (dime-group-similar
-             (lambda (n1 n2)
-               (equal (gethash n1 locs nil) (gethash n2 locs t)))
-             (let* ((bottom most-negative-fixnum)
-                    (+default+ (list "" bottom bottom)))
-               (sort notes
-                     (lambda (n1 n2)
-                       (cl-destructuring-bind (filename1 line1 col1)
-                           (gethash n1 locs +default+)
-                         (cl-destructuring-bind (filename2 line2 col2)
-                             (gethash n2 locs +default+)
-                           (cond ((string-lessp filename1 filename2) t)
-                                 ((string-lessp filename2 filename1) nil)
-                                 ((< line1 line2) t)
-                                 ((> line1 line2) nil)
-                                 (t (< col1 col2)))))))))
-            locs)))
+    (cl-values
+     (dime-group-similar
+      (lambda (n1 n2)
+        (equal (gethash n1 locs nil) (gethash n2 locs t)))
+      (let* ((bottom most-negative-fixnum)
+             (+default+ (list "" bottom bottom)))
+        (sort notes
+              (lambda (n1 n2)
+                (cl-destructuring-bind (filename1 line1 col1)
+                    (gethash n1 locs +default+)
+                  (cl-destructuring-bind (filename2 line2 col2)
+                      (gethash n2 locs +default+)
+                    (cond ((string-lessp filename1 filename2) t)
+                          ((string-lessp filename2 filename1) nil)
+                          ((< line1 line2) t)
+                          ((> line1 line2) nil)
+                          (t (< col1 col2)))))))))
+     locs)))
 
 (defun dime-note.severity (note)
   (plist-get note :severity))
@@ -2767,7 +2768,7 @@ This is quite an expensive operation so use carefully."
 If an appropriate overlay for a compiler note in the same location
 already exists then the new information is merged into it. Otherwise a
 new overlay is created."
-  (multiple-value-bind (start end) (dime-choose-overlay-region note)
+  (cl-multiple-value-bind (start end) (dime-choose-overlay-region note)
     (when start
       (goto-char start)
       (let ((severity (plist-get note :severity))
@@ -2827,7 +2828,7 @@ Return nil if there's no useful source location."
                ((eq (dime-note.severity note) :read-error)
                 (dime-choose-overlay-for-read-error location))
                ((equal pos '(:eof))
-                (values (1- (point-max)) (point-max)))
+                (cl-values (1- (point-max)) (point-max)))
                (t
                 (dime-choose-overlay-for-sexp location))))))))
 
@@ -2837,9 +2838,9 @@ Return nil if there's no useful source location."
       (goto-char pos)
       (cond ((thing-at-point 'dime-symbol)
              ;; project not found, &c.
-             (values (dime-symbol-start-pos) (dime-symbol-end-pos)))
+             (cl-values (dime-symbol-start-pos) (dime-symbol-end-pos)))
             (t
-             (values pos (1+ pos)))))))
+             (cl-values pos (1+ pos)))))))
 
 (defun dime-choose-overlay-for-sexp (location)
   (dime-goto-source-location location)
@@ -2847,11 +2848,11 @@ Return nil if there's no useful source location."
   (let ((start (point)))
     (ignore-errors (dime-forward-sexp))
     (if (dime-same-line-p start (point))
-        (values start (point))
-      (values (1+ start)
-              (progn (goto-char (1+ start))
-                     (ignore-errors (forward-sexp 1))
-                     (point))))))
+        (cl-values start (point))
+      (cl-values (1+ start)
+                 (progn (goto-char (1+ start))
+                        (ignore-errors (forward-sexp 1))
+                        (point))))))
 
 (defun dime-same-line-p (pos1 pos2)
   "Return t if buffer positions POS1 and POS2 are on the same line."
@@ -3101,7 +3102,7 @@ you should check twice before modifying.")
             (count 0 (1+ count)))
            ((>= (point) pos) (1- count))
          (forward-line)
-         (decf pos))))
+         (cl-decf pos))))
     (t 0)))
 
 (defun dime-search-method-location (name specializers qualifiers)
@@ -4535,10 +4536,10 @@ This is used by `dime-goto-next-xref'")
   "Goto the next cross-reference location."
   (if (not (buffer-live-p dime-xref-last-buffer))
       (error "No XREF buffer alive.")
-    (multiple-value-bind (location pos)
+    (cl-multiple-value-bind (location pos)
         (with-current-buffer dime-xref-last-buffer
-          (values (dime-search-property 'dime-location backward)
-                  (point)))
+          (cl-values (dime-search-property 'dime-location backward)
+                     (point)))
       (cond ((dime-location-p location)
              (dime-pop-to-location location)
              ;; We do this here because changing the location can take
@@ -4695,7 +4696,7 @@ When displaying XREF information, this goes to the previous reference."
       (let ((char0 (elt string 0)))
         (when (member char0 '(?\' ?\, ?\" ?\@))
           (setf string (substring string 1))
-          (incf (car bounds)))))
+          (cl-incf (car bounds)))))
     (list string (cons (set-marker (make-marker) (car bounds))
                        (set-marker (make-marker) (cdr bounds))))))
 
@@ -5467,7 +5468,7 @@ See `dime-output-target-to-marker'."
   (let ((buffer (get-buffer-create (dime-buffer-name :trace))))
     (with-current-buffer buffer
       (let ((marker (copy-marker (buffer-size)))
-            (target (incf dime--last-output-target-id)))
+            (target (cl-incf dime--last-output-target-id)))
         (puthash target marker dime--output-target-to-marker)
         (dime-eval `(swank:redirect-trace-output ,target))))
     ;; Note: We would like the entries in
@@ -5601,8 +5602,8 @@ The details include local variable bindings and CATCH-tags."
   (let* ((frame (get-text-property (point) 'frame))
          (num (car frame)))
     (cl-destructuring-bind (start end) (dime-debug-frame-region)
-      (list* start end frame
-             (dime-eval `(swank:frame-locals-and-catch-tags ,num))))))
+      (cl-list* start end frame
+                (dime-eval `(swank:frame-locals-and-catch-tags ,num))))))
 
 (defvar dime-debug-insert-frame-variable-value-function
   'dime-debug-insert-frame-variable-value)
@@ -6226,8 +6227,8 @@ KILL-BUFFER hooks for the inspector buffer."
     (let ((inhibit-read-only t))
       (erase-buffer)
       (cl-destructuring-bind (&key id title content) inspected-parts
-        (macrolet ((fontify (face string)
-                            `(dime-inspector-fontify ,face ,string)))
+        (cl-macrolet ((fontify (face string)
+                        `(dime-inspector-fontify ,face ,string)))
           (dime-propertize-region
               (list 'dime-part-number id
                  'mouse-face 'highlight
@@ -6580,7 +6581,7 @@ See `define-dime-selector-method' for defining new methods."
                (read-char)))
          (method (cl-find ch dime-selector-methods :key #'car)))
     (cond (method
-           (funcall (third method)))
+           (funcall (cl-third method)))
           (t
            (message "No method for character: ?\\%c" ch)
            (ding)
@@ -6627,8 +6628,8 @@ switch-to-buffer."
   (dime-selector)
   (current-buffer))
 
-(pushnew (list ?4 "Select in other window" (lambda () (dime-selector t)))
-         dime-selector-methods :key #'car)
+(cl-pushnew (list ?4 "Select in other window" (lambda () (dime-selector t)))
+            dime-selector-methods :key #'car)
 
 (define-dime-selector-method ?q "Abort."
   (top-level))
@@ -6689,7 +6690,7 @@ Only considers buffers that are not already visible."
 (defvar dime-required-modules '())
 
 (defun dime-require (module)
-  (pushnew module dime-required-modules)
+  (cl-pushnew module dime-required-modules)
   (when (dime-connected-p)
     (dime-load-contribs)))
 

@@ -204,7 +204,7 @@ If NOPROMPT is non-nil, omit prompt."
 
 (defun dime-repl-output-filter (process string)
   (with-current-buffer (process-buffer process)
-    (when (and (plusp (length string))
+    (when (and (cl-plusp (length string))
                (eq (process-status dime-buffer-connection) 'open))
       (dime-write-string string))))
 
@@ -669,7 +669,7 @@ If NEWLINE is true then add a newline at the end of the input."
       (add-text-properties dime-repl-input-start-mark
                            (point)
                            `(dime-repl-old-input
-                             ,(incf dime-repl-old-input-counter))))
+                             ,(cl-incf dime-repl-old-input-counter))))
     (let ((overlay (make-overlay dime-repl-input-start-mark end)))
       ;; These properties are on an overlay so that they won't be taken
       ;; by kill/yank.
@@ -686,7 +686,8 @@ If NEWLINE is true then add a newline at the end of the input."
 If replace is non-nil the current input is replaced with the old
 input; otherwise the new input is appended.  The old input has the
 text property `dime-repl-old-input'."
-  (multiple-value-bind (beg end) (dime-property-bounds 'dime-repl-old-input)
+  (cl-multiple-value-bind (beg end)
+      (dime-property-bounds 'dime-repl-old-input)
     (let ((old-input (buffer-substring beg end)) ;;preserve
           ;;properties, they will be removed later
           (offset (- (point) beg)))
@@ -785,7 +786,7 @@ earlier in the buffer."
         (setf (dime-dylan-project-prompt-string) prompt-string)
         (setf dime-buffer-project name)
         (dime-repl-insert-prompt)
-        (when (plusp previous-point)
+        (when (cl-plusp previous-point)
           (goto-char (+ previous-point dime-repl-input-start-mark)))))))
 
 ;;;;; History
