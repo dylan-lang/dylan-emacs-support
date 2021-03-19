@@ -204,7 +204,7 @@ If NOPROMPT is non-nil, omit prompt."
 
 (defun dime-repl-output-filter (process string)
   (with-current-buffer (process-buffer process)
-    (when (and (plusp (length string))
+    (when (and (cl-plusp (length string))
                (eq (process-status dime-buffer-connection) 'open))
       (dime-write-string string))))
 
@@ -669,7 +669,7 @@ If NEWLINE is true then add a newline at the end of the input."
       (add-text-properties dime-repl-input-start-mark
                            (point)
                            `(dime-repl-old-input
-                             ,(incf dime-repl-old-input-counter))))
+                             ,(cl-incf dime-repl-old-input-counter))))
     (let ((overlay (make-overlay dime-repl-input-start-mark end)))
       ;; These properties are on an overlay so that they won't be taken
       ;; by kill/yank.
@@ -686,7 +686,8 @@ If NEWLINE is true then add a newline at the end of the input."
 If replace is non-nil the current input is replaced with the old
 input; otherwise the new input is appended.  The old input has the
 text property `dime-repl-old-input'."
-  (multiple-value-bind (beg end) (dime-property-bounds 'dime-repl-old-input)
+  (cl-multiple-value-bind (beg end)
+      (dime-property-bounds 'dime-repl-old-input)
     (let ((old-input (buffer-substring beg end)) ;;preserve
           ;;properties, they will be removed later
           (offset (- (point) beg)))
@@ -785,7 +786,7 @@ earlier in the buffer."
         (setf (dime-dylan-project-prompt-string) prompt-string)
         (setf dime-buffer-project name)
         (dime-repl-insert-prompt)
-        (when (plusp previous-point)
+        (when (cl-plusp previous-point)
           (goto-char (+ previous-point dime-repl-input-start-mark)))))))
 
 ;;;;; History
@@ -890,13 +891,13 @@ If EXCLUDE-STRING is specified then it's excluded from the search."
                  (backward 1)))
          (history dime-repl-input-history)
          (len (length history)))
-    (loop for pos = (+ start-pos step) then (+ pos step)
-          if (< pos 0) return -1
-          if (<= len pos) return len
-          for history-item = (nth pos history)
-          if (and (string-match regexp history-item)
-                  (not (equal history-item exclude-string)))
-          return pos)))
+    (cl-loop for pos = (+ start-pos step) then (+ pos step)
+             if (< pos 0) return -1
+             if (<= len pos) return len
+             for history-item = (nth pos history)
+             if (and (string-match regexp history-item)
+                     (not (equal history-item exclude-string)))
+             return pos)))
 
 (defun dime-repl-previous-input ()
   "Cycle backwards through input history.
@@ -939,7 +940,7 @@ See `dime-repl-previous-input'."
   (cond ((dime-repl-history-search-in-progress-p)
          dime-repl-history-pattern)
         (use-current-input
-         (assert (<= dime-repl-input-start-mark (point)))
+         (cl-assert (<= dime-repl-input-start-mark (point)))
          (let ((str (dime-repl-current-input t)))
            (cond ((string-match "^[ \t\n]*$" str) nil)
                  (t (concat "^" (regexp-quote str))))))
@@ -1137,8 +1138,8 @@ The handler will use qeuery to ask the use if the error should be ingored."
           (call-interactively handler))))))
 
 (defun dime-repl-list-all-shortcuts ()
-  (loop for shortcut in dime-repl-shortcut-table
-        append (dime-repl-shortcut.names shortcut)))
+  (cl-loop for shortcut in dime-repl-shortcut-table
+           append (dime-repl-shortcut.names shortcut)))
 
 (defun dime-repl-lookup-shortcut (name)
   (cl-find-if (lambda (s) (member name (dime-repl-shortcut.names s)))
@@ -1157,7 +1158,7 @@ of the shortcut \(`:handler'\), and a help text \(`:one-liner'\)."
      ,(when edylan-name
         `(defun ,edylan-name ()
            (interactive)
-           (call-interactively ,(second (assoc :handler options)))))
+           (call-interactively ,(cl-second (assoc :handler options)))))
      (let ((new-shortcut (make-dime-repl-shortcut
                           :symbol ',edylan-name
                           :names (list ,@names)
@@ -1459,7 +1460,7 @@ expansion will be added to the REPL's history.)"
      (dime-write-string output target)
      t)
     ((:read-string thread tag)
-     (assert thread)
+     (cl-assert thread)
      (dime-repl-read-string thread tag)
      t)
     ((:read-aborted thread tag)
