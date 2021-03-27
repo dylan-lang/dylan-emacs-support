@@ -5406,7 +5406,7 @@ This is 0 if START and END at the same line."
   (- (count-lines start end)
      (if (save-excursion (goto-char end) (bolp)) 0 1)))
 
-(defvar-local dime-write-string-function nil)
+(defvar dime-write-string-function nil)
 
 (defun dime-write-string (string &optional target)
   "Insert STRING in the REPL buffer or some other TARGET.
