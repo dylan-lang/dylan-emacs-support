@@ -21,8 +21,14 @@
 
 ;;; Commentary:
 
-;; Dylan mode is a major mode for editing Dylan programs. It provides
-;; indenting and syntax highlighting support.
+;; This package provides three Emacs modes for the Dylan programming
+;; language:
+
+;; * The `dylan-mode` major mode to edit Dylan code.
+;; * The `dylan-opt-mode` minor mode to show compiler optimizations.
+;; * The `dylan-lid-mode` major mode to edit LID files.
+
+;;; Code:
 
 ;; Testing
 ;;
@@ -40,8 +46,6 @@
 ;; With so many cascading defvars and the fact that eval-buffer doesn't reset
 ;; their values, frequently the easiest way to test changes is to start a new
 ;; Emacs.
-
-;;; Code:
 
 ;;; Customization:
 

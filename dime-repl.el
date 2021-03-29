@@ -411,7 +411,6 @@ This is automatically synchronized from Dylan.")
   (setq font-lock-defaults nil)
   (setq mode-name "REPL")
   (setq dime-current-thread :repl-thread)
-  (setq dime-write-string-function 'dime-repl-write-string)
   (set (make-local-variable 'scroll-conservatively) 20)
   (set (make-local-variable 'scroll-margin) 0)
   (when dime-repl-history-file
@@ -1486,6 +1485,7 @@ expansion will be added to the REPL's history.)"
   (remove-hook 'dime-connected-hook 'dime-repl-connected-hook-function))
 
 (setq dime-output-target-to-marker-function 'dime-repl-target-to-marker)
+(setq dime-write-string-function 'dime-repl-write-string)
 (add-hook 'dime-repl-mode-hook 'dime-repl-add-easy-menu)
 (add-hook 'dime-sync-project-and-directory-hook
           'dime-repl-sync-project-and-directory)
