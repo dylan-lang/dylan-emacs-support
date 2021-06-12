@@ -204,10 +204,10 @@ These must also be simple definitions and are appended to
     "iterate" "profiling")
   "Words that begin statements with implicit bodies.")
 
-;; Names beginning "with-", "without-", and "...ing-" (e.g., printing-object)
-;; are commonly used as statement macros.
+;; Names beginning "with-", "without-", and "printing-" (for printing-object
+;; and printing-logical-block) are commonly used as statement macros.
 (defvar dylan-with-statement-prefix
-  "\\(with\\|without\\|[a-zA-Z]+ing\\)-")
+  "\\(with\\|without\\|printing\\)-")
 
 (defvar dylan-statement-prefixes
   (concat "\\|\\_<" dylan-with-statement-prefix "[-_a-zA-Z?!*@<>$%]+"))
