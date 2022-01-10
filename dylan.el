@@ -1397,21 +1397,20 @@ LOUDLY is as for `font-lock-fontify-region'."
 
 (defun dylan-find-buffer-library (path depth)
   "Return the name of the Dylan library the current buffer is in.
-
 Look up libraries in PATH.
-
-DEPTH is the current lookup nesting depth."
+DEPTH is the current lookup nesting depth and should start at 0."
   (let ((lid-files (directory-files path t ".*\\.lid" t)))
     (if lid-files
-      (let ((try-lid (car lid-files)))
-        (with-current-buffer (find-file-noselect try-lid)
-          (goto-char (point-min))
-          (let ((found
-                 (re-search-forward "[Ll]ibrary:[ \t]*\\([^ \n\r\t]+\\)")))
-            (if found
-                (buffer-substring
-                 (match-beginning 1)
-                 (match-end 1))))))
+        (let ((try-lid (car lid-files)))
+          (with-temp-buffer
+            (insert-file-contents try-lid)
+            (goto-char (point-min))
+            (let ((found
+                   (re-search-forward "[Ll]ibrary:[ \t]*\\([^ \n\r\t]+\\)")))
+              (if found
+                  (buffer-substring
+                   (match-beginning 1)
+                   (match-end 1))))))
       (when (< depth 5)
         (dylan-find-buffer-library (concat path "/..") (1+ depth))))))
 
