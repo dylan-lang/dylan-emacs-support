@@ -201,7 +201,7 @@ These must also be simple definitions and are appended to
     "if" "block" "begin" "method" "case" "for" "select" "when" "unless"
     "until" "while"
     ;; Extensions
-    "iterate" "profiling")
+    "collecting" "iterate" "profiling")
   "Words that begin statements with implicit bodies.")
 
 ;; Names beginning "with-", "without-", and "printing-" (for printing-object
@@ -472,6 +472,7 @@ the various keyword list variables."
           ("while[ \t\n]*" "")
           ("iterate[ \t\n]+\\w+[ \t\n]*" "")
           ("profiling[ \t\n]*" "")
+          ("collecting[ \t\n]*" "")
           ;; Special patterns for "define method" and "define function", which
           ;; have a return value spec.
           ;; TODO(cgay): comments may appear before/in/after the signature.
