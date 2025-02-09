@@ -62,9 +62,9 @@
   "*Number of additional spaces to indent each continued line.
 
 A continued line may be, for example, a method parameter list
-started on the line following the 'define method', the 2nd and
+started on the line following the `define method', the 2nd and
 subsequent lines of a method call, the 2nd and subsequent lines
-of a module 'use' statement, etc."
+of a module `use' statement, etc."
   :type  'integer
   :group 'dylan)
 
