@@ -1,0 +1,11 @@
+{
+    "dependencies": [],
+    "dev-dependencies": [ "testworks" ],
+    "description": "Support writing Dylan code in emacs",
+    "name": "dylan-emacs-support",
+    "version": "0.1.0",
+    "url": "https://github.com/dylan-lang/dylan-emacs-support",
+    "keywords": [ "dime", "dylan-mode", "emacs" ],
+    "contact": "https://github.com/dylan-lang/dylan-emacs-support/issues",
+    "license": "GPLv2",
+}
