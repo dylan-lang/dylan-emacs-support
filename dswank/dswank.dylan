@@ -6,6 +6,8 @@ copyright: Original Code is Copyright (c) 2008-2012 Dylan Hackers;
 License:   See License.txt in this distribution for details.
 Warranty:  Distributed WITHOUT WARRANTY OF ANY KIND
 
+// Why is this not called DIMED or DANK?  Missed opportunity.
+
 define thread variable *server* = #f;
 define thread variable *project* = #f;
 define thread variable *library* = #f;
@@ -434,7 +436,7 @@ define function main (args)
   *server* := start-compiler(stream);
   let greeting = concatenate("Welcome to dswank - the ",
                              release-full-name(),
-                             " SLIME interface\n");
+                             " DIME interface\n");
   write-to-emacs(stream, list(#":write-string", greeting));
   while (#t)
     let length = string-to-integer(read(stream, 6), base: 16);
