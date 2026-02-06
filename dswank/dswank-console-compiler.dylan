@@ -12,46 +12,48 @@ define method start-compiler (stream)
                            direction: #"output");
   make-environment-command-line-server
     (input-stream:   input-stream,
-     output-stream:  output-stream);
-end;
+     output-stream:  output-stream)
+end method;
 
 define class <emacs-output-wrapper-stream> (<wrapper-stream>)
   slot buffer :: <string> = "";
 end;
 
-define method write-element (stream :: <emacs-output-wrapper-stream>, char :: <character>)
- => ()
+define method write-element
+    (stream :: <emacs-output-wrapper-stream>, char :: <character>) => ()
   if (char == '\n')
     new-line(stream);
   else
     stream.buffer := add!(stream.buffer, char);
   end;
-end;
+end method;
 
 define method write
     (stream :: <emacs-output-wrapper-stream>, elements :: <sequence>,
-     #rest keys, #key start: _start = 0, end: _end) => ()
-  let string =
-    if (_end)
-      copy-sequence(elements, start: _start, end: _end);
-    else
-      copy-sequence(elements, start: _start);
-    end;
+     #rest keys, #key start: _start = 0, end: _end)
+ => ()
+  let string = if (_end)
+                 copy-sequence(elements, start: _start, end: _end);
+               else
+                 copy-sequence(elements, start: _start);
+               end;
   stream.buffer := concatenate(stream.buffer, string);
-end method write;
+end method;
 
 define method new-line (stream :: <emacs-output-wrapper-stream>) => ()
-  write-to-emacs(stream.inner-stream, list(#":write-string", concatenate(stream.buffer, "\n")));
+  write-to-emacs(stream.inner-stream,
+                 list(#":write-string", concatenate(stream.buffer, "\n")));
   stream.buffer := "";
-end method new-line;
+end method;
 
 define method write-line
-    (stream :: <emacs-output-wrapper-stream>, line :: <string>, #key start = 0, end: end-index)
+    (stream :: <emacs-output-wrapper-stream>, line :: <string>,
+     #key start = 0, end: end-index)
  => ()
   write(stream, line, start: start, end: end-index);
   new-line(stream);
-end;
+end method;
 
 define function run-compiler (server, string :: <string>) => ()
   execute-command-line(server, string);
-end;
+end function;

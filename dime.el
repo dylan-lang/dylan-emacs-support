@@ -2468,7 +2468,8 @@ to it depending on its sign."
 
 (defun dime-compilation-finished (result)
   (dime--with-struct (dime-compilation-result. notes duration successp
-                                               loadp faslfile) result
+                                               loadp faslfile)
+      result
     (setf dime-last-compilation-result result)
     (dime-show-note-counts notes duration (cond ((not loadp) successp)
                                                  (t (and faslfile successp))))
