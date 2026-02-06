@@ -17,8 +17,9 @@ The `dime` package (Dylan Interactor Mode for Emacs), an IDE derived from
 * `dime-repl.el` -- Read-eval-print loop.
 * `dime-browse.el` -- Class browser.
 * `dime-note-tree.el` -- Compiler note browser.
+* `dswank` -- Server process that controls the Open Dylan compiler.
 
 ## Using DIME
 
-DIME documentation is currently included as part of the Open Dylan project,
-[here](https://opendylan.org/getting-started-cli/dylan-mode-for-emacs.html).
+DIME documentation is currently included as part of the Open Dylan project's [Getting
+Started Guide](https://opendylan.org/getting-started-cli/dylan-mode-for-emacs.html).
