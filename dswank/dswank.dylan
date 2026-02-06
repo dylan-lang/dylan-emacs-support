@@ -290,12 +290,15 @@ define method snippet (zlot :: <slot-object>) => (res :: <string>)
   concatenate("S ", zlot.get-name, " :: ", slot-type(*project*, zlot).get-name)
 end method;
 
-define swank-function xref (quoted-arg, quoted-name)
-  let function = $xref-functions[quoted-arg.tail.head];
-  let env-obj = get-environment-object(quoted-name.tail.head);
+define swank-function xref (kind :: <symbol>, name :: <string>)
+  let function = $xref-functions[kind];
+  let env-obj = get-environment-object(name);
   let result = function(env-obj);
-  let res = map(curry(get-location-as-sexp, quoted-name.tail.head), result);
-  res
+  map(curry(get-location-as-sexp, name), result)
+end;
+
+define swank-function xrefs (kinds, name :: <string>)
+  error("swank:xrefs not yet implemented (%s, %s)", kinds, name);
 end;
 
 define constant $xref-functions = make(<table>);

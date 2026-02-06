@@ -4462,7 +4462,7 @@ This is used by `dime-goto-next-xref'")
 (defun dime-xref (type dylan-name &optional continuation)
   "Make an XREF request to Dylan."
   (dime-eval-async
-      `(swank:xref ',type ',dylan-name)
+      `(swank:xref ,type ,dylan-name)
     (dime-rcurry (lambda (result type symbol project cont)
                    (dime-check-xref-implemented type result)
                    (dime-postprocess-xrefs result) ; TODO: Is this needed?
@@ -4483,18 +4483,18 @@ This is used by `dime-goto-next-xref'")
 (defun dime-xref-type (type)
   (format "who-%s" (dime-cl-symbol-name type)))
 
-(defun dime-xrefs (types symbol &optional continuation)
+(defun dime-xrefs (types dylan-name &optional continuation)
   "Make multiple XREF requests at once."
   (dime-eval-async
-   `(swank:xrefs ',types ',symbol)
-   (dime-rcurry (lambda (result types symbol project cont)
+      `(swank:xrefs ,types ,dylan-name)
+    (dime-rcurry (lambda (result types symbol project cont)
                    (funcall (or cont 'dime-show-xrefs)
                             (dime-map-alist #'dime-xref-type
-                                             #'identity
-                                             result)
+                                            #'identity
+                                            result)
                             types symbol project))
                  types
-                 symbol
+                 dylan-name
                  dylan-buffer-module
                  continuation)))
 
