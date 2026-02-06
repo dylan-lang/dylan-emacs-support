@@ -47,4 +47,6 @@ define module dswank
   use registry-projects;
   use release-info;
   use operating-system;
+  use threads,
+    import: { dynamic-bind };
 end module;

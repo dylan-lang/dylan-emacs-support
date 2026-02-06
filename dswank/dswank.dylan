@@ -400,6 +400,17 @@ define function write-to-emacs (stream, s-expression)
   format(stream, "%s%s", len, s-expression);
 end function;
 
+define thread variable *dswank-stream* = #f;
+
+// Send debug output to the REPL. Of course it can also be found in the *dime-events*
+// buffer.
+define function debug-to-repl (format-string :: <string>, #rest format-args)
+  let text = apply(format-to-string,
+                   concatenate("*** DEBUG: ", format-string),
+                   format-args);
+  write-to-emacs(*dswank-stream*, list(#":write-string", text));
+end function;
+
 define function main (args)
   start-sockets();
   let tmpfile = #f;
@@ -436,20 +447,22 @@ define function main (args)
         end;
   let socket = open();
   let stream = accept(socket);
-  *server* := start-compiler(stream);
-  let greeting = concatenate("Welcome to dswank - the ",
-                             release-full-name(),
-                             " DIME interface\n");
-  write-to-emacs(stream, list(#":write-string", greeting));
-  while (#t)
-    let length = string-to-integer(read(stream, 6), base: 16);
-    let line = read(stream, length);
-    format-err("read: %s\n", line);
-    let expr = read-lisp(make(<string-stream>,
-                              direction: #"input", contents: line));
-    let function = $emacs-commands[expr.head];
-    let result = apply(function, expr.tail);
-    write-to-emacs(stream, result);
+  dynamic-bind (*dswank-stream* = stream)
+    *server* := start-compiler(stream);
+    let greeting = concatenate("Welcome to dswank - the ",
+                               release-full-name(),
+                               " DIME interface\n");
+    write-to-emacs(stream, list(#":write-string", greeting));
+    while (#t)
+      let length = string-to-integer(read(stream, 6), base: 16);
+      let line = read(stream, length);
+      debug-to-repl("read: %s", line);
+      let expr = read-lisp(make(<string-stream>,
+                                direction: #"input", contents: line));
+      let function = $emacs-commands[expr.head];
+      let result = apply(function, expr.tail);
+      write-to-emacs(stream, result);
+    end;
   end;
 end function main;
 
