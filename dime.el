@@ -4414,55 +4414,55 @@ This is used by `dime-goto-next-xref'")
 
 ;;;;; XREF commands
 
-(defun dime-who-calls (symbol)
-  "Show all known callers of the function SYMBOL."
+(defun dime-who-calls (dylan-name)
+  "Show all known callers of the function DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who calls: " t)))
-  (dime-xref :calls symbol))
+  (dime-xref :calls dylan-name))
 
-(defun dime-calls-who (symbol)
-  "Show all known functions called by the function SYMBOL."
+(defun dime-calls-who (dylan-name)
+  "Show all known functions called by the function DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who calls: " t)))
-  (dime-xref :calls-who symbol))
+  (dime-xref :calls-who dylan-name))
 
-(defun dime-who-references (symbol)
-  "Show all known referrers of the global variable SYMBOL."
+(defun dime-who-references (dylan-name)
+  "Show all known referrers of the global variable DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who references: " t)))
-  (dime-xref :references symbol))
+  (dime-xref :references dylan-name))
 
-(defun dime-who-binds (symbol)
-  "Show all known binders of the global variable SYMBOL."
+(defun dime-who-binds (dylan-name)
+  "Show all known binders of the global variable DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who binds: " t)))
-  (dime-xref :binds symbol))
+  (dime-xref :binds dylan-name))
 
-(defun dime-who-sets (symbol)
-  "Show all known setters of the global variable SYMBOL."
+(defun dime-who-sets (dylan-name)
+  "Show all known setters of the global variable DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who sets: " t)))
-  (dime-xref :sets symbol))
+  (dime-xref :sets dylan-name))
 
-(defun dime-who-macroexpands (symbol)
-  "Show all known expanders of the macro SYMBOL."
+(defun dime-who-macroexpands (dylan-name)
+  "Show all known expanders of the macro DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who macroexpands: " t)))
-  (dime-xref :macroexpands symbol))
+  (dime-xref :macroexpands dylan-name))
 
-(defun dime-who-specializes (symbol)
-  "Show all known methods specialized on class SYMBOL."
+(defun dime-who-specializes (dylan-name)
+  "Show all known methods specialized on class DYLAN-NAME."
   (interactive (list (dime-read-symbol-name "Who specializes: " t)))
-  (dime-xref :specializes symbol))
+  (dime-xref :specializes dylan-name))
 
-(defun dime-list-callers (symbol-name)
-  "List the callers of SYMBOL-NAME in a xref window."
+(defun dime-list-callers (dylan-name)
+  "List the callers of DYLAN-NAME in a xref window."
   (interactive (list (dime-read-symbol-name "List callers: ")))
-  (dime-xref :callers symbol-name))
+  (dime-xref :callers dylan-name))
 
-(defun dime-list-callees (symbol-name)
-  "List the callees of SYMBOL-NAME in a xref window."
+(defun dime-list-callees (dylan-name)
+  "List the callees of DYLAN-NAME in a xref window."
   (interactive (list (dime-read-symbol-name "List callees: ")))
-  (dime-xref :callees symbol-name))
+  (dime-xref :callees dylan-name))
 
-(defun dime-xref (type symbol &optional continuation)
+(defun dime-xref (type dylan-name &optional continuation)
   "Make an XREF request to Dylan."
   (dime-eval-async
-      `(swank:xref ',type ',symbol)
+      `(swank:xref ',type ',dylan-name)
     (dime-rcurry (lambda (result type symbol project cont)
                    (dime-check-xref-implemented type result)
                    (dime-postprocess-xrefs result) ; TODO: Is this needed?
@@ -4470,7 +4470,7 @@ This is used by `dime-goto-next-xref'")
                      (funcall (or cont 'dime-show-xrefs)
                               file-alist type symbol project)))
                  type
-                 symbol
+                 dylan-name
                  dylan-buffer-module
                  continuation)))
 
