@@ -10,7 +10,7 @@ define method start-compiler (stream)
   let output-stream = make(<emacs-output-wrapper-stream>,
                            inner-stream: stream,
                            direction: #"output");
-  make-environment-command-line-server
+  environment-commands/make-environment-command-line-server
     (input-stream:   input-stream,
      output-stream:  output-stream)
 end method;
@@ -54,6 +54,7 @@ define method write-line
   new-line(stream);
 end method;
 
-define function run-compiler (server, string :: <string>) => ()
-  execute-command-line(server, string);
+define function run-compiler
+    (server :: command-lines/<command-line-server>, string :: <string>) => ()
+  command-lines/execute-command-line(server, string);
 end function;

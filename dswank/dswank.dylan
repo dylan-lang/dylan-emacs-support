@@ -32,7 +32,6 @@ define emacs-command emacs-rex (command, package, thread-id, request-id)
     let result = apply(function, command.tail);
     list(#":return", list(#":ok", result), request-id)
   exception (err :: <error>)
-    format-err("Received error during evaluation: %s", err);
     list(#":return", list(#":abort", format-to-string("%=", err)), request-id)
   end
 end;
@@ -54,8 +53,8 @@ define swank-function connection-info ()
   list(#":pid", 23,             // TODO
        #":style", #":fd-handler",
        #":lisp-implementation", list(#":type", "dylan",
-                                     #":name", release-product-name(),
-                                     #":version", release-version()),
+                                     #":name", release-info/release-product-name(),
+                                     #":version", release-info/release-version()),
        #":version", "2011-02-13", // TODO
        #":package", #(#":name", "opendylan",
                       #":prompt", "opendylan"))
@@ -81,8 +80,9 @@ define swank-function list-all-package-names (t)
         end;
       end;
     end method;
-  let regs = find-registries(as(<string>, target-platform-name()));
-  let reg-paths = map(registry-location, regs);
+  let regs = registry-projects/find-registries(as(<string>,
+                                                  build-system/target-platform-name()));
+  let reg-paths = map(registry-projects/registry-location, regs);
   for (reg-path in reg-paths)
     if (file-exists?(reg-path))
       do-directory(collect-project, reg-path);
@@ -93,7 +93,7 @@ end;
 
 define swank-function set-package (package-name)
   run-compiler(*server*, concatenate("open ", package-name));
-  *project* := find-project(package-name);
+  *project* := ep/find-project(package-name);
   list(package-name, package-name) // #(name, prompt-string)
 end;
 
@@ -108,9 +108,9 @@ end;
 
 define swank-function compile-file-for-emacs (filename, #rest foo)
   block (done)
-    for (proj in open-projects())
-      for (source in proj.project-sources)
-        if (source.source-record-location = filename)
+    for (proj in ep/open-projects())
+      for (source in proj.ep/project-sources)
+        if (source.sr/source-record-location = filename)
           *project* := proj;
           done();
         end;
@@ -118,7 +118,7 @@ define swank-function compile-file-for-emacs (filename, #rest foo)
     end;
   end;
   if (*project*)
-    run-compiler(*server*, concatenate("build ", *project*.project-name));
+    run-compiler(*server*, concatenate("build ", *project*.ep/project-name));
     let notes = compiler-notes-for-emacs();
     //result is output-pathname, notes, success/failure of compilation
     list("pathname", notes, "T");
@@ -128,15 +128,15 @@ define swank-function compile-file-for-emacs (filename, #rest foo)
 end;
 
 define swank-function compiler-notes-for-emacs ()
-  let warnings = project-warnings(*project*);
+  let warnings = ep/project-warnings(*project*);
   let res = make(<stretchy-vector>);
   for (w in warnings)
-    let message = compiler-warning-full-message(*project*, w);
-    let short-message = compiler-warning-short-message(*project*, w);
+    let message = ep/compiler-warning-full-message(*project*, w);
+    let short-message = ep/compiler-warning-short-message(*project*, w);
     let location = get-location-as-sexp(#f, w).tail.head;
-    let severity = if (instance?(w, <compiler-error-object>))
+    let severity = if (instance?(w, ep/<compiler-error-object>))
                      #":error"
-                   elseif (instance?(w, <serious-compiler-warning-object>))
+                   elseif (instance?(w, ep/<serious-compiler-warning-object>))
                      #":warning"
                    else
                      #":note"
@@ -153,7 +153,7 @@ end;
 
 define swank-function describe-symbol (symbol-name)
   let env = get-environment-object(symbol-name);
-  environment-object-description(*project*, env, *module*)
+  ep/environment-object-description(*project*, env, *module*)
 end;
 
 define function get-environment-object (symbols)
@@ -164,21 +164,21 @@ define function get-environment-object (symbols)
   let project = #f;
   if (env.size == 3)
     project := *project*;
-    library := find-library(project, env[2]);
-    module := find-module(project, env[1], library: library);
+    library := ep/find-library(project, env[2]);
+    module := ep/find-module(project, env[1], library: library);
   end;
   local method check-and-set-module (p, lib)
           unless(module)
-            module := find-module(p, *module*, library: lib);
+            module := ep/find-module(p, *module*, library: lib);
             if (module)
               library := lib;
             end;
           end;
         end;
-  for (p in open-projects())
+  for (p in ep/open-projects())
     unless (project)
-      check-and-set-module(p, project-library(p));
-      do-project-used-libraries(curry(check-and-set-module, p), p, p);
+      check-and-set-module(p, ep/project-library(p));
+      ep/do-project-used-libraries(curry(check-and-set-module, p), p, p);
       if (library)
         project := p;
       end;
@@ -189,22 +189,22 @@ define function get-environment-object (symbols)
     *library* := library;
     *module* := module;
   end;
-  find-environment-object(project, symbol-name,
-                          library: library,
-                          module: module)
+  ep/find-environment-object(project, symbol-name,
+                             library: library,
+                             module: module)
 end function;
 
 define function get-location-as-sexp (search, env-obj)
-  let location = environment-object-source-location(*project*, env-obj);
+  let location = ep/environment-object-source-location(*project*, env-obj);
   if (location)
     let source-name
-      = print-environment-object-location(*project*,
-                                          env-obj,
-                                          absolute-path?: #t);
+      = ep/print-environment-object-location(*project*,
+                                             env-obj,
+                                             absolute-path?: #t);
     let (name, lineno)
-      = source-line-location(location.source-location-source-record,
-                             location.source-location-start-line);
-    let column = location.source-location-start-column;
+      = sr/source-line-location(location.sr/source-location-source-record,
+                                location.sr/source-location-start-line);
+    let column = location.sr/source-location-start-column;
     let snipp = snippet(env-obj) | search;
     list(snipp | name,
          list(#":location",
@@ -230,13 +230,13 @@ define swank-function listener-eval (arg)
   list(#":values", "Done.")
 end;
 
-define function get-name (o :: <environment-object>) => (res :: <string>)
+define function get-name (o :: ep/<environment-object>) => (res :: <string>)
   block ()
-    environment-object-primitive-name
+    ep/environment-object-primitive-name
       (*project*,
-       environment-object-home-name(*project*, o))
+       ep/environment-object-home-name(*project*, o))
   exception (c :: <condition>)
-    environment-object-display-name(*project*, o, #f, qualify-name?: #f)
+    ep/environment-object-display-name(*project*, o, #f, qualify-name?: #f)
   end
 end function;
 
@@ -244,8 +244,8 @@ define method snippet (o :: <object>) => (res :: <string>)
   get-name(o)
 end method;
 
-define method snippet (function :: <dylan-function-object>) => (res :: <string>)
-  let required = function-parameters(*project*, function);
+define method snippet (function :: ep/<dylan-function-object>) => (res :: <string>)
+  let required = ep/function-parameters(*project*, function);
   concatenate("M ", next-method(), " (",
               if (empty?(required))
                 ""
@@ -253,18 +253,18 @@ define method snippet (function :: <dylan-function-object>) => (res :: <string>)
                 reduce1(method (a, b)
                           concatenate(a, ", ", b)
                         end,
-                        map(compose(get-name, parameter-type),
+                        map(compose(get-name, ep/parameter-type),
                             required))
               end,
               ")")
 end method;
 
-define method snippet (generic :: <generic-function-object>) => (res :: <string>)
+define method snippet (generic :: ep/<generic-function-object>) => (res :: <string>)
   concatenate("G ", generic.get-name)
 end method;
 
-define method snippet (domain :: <domain-object>) => (res :: <string>)
-  let specializers = domain-specializers(*project*, domain);
+define method snippet (domain :: ep/<domain-object>) => (res :: <string>)
+  let specializers = ep/domain-specializers(*project*, domain);
   concatenate("D ", domain.get-name, " (",
               if (empty?(specializers))
                 ""
@@ -274,9 +274,9 @@ define method snippet (domain :: <domain-object>) => (res :: <string>)
               end, ")")
 end method;
 
-define method snippet (class :: <class-object>) => (res :: <string>)
+define method snippet (class :: ep/<class-object>) => (res :: <string>)
   let supers = make(<stretchy-vector>);
-  do-direct-superclasses(compose(curry(add!, supers), get-name), *project*, class);
+  ep/do-direct-superclasses(compose(curry(add!, supers), get-name), *project*, class);
   concatenate("C ", class.get-name, " (",
               if (empty?(supers))
                 ""
@@ -286,8 +286,8 @@ define method snippet (class :: <class-object>) => (res :: <string>)
               end, ")")
 end method;
 
-define method snippet (zlot :: <slot-object>) => (res :: <string>)
-  concatenate("S ", zlot.get-name, " :: ", slot-type(*project*, zlot).get-name)
+define method snippet (zlot :: ep/<slot-object>) => (res :: <string>)
+  concatenate("S ", zlot.get-name, " :: ", ep/slot-type(*project*, zlot).get-name)
 end method;
 
 define swank-function xref (kind :: <symbol>, name :: <string>)
@@ -312,59 +312,59 @@ define macro xref-function-definer
 end macro;
 
 define xref-function calls (env-obj)
-  source-form-clients(*project*, env-obj)
+  ep/source-form-clients(*project*, env-obj)
 end;
 
 define xref-function references (env-obj)
-  source-form-clients(*project*, env-obj)
+  ep/source-form-clients(*project*, env-obj)
 end;
 
 define xref-function sets (env-obj)
   // TODO: returns all references, needs to find actual setters
-  source-form-clients(*project*, env-obj)
+  ep/source-form-clients(*project*, env-obj)
 end;
 
 define xref-function binds (env-obj)
   // TODO: returns all references, needs to find actual setters
-  source-form-clients(*project*, env-obj)
+  ep/source-form-clients(*project*, env-obj)
 end;
 
 define xref-function macroexpands (env-obj)
-  macro-call-source-forms(*project*, env-obj)
+  ep/macro-call-source-forms(*project*, env-obj)
 end;
 
 define xref-function specializes (function)
   let generic
     = select (function by instance?)
-        <generic-function-object> => function;
-        <method-object>           => method-generic-function(*project*, function);
-        otherwise                 => #f;
+        ep/<generic-function-object> => function;
+        ep/<method-object>           => ep/method-generic-function(*project*, function);
+        otherwise                    => #f;
       end;
   // TODO: Why is one explicitly returning a vector and the other a list?
   if (generic)
     concatenate-as(<vector>,
                    vector(generic),
-                   generic-function-object-methods(*project*, generic))
+                   ep/generic-function-object-methods(*project*, generic))
   else
     #()
   end
 end;
 
 define xref-function callers (env-obj)
-  source-form-clients(*project*, env-obj)
+  ep/source-form-clients(*project*, env-obj)
 end;
 
 define xref-function callees (env-obj)
   // TODO: filter for function definitions
-  source-form-used-definitions(*project*, env-obj)
+  ep/source-form-used-definitions(*project*, env-obj)
 end;
 
 define swank-function operator-arglist (symbol, package)
   let env-obj = get-environment-object(symbol);
   if (env-obj)
-    concatenate(print-function-parameters(*project*, env-obj, *module*),
+    concatenate(ep/print-function-parameters(*project*, env-obj, *module*),
                 " => ",
-                print-function-values(*project*, env-obj, *module*))
+                ep/print-function-values(*project*, env-obj, *module*))
   else
     #"nil"
   end
@@ -372,23 +372,23 @@ end;
 
 define function get-names (env-objs)
   let module = if (instance?(*module*, <string>))
-                 find-module(*project*, *module*)
+                 ep/find-module(*project*, *module*)
                else
                  *module*
                end;
-  sort!(map(rcurry(curry(environment-object-display-name, *project*),
+  sort!(map(rcurry(curry(ep/environment-object-display-name, *project*),
                    module, qualify-names?: #t),
             env-objs))
 end function;
 
 define swank-function dylan-subclasses (symbols)
   let env-obj = get-environment-object(symbols);
-  get-names(class-direct-subclasses(*project*, env-obj))
+  get-names(ep/class-direct-subclasses(*project*, env-obj))
 end;
 
 define swank-function dylan-superclasses (symbol)
   let env-obj = get-environment-object(symbol);
-  get-names(class-direct-superclasses(*project*, env-obj))
+  get-names(ep/class-direct-superclasses(*project*, env-obj))
 end;
 
 define function write-to-emacs (stream, s-expression)
@@ -433,7 +433,6 @@ define function main (args)
   local method open ()
           block ()
             let socket = make(<server-socket>, port: port);
-            format-out("Waiting for connection on port %d\n", port);
             if (tmpfile)
               with-open-file (file = tmpfile, direction: #"output")
                 write(file, integer-to-string(port));
@@ -450,7 +449,7 @@ define function main (args)
   dynamic-bind (*dswank-stream* = stream)
     *server* := start-compiler(stream);
     let greeting = concatenate("Welcome to dswank - the ",
-                               release-full-name(),
+                               release-info/release-full-name(),
                                " DIME interface\n");
     write-to-emacs(stream, list(#":write-string", greeting));
     while (#t)
