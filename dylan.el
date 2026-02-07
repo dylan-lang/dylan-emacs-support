@@ -1397,6 +1397,8 @@ LOUDLY is as for `font-lock-fontify-region'."
                 (re-search-forward regexp nil t))
         (match-string-no-properties 1)))))
 
+;;; TODO(cgay): This doesn't verify that the LID file includes the current buffer's file.
+;;; There could be multiple LID files for multile libraries in the same directory.
 (defun dylan-find-buffer-library (path depth)
   "Return the name of the Dylan library the current buffer is in.
 Look up libraries in PATH.

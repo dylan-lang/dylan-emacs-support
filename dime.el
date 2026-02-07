@@ -1946,22 +1946,25 @@ Return nil if there's no process object for the connection."
 ;;; `dime-eval' and `dime-eval-async'. You can use it directly if
 ;;; you need to, but the others are usually more convenient.
 
+;;; TODO(cgay): It seems to me that MODULE should come from the Module: header in the
+;;; current buffer and dylan-buffer-module could be deleted. But I'm new here so maybe I
+;;; misunderstand.
 (cl-defmacro dime-rex ((&rest saved-vars)
                        (sexp &optional
-                             (project dylan-buffer-module)
+                             (module dylan-buffer-module)
                              (thread 'dime-current-thread))
                        &rest continuations)
-  "(dime-rex (VAR ...) (SEXP &optional PROJECT THREAD) CLAUSES ...)
+  "(dime-rex (VAR ...) (SEXP &optional MODULE THREAD) CLAUSES ...)
 
 Remote EXecute SEXP.
 
 VARs are a list of saved variables visible in the other forms.  Each
 VAR is either a symbol or a list (VAR INIT-VALUE).
 
-SEXP is evaluated and the princed version is sent to Dylan.
+SEXP is evaluated and the PRINCed value is sent to Dylan.
 
-PROJECT is evaluated and Dylan binds *BUFFER-PROJECT* to this project.
-The default value is dylan-buffer-module.
+MODULE is evaluated and sent to Dylan to use as module to use for lookup when
+executing SEXP.  The default value is dylan-buffer-module.
 
 CLAUSES is a list of patterns with same syntax as
 `dime--destructuring-case'.  The result of the evaluation of SEXP is
@@ -1978,12 +1981,15 @@ versions cannot deal with that."
                               (symbol (list var var))
                               (cons var)))
        (dime-dispatch-event
-        (list :emacs-rex ,sexp ,project ,thread
+        (list :emacs-rex ,sexp ,module ,thread
               (lambda (,result)
                 (dime--destructuring-case ,result
                   ,@continuations)))))))
 
 ;;; Interface
+;;;
+;;; TODO(cgay): This uses dime-buffer-project, which is a *module* name, and then falls
+;;; back to (dime-find-buffer-project) which returns a *library* name. What gives?
 (defun dime-current-project ()
   "Return the Open Dylan project in the current context.
 If `dime-buffer-project' has a value then return that, otherwise

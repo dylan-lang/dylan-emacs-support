@@ -5,14 +5,18 @@ copyright: Original Code is Copyright (c) 2008-2012 Dylan Hackers;
 License:   See License.txt in this distribution for details.
 Warranty:  Distributed WITHOUT WARRANTY OF ANY KIND
 
-define method start-compiler (stream)
+
+define variable *server* :: false-or(command-lines/<command-line-server>) = #f;
+
+define method start-compiler
+    (stream) => (server :: command-lines/<command-line-server>)
   let input-stream = make(<string-stream>, direction: #"input");
   let output-stream = make(<emacs-output-wrapper-stream>,
                            inner-stream: stream,
                            direction: #"output");
-  environment-commands/make-environment-command-line-server
-    (input-stream:   input-stream,
-     output-stream:  output-stream)
+  *server* := environment-commands/make-environment-command-line-server
+                (input-stream:   input-stream,
+                 output-stream:  output-stream)
 end method;
 
 define class <emacs-output-wrapper-stream> (<wrapper-stream>)
@@ -54,7 +58,7 @@ define method write-line
   new-line(stream);
 end method;
 
-define function run-compiler
-    (server :: command-lines/<command-line-server>, string :: <string>) => ()
-  command-lines/execute-command-line(server, string);
+define function run-compiler-command
+    (string :: <string>) => ()
+  command-lines/execute-command-line(*server*, string);
 end function;

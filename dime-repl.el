@@ -774,14 +774,15 @@ earlier in the buffer."
           (goto-char start)
           (insert ";;; output flushed"))))))
 
-(defun dime-repl-set-project (project)
-  "Set the project of the REPL buffer to PROJECT."
+(defun dime-repl-set-project (project-name)
+  "Set the project of the REPL buffer to PROJECT-NAME, opening the project if
+   necessary."
   (interactive (list (let* ((p (dime-current-project)))
                        (dime-read-project-name "Project: " p))))
   (with-current-buffer (dime-repl-output-buffer)
     (let ((previous-point (- (point) dime-repl-input-start-mark)))
       (cl-destructuring-bind (name prompt-string)
-          (dime-repl-shortcut-eval `(swank:set-package ,project))
+          (dime-repl-shortcut-eval `(swank:set-project ,project-name))
         (setf (dime-dylan-project-prompt-string) prompt-string)
         (setf dime-buffer-project name)
         (dime-repl-insert-prompt)
