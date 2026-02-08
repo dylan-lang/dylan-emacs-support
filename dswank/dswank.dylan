@@ -20,11 +20,10 @@ define function current-repl-project () => (project :: ep/<project-object>)
     | error("No project has been set, try dime-repl-set-project.")
 end function;
 
-// TODO(cgay): Not yet sure under what circumstances these two variables can be expected
-// to be non-false. Why are these necessary at all? I would think *project* suffices and
-// every call to a swank-function should include the current buffer's filename and the
-// value of the Module: header so that the module and library can be found.
-define thread variable *library* :: false-or(ep/<library-object>) = #f;
+// TODO(cgay): Not yet sure under what circumstances this variable can be expected to be
+// non-false. Why is this necessary at all? I would think *project* suffices and every
+// call to a swank-function should include the current buffer's filename and the value of
+// the Module: header so that the module and library can be found.
 define thread variable *module-name* :: false-or(<string>) = #f;
 
 define constant $emacs-commands = make(<table>);
@@ -41,6 +40,7 @@ end macro;
 
 define emacs-command emacs-rex (command, module-name, thread-id, request-id)
   block ()
+    debug-to-repl("emacs-rex(%=, %=, %=, %=)", command, module-name, thread-id, request-id);
     let function = $swank-functions[command.head];
     *module-name* := module-name;
     let result = apply(function, command.tail);
@@ -171,49 +171,81 @@ end;
 
 define swank-function describe-symbol (dylan-name)
   let project = current-repl-project();
-  // TODO: Can we make get-environment-object return the module and library and second
-  // and third values so we can use them below?
-  let object = get-environment-object(dylan-name);
-  let module = ep/find-module(project, *module-name*); // TODO: library: ...
+  let (object, module) = get-environment-object(dylan-name);
   ep/environment-object-description(project, object, module)
 end;
 
-define function get-environment-object (symbols)
-  let env = split(symbols, ":");
-  let symbol-name = env[0];
-  let library = #f;
-  let module = #f;
-  let project = #f;
-  if (env.size == 3)
-    project := *project*;       // ??? project = library name, right?
-    library := ep/find-library(project, env[2]);
-    module := ep/find-module(project, env[1], library: library);
-  end;
-  local method check-and-set-module (p, lib)
-          unless(module)
-            module := ep/find-module(p, *module-name*, library: lib);
-            if (module)
-              library := lib;
-            end;
-          end;
-        end;
-  for (p in ep/open-projects())
-    unless (project)
-      check-and-set-module(p, ep/project-library(p));
-      ep/do-project-used-libraries(curry(check-and-set-module, p), p, p);
-      if (library)
-        project := p;
+define function get-environment-object
+    (dylan-name :: <string>)
+ => (object :: false-or(ep/<environment-object>),
+     module :: false-or(ep/<module-object>),
+     library :: false-or(ep/<library-object>))
+  block (return)
+    // First check the current project, then check all open projects, so that if
+    // dylan-name is unqualified and exists in two modules the current project wins.
+    if (*project*)
+      let (obj, mod, lib) = find-object-in-project(*project*, dylan-name);
+      if (obj)
+        return(obj, mod, lib)
       end;
     end;
-  end;
-  if (env.size == 1)
-    *project* := project;
-    *library* := library;
-    *module-name* := module;
-  end;
-  ep/find-environment-object(project, symbol-name,
-                             library: library,
-                             module: module)
+    for (project in ep/open-projects())
+      if (project ~== *project*)
+        let (obj, mod, lib) = find-object-in-project(project, dylan-name);
+        if (obj)
+          return(obj, mod, lib);
+        end;
+      end;
+    end;
+  end
+end function;
+
+define function find-object-in-project
+    (project :: ep/<project-object>, dylan-name :: <string>)
+ => (object :: false-or(ep/<environment-object>),
+     module :: false-or(ep/<module-object>),
+     library :: false-or(ep/<library-object>))
+  block (return)
+    let (object-name, module-name, library-name)
+      = apply(values, split(dylan-name, ':'));
+    local
+      method check-module (proj, lib, mod)
+        if (~module-name
+              | ep/environment-object-basic-name(proj, mod) = module-name)
+          let obj = ep/find-environment-object(proj, object-name,
+                                               library: lib, module: mod);
+          if (obj)
+            return(obj, mod, lib);
+          end;
+        end;
+      end,
+      method check-library (proj, lib)
+        // Find object-name[:module-name] in lib...
+        let module = module-name & ep/find-module(project, module-name, library: lib);
+        if (module)
+          check-module(proj, lib, module)
+        else
+          for (module in ep/library-modules(proj, lib, imported?: #t))
+            check-module(proj, lib, module);
+          end;
+        end;
+      end;
+    let library = library-name & ep/find-library(project, library-name);
+    if (library)
+      // A library was explicitly specified so that's the only one we check.
+      check-library(project, library)
+    else
+      let library = ep/project-library(project);
+      check-library(project, library)
+        | ep/do-project-used-libraries(method (proj, lib)
+                                         let (obj, mod, lib) = check-library(proj, lib);
+                                         if (obj)
+                                           return(obj, mod, lib);
+                                         end;
+                                       end,
+                                       project, project)
+    end
+  end block
 end function;
 
 define function get-location-as-sexp (search, env-obj)
@@ -388,12 +420,11 @@ end;
 define swank-function operator-arglist (symbol, module-name)
   // TODO(cgay): module-name is unused.
   let project = current-repl-project();
-  let env-obj = get-environment-object(symbol);
-  let module :: ep/<module-object> = ep/find-module(project, *module-name*);
-  if (env-obj)
-    concatenate(ep/print-function-parameters(project, env-obj, module),
+  let (object, module) = get-environment-object(symbol);
+  if (object)
+    concatenate(ep/print-function-parameters(project, object, module),
                 " => ",
-                ep/print-function-values(project, env-obj, module))
+                ep/print-function-values(project, object, module))
   else
     #"nil"
   end
@@ -407,8 +438,8 @@ define function get-names (env-objs)
             env-objs))
 end function;
 
-define swank-function dylan-subclasses (symbols)
-  let env-obj = get-environment-object(symbols);
+define swank-function dylan-subclasses (dylan-name)
+  let env-obj = get-environment-object(dylan-name);
   get-names(ep/class-direct-subclasses(current-repl-project(), env-obj))
 end;
 
@@ -432,7 +463,7 @@ define thread variable *dswank-stream* = #f;
 // buffer.
 define function debug-to-repl (format-string :: <string>, #rest format-args)
   let text = apply(format-to-string,
-                   concatenate("*** DEBUG: ", format-string),
+                   concatenate("*** DEBUG: ", format-string, "\n"),
                    format-args);
   write-to-emacs(*dswank-stream*, list(#":write-string", text));
 end function;
@@ -481,7 +512,6 @@ define function main (args)
     while (#t)
       let length = string-to-integer(read(stream, 6), base: 16);
       let line = read(stream, length);
-      debug-to-repl("read: %s", line);
       let expr = read-lisp(make(<string-stream>,
                                 direction: #"input", contents: line));
       let function = $emacs-commands[expr.head];
