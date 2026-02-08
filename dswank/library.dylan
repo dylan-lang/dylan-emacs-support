@@ -11,6 +11,7 @@ define library dswank
   use common-dylan;
   use dfmc-back-end-implementations; // Is this used for effect?
   use environment-commands;
+  use environment-internal-commands; // For side effect
   use environment-protocols;
   use file-source-records;
   use io;
@@ -35,6 +36,8 @@ define module dswank
   use common-dylan;
   use environment-commands,
     prefix: "environment-commands/";
+  use environment-internal-commands, // For side effect
+    prefix: "environment-internal-commands/";
   use environment-protocols,
     prefix: "ep/";              // This is the big one.
   use file-system;
