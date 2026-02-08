@@ -171,11 +171,11 @@ end;
 
 define swank-function describe-symbol (dylan-name)
   let project = current-repl-project();
-  let (object, module) = get-environment-object(dylan-name);
+  let (object, module) = find-object(dylan-name);
   ep/environment-object-description(project, object, module)
 end;
 
-define function get-environment-object
+define function find-object
     (dylan-name :: <string>)
  => (object :: false-or(ep/<environment-object>),
      module :: false-or(ep/<module-object>),
@@ -273,8 +273,8 @@ define function get-location-as-sexp (search, env-obj)
   end
 end function;
 
-define swank-function find-definitions-for-emacs (symbol-name)
-  let env-obj = get-environment-object(symbol-name);
+define swank-function find-definitions-for-emacs (dylan-name)
+  let env-obj = find-object(dylan-name);
   list(get-location-as-sexp(#f, env-obj))
 end;
 
@@ -349,7 +349,7 @@ end method;
 
 define swank-function xref (kind :: <symbol>, name :: <string>)
   let function = $xref-functions[kind];
-  let env-obj = get-environment-object(name);
+  let env-obj = find-object(name);
   let result = function(env-obj);
   map(curry(get-location-as-sexp, name), result)
 end;
@@ -417,10 +417,10 @@ define xref-function callees (env-obj)
   ep/source-form-used-definitions(current-repl-project(), env-obj)
 end;
 
-define swank-function operator-arglist (symbol, module-name)
+define swank-function operator-arglist (dylan-name, module-name)
   // TODO(cgay): module-name is unused.
   let project = current-repl-project();
-  let (object, module) = get-environment-object(symbol);
+  let (object, module) = find-object(dylan-name);
   if (object)
     concatenate(ep/print-function-parameters(project, object, module),
                 " => ",
@@ -439,12 +439,12 @@ define function get-names (env-objs)
 end function;
 
 define swank-function dylan-subclasses (dylan-name)
-  let env-obj = get-environment-object(dylan-name);
+  let env-obj = find-object(dylan-name);
   get-names(ep/class-direct-subclasses(current-repl-project(), env-obj))
 end;
 
-define swank-function dylan-superclasses (symbol)
-  let env-obj = get-environment-object(symbol);
+define swank-function dylan-superclasses (dylan-name)
+  let env-obj = find-object(dylan-name);
   get-names(ep/class-direct-superclasses(current-repl-project(), env-obj))
 end;
 
