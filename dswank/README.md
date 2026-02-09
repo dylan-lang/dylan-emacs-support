@@ -15,12 +15,18 @@
   (require 'dime)
   (dime-setup '(dime-repl dime-note-tree))
   (setq dime-dylan-implementations
-        `((opendylan ("/home/me/dylan/workspaces/dylan-emacs-support/_build/bin/dswank")
+        `((opendylan ("/home/me/dylan/workspaces/dylan-emacs-support/_build/bin/dswank"
+                      "--debug")
                      ;; The registry setting should be found dynamically but for now
                      ;; must be set specifically for the code I'm working on at the
                      ;; moment.
-                     :env ("OPEN_DYLAN_USER_REGISTRIES=/home/me/dylan/workspaces/dylan-emacs-support/registry"))))
+                     :env ("OPEN_DYLAN_USER_REGISTRIES=/home/me/dylan/workspaces/dylan-emacs-support/registry"
+                           "OPEN_DYLAN_USER_ROOT=/home/me/dylan/workspaces/dylan-emacs-support/_build"))))
   ```
+
+  Notice the `--debug` flag so that output from `debug-to-repl` is shown, and that it is
+  (currently) important to specify **both** the `...REGISTRIES` and `...ROOT` environment
+  variables.
 
 * The easiest way to add debug output to the dswank Dylan code is to call
   `debug-to-repl`. The output shows up in the `*dime-repl nil*` buffer.

@@ -466,22 +466,27 @@ define function write-to-emacs (stream, s-expression)
   format(stream, "%s%s", len, s-expression);
 end function;
 
-define thread variable *dswank-stream* = #f;
+define variable *debug-swank?* = #f;
 
 // Send debug output to the REPL. Of course it can also be found in the *dime-events*
 // buffer.
 define function debug-to-repl (format-string :: <string>, #rest format-args)
-  let text = apply(format-to-string,
-                   concatenate("*** DEBUG: ", format-string, "\n"),
-                   format-args);
-  write-to-emacs(*dswank-stream*, list(#":write-string", text));
+  if (*debug-swank?*)
+    let text = apply(format-to-string,
+                     concatenate("*** DEBUG: ", format-string, "\n"),
+                     format-args);
+    write-to-emacs(*dswank-stream*, list(#":write-string", text));
+  end;
 end function;
 
+define thread variable *dswank-stream* = #f;
+
 define function main (args)
+  *debug-swank?* := member?("--debug", args, test: \=);
   start-sockets();
   let tmpfile = #f;
   let port = 4005;
-  unless (args.size >= 1 & args[0] = "--listen")
+  unless (member?("--listen", args, test: \=))
     let line = read-line(*standard-input*);
     let sexp = read-lisp(make(<string-stream>,
                               direction: #"input", contents: line));
