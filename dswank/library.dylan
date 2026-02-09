@@ -43,6 +43,7 @@ define module dswank
   use file-system;
   use format;
   use lisp-reader;
+  use locators;
   use registry-projects,
     prefix: "registry-projects/";
   use release-info,

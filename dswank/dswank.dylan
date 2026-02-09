@@ -126,11 +126,25 @@ define swank-function compile-file-for-emacs (filename, #rest foo)
 end;
 
 define function find-project-for-file
-    (filename :: <string>) => (project :: false-or(ep/<project-object>))
+    (pathname :: <string>) => (project :: false-or(ep/<project-object>))
+  // `pathname` is an absolute pathname string.  It's possible for this to be the same
+  // file as one of the source records but not be = to a source record pathname string
+  // due to symlinks (specifically /tmp vs /private/tmp on macOS) so we attempt to
+  // resolve all pathnames.
+  local
+    method resolve (path)
+      let locator = as(<file-locator>, path);
+      block ()
+        resolve-locator(locator)   // resolve-file after OD 2026.2
+      exception (err :: <file-system-error>)
+        locator
+      end
+    end;
+  let pathname = resolve(pathname);
   block (return)
     for (proj in ep/open-projects())
       for (source in proj.ep/project-sources)
-        if (source.sr/source-record-location = filename)
+        if (resolve(sr/source-record-location(source)) = pathname)
           return(proj);
         end;
       end;
