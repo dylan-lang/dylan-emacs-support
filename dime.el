@@ -18,7 +18,7 @@
 
 ;;; Commentary:
 
-;; Dime is the Dylan interaction mode for Emacs.  It is essentially an
+;; DIME is the Dylan Interactor Mode for Emacs.  It is essentially an
 ;; IDE (integrated development environment) for the Dylan programming
 ;; language and the Open Dylan toolchain.
 
@@ -34,8 +34,8 @@
 
 ;; * An inspector to interactively look at run-time data.
 
-;; Dime works by opening a socket between Emacs and Open Dylan and
-;; communicating via the dswank protocol.  Dime traces its history back
+;; DIME works by opening a socket between Emacs and Open Dylan and
+;; communicating via the dswank protocol.  DIME traces its history back
 ;; to SLIME (the Superior Lisp Interaction Mode for Emacs).
 
 ;;; Code:
@@ -82,7 +82,7 @@ This is set only in buffers bound to specific projects.")
   (defvar dime-path
     (let ((path (or (locate-library "dime") load-file-name)))
       (and path (file-name-directory path)))
-    "Directory containing the Dime package.
+    "Directory containing the DIME package.
 This is used to load the supporting Open Dylan library, Swank.
 The default value is automatically computed from the location of the
 Emacs Lisp package."))
@@ -92,7 +92,7 @@ Emacs Lisp package."))
 
 ;;;###autoload
 (defun dime-setup (&optional contribs)
-  "Setup Emacs so that `dylan-mode' buffers always use Dime.
+  "Setup Emacs so that `dylan-mode' buffers always use DIME.
 
 CONTRIBS is a list of contrib packages to load."
   (when (member 'dylan-mode dime-dylan-modes)
@@ -109,7 +109,7 @@ CONTRIBS is a list of contrib packages to load."
         (funcall init)))))
 
 (defun dime-dylan-mode-hook ()
-  "Hook function to enable Dime in `dylan-mode-hook'."
+  "Hook function to enable DIME in `dylan-mode-hook'."
   (dime-mode 1))
 
 (eval-and-compile
@@ -125,7 +125,7 @@ Return nil if the ChangeLog file cannot be found."
           (goto-char (point-min))
           (setq date (symbol-name (read (current-buffer))))))
       (when interactivep
-        (message "Dime ChangeLog dates %s." date))
+        (message "DIME ChangeLog dates %s." date))
       date)))
 
 (defvar dime-protocol-version "2011-02-13")
@@ -154,7 +154,7 @@ debugger backtraces and apropos listings."
   :group 'dime-ui)
 
 (defcustom dime-kill-without-query-p nil
-  "If non-nil, kill Dime processes without query when quitting Emacs.
+  "If non-nil, kill DIME processes without query when quitting Emacs.
 This applies to the *inferior-dylan* buffer and the network connections."
   :type 'boolean
   :group 'dime-ui)
@@ -174,7 +174,7 @@ dime.el, but could also be set to an absolute filename."
   :group 'dime-dylan)
 
 (defcustom dime-connected-hook nil
-  "List of functions to call when Dime connects to Dylan."
+  "List of functions to call when DIME connects to Dylan."
   :type 'hook
   :group 'dime-dylan)
 
@@ -333,7 +333,7 @@ PROPERTIES specifies any default face properties."
                      collect `(define-dime-debug-face ,@face))))
 
 (defmacro define-dime-debug-face (name description &optional default)
-  "Helper to define Dime debug face.
+  "Helper to define DIME debug face.
 
 NAME, DESCRIPTION, DEFAULT are as for `defface'."
   (let ((facename (intern (format "dime-debug-%s-face" (symbol-name name)))))
@@ -377,7 +377,7 @@ more easily. See `dime-init-keymaps'.")
 
 (define-minor-mode dime-mode
   "\\<dime-mode-map>\
-Dime: Dylan interaction mode for Emacs (minor-mode).
+DIME: Dylan interaction mode for Emacs (minor-mode).
 
 Commands to compile the current buffer's source file and visually
 highlight any resulting compiler notes and warnings:
@@ -418,14 +418,14 @@ Full set of commands:
 
 (defun dime-modeline-string ()
   "Return the string to display in the modeline.
-\"Dime\" only appears if we aren't connected.  If connected,
+\"DIME\" only appears if we aren't connected.  If connected,
 include project-name, connection-name, and possibly some state
 information."
   (let ((conn (dime-current-connection)))
     ;; Bail out early in case there's no connection, so we won't
     ;; implicitly invoke `dime-connection' which may query the user.
     (if (not conn)
-        (and dime-mode " Dime")
+        (and dime-mode " DIME")
         (let ((local (eq conn dime-buffer-connection))
               (pkg   (dime-current-project)))
           (concat " "
@@ -450,7 +450,7 @@ information."
 ;;;;; Key bindings
 
 (defvar dime-parent-map nil
-  "Parent keymap for shared between all Dime related modes.")
+  "Parent keymap shared between all DIME related modes.")
 
 (defvar dime-parent-bindings
   '(("\M-."      dime-edit-definition)
@@ -488,31 +488,31 @@ information."
     ("\C-w"  dime-who-map)))
 
 (defvar dime-editing-map nil
-  "Dime keys for buffers where the user can edit S-expressions.
+  "DIME keys for buffers where the user can edit S-expressions.
 
 E.g. source buffers and the REPL.")
 
 (defvar dime-editing-keys
   `(;; Arglist display & completion
-    ("\M-\t"      dime-complete-symbol)
-    (" "          dime-space)
+    ("\M-\t"        dime-complete-symbol)
+    (" "            dime-space)
     ;; Evaluating
-    ;;("\C-x\M-e" dime-eval-last-expression-display-output :inferior t)
-    ("\C-c\C-p"   dime-pprint-eval-last-expression)
+    ;;("\C-x\M-e"   dime-eval-last-expression-display-output :inferior t)
+    ("\C-c\C-p"     dime-pprint-eval-last-expression)
     ;; Macroexpand
-    ("\C-c\C-m"   dime-expand-1)
-    ("\C-c\M-m"   dime-macroexpand-all)
+    ("\C-c\C-m"     dime-expand-1)
+    ("\C-c\M-m"     dime-macroexpand-all)
     ;; Misc
-    ("\C-c\C-u"   dime-undefine-function)
-    (,(kbd "C-M-.")   dime-next-location)
-    (,(kbd "C-M-,")   dime-previous-location)
+    ("\C-c\C-u"     dime-undefine-function)
+    (,(kbd "C-M-.") dime-next-location)
+    (,(kbd "C-M-,") dime-previous-location)
     ;; Obsolete, redundant bindings
-    ("\C-c\C-i" dime-complete-symbol)
+    ("\C-c\C-i"     dime-complete-symbol)
     ;;("\M-*" pop-tag-mark) ; almost to clever
     ))
 
 (defvar dime-mode-map nil
-  "Dime mode keymap.")
+  "DIME mode keymap.")
 
 (defvar dime-keys
   '( ;; Compiler notes
@@ -551,7 +551,7 @@ E.g. source buffers and the REPL.")
     (?a dime-who-specializes)))
 
 (defun dime-init-keymaps ()
-  "(Re)initialize the keymaps for Dime mode."
+  "(Re)initialize the keymaps for DIME mode."
   (interactive)
   (dime-init-keymap 'dime-doc-map t t dime-doc-bindings)
   (dime-init-keymap 'dime-who-map t t dime-who-bindings)
@@ -564,7 +564,7 @@ E.g. source buffers and the REPL.")
   (set-keymap-parent dime-mode-indirect-map dime-mode-map))
 
 (defun dime-init-keymap (keymap-name prefixp bothp bindings)
-  "Helper to initialize one of the Dime keymaps."
+  "Helper to initialize one of the DIME keymaps."
   (set keymap-name (make-sparse-keymap))
   (when prefixp (define-prefix-command keymap-name))
   (dime-bind-keys (eval keymap-name) bothp bindings))
@@ -601,7 +601,7 @@ This list of flushed between commands.")
   (setq dime-pre-command-actions nil))
 
 (defun dime-post-command-hook ()
-  "Install Dime `pre-command-hook'."
+  "Install DIME `pre-command-hook'."
   (when (null pre-command-hook) ; sometimes this is lost
     (add-hook 'pre-command-hook 'dime-pre-command-hook)))
 
@@ -612,7 +612,7 @@ This list of flushed between commands.")
 
 ;;;; Framework'ey bits
 ;;;
-;;; This section contains some standard Dime idioms: basic macros,
+;;; This section contains some standard DIME idioms: basic macros,
 ;;; ways of showing messages to the user, etc. All the code in this
 ;;; file should use these functions when applicable.
 ;;;
@@ -951,7 +951,7 @@ last activated the buffer."
   "Translate the Dylan filename FILENAME to an Emacs filename."
   (funcall dime-from-dylan-filename-function filename))
 
-;;;; Starting Dime
+;;;; Starting DIME
 ;;;
 ;;; This section covers starting an inferior-dylan, compiling and
 ;;; starting the server, initiating a network connection.
@@ -1130,7 +1130,7 @@ DIRECTORY change to this directory before starting the process.
 
 ;;;;; Start inferior dylan
 ;;;
-;;; Here is the protocol for starting Dime:
+;;; Here is the protocol for starting DIME:
 ;;;
 ;;;   0. Emacs recompiles/reloads dime.elc if it exists and is stale.
 ;;;   1. Emacs starts an inferior Dylan process.
@@ -1378,7 +1378,7 @@ The default condition handler for timer functions (see
 ;;; This section covers the low-level networking: establishing
 ;;; connections and encoding/decoding protocol messages.
 ;;;
-;;; Each Dime protocol message beings with a 3-byte length header
+;;; Each DIME protocol message beings with a 3-byte length header
 ;;; followed by an S-expression as text. The sexp must be readable
 ;;; both by Emacs and by Open Dylan, so if it contains any embedded
 ;;; code fragments they should be sent as strings.
@@ -1409,7 +1409,7 @@ first line of the file."
 (defun dime-net-connect (host port coding-system)
   "Establish a connection with a Dylan."
   (let* ((inhibit-quit nil)
-         (proc (open-network-stream "Dime Dylan" nil host port))
+         (proc (open-network-stream "DIME Dylan" nil host port))
          (buffer (dime-make-net-buffer " *dime-connection*")))
     (push proc dime-net-processes)
     (set-process-buffer proc buffer)
@@ -1644,7 +1644,7 @@ Signal an error if there's no connection."
 ;; FIXME: should be called auto-start
 (defcustom dime-auto-connect 'never
   "Controls auto connection when information from dylan process is needed.
-This doesn't mean it will connect right after Dime is loaded."
+This doesn't mean it will connect right after DIME is loaded."
   :group 'dime-mode
   :type '(choice (const never)
                  (const always)
@@ -1653,7 +1653,7 @@ This doesn't mean it will connect right after Dime is loaded."
 (defun dime-auto-connect ()
   (cond ((or (eq dime-auto-connect 'always)
              (and (eq dime-auto-connect 'ask)
-                  (y-or-n-p "No connection.  Start Dime? ")))
+                  (y-or-n-p "No connection.  Start DIME? ")))
          (save-window-excursion
            (dime)
            (while (not (dime-current-connection))
@@ -1776,7 +1776,7 @@ This is automatically synchronized from Dylan.")
 ;;;;; Connection setup
 
 (defvar dime-connection-counter 0
-  "The number of Dime connections made. For generating serial numbers.")
+  "The number of DIME connections made. For generating serial numbers.")
 
 ;;; Interface
 (defun dime-setup-connection (process)
@@ -2328,7 +2328,7 @@ This is only used by the repl command sayoonara."
               (string-match "^\\*inferior-dylan*" (buffer-name buf))
               (string-match "^\\*dime-repl .*\\*$" (buffer-name buf))
               (string-match "^\\*dime-debug .*\\*$" (buffer-name buf))
-              (string-match "^\\*Dime.*\\*$" (buffer-name buf)))
+              (string-match "^\\*DIME.*\\*$" (buffer-name buf)))
       (kill-buffer buf))))
 
 ;;;; Compilation and the creation of compiler-note annotations
@@ -3700,7 +3700,7 @@ FILE-ALIST is an alist of the form ((FILENAME . (XREF ...)) ...)."
 
 (defun dime-postprocess-xref (original-xref)
   "Process (for normalization purposes) an Xref comming directly
-from SWANK before the rest of Dime sees it. In particular,
+from SWANK before the rest of DIME sees it. In particular,
 convert ETAGS based xrefs to actual file+position based
 locations."
   (if (not (dime-xref-has-location-p original-xref))
@@ -3902,7 +3902,7 @@ the display stuff that we neither need nor want."
 
 Note: If a prefix argument is in effect then the result will be
 inserted in the current buffer."
-  (interactive (list (dime-read-from-minibuffer "Dime Eval: ")))
+  (interactive (list (dime-read-from-minibuffer "DIME Eval: ")))
   (cl-case current-prefix-arg
     ((nil)
      (dime-eval-with-transcript `(swank:interactive-eval ,string)))
@@ -4225,12 +4225,12 @@ If PROJECT is NIL, then search in all projects."
 arg, you're interactively asked for parameters of the search."
   (interactive
    (if current-prefix-arg
-       (list (read-string "Dime Apropos: ")
+       (list (read-string "DIME Apropos: ")
              (y-or-n-p "External symbols only? ")
              (let ((pkg (dime-read-project-name "Project: ")))
                (if (string= pkg "") nil pkg))
              (y-or-n-p "Case-sensitive? "))
-     (list (read-string "Dime Apropos: ") t nil nil)))
+     (list (read-string "DIME Apropos: ") t nil nil)))
   (let ((buffer-project (or project dylan-buffer-module)))
     (dime-eval-async
      `(swank:apropos-list-for-emacs ,string ,only-external-p
@@ -4242,7 +4242,7 @@ arg, you're interactively asked for parameters of the search."
 (defun dime-apropos-all ()
   "Shortcut for (dime-apropos <string> nil nil)"
   (interactive)
-  (dime-apropos (read-string "Dime Apropos: ") nil nil))
+  (dime-apropos (read-string "DIME Apropos: ") nil nil))
 
 (defun dime-apropos-project (project &optional internal)
   "Show apropos listing for symbols in PROJECT.
@@ -4306,7 +4306,7 @@ With prefix argument include internal symbols."
     (dime-eval-describe `(swank:describe-definition-for-emacs ,item ,type))))
 
 (defun dime-info ()
-  "Open Dime manual"
+  "Open DIME manual"
   (interactive)
   (let ((file (expand-file-name "doc/dime.info" dime-path)))
     (if (file-exists-p file)
@@ -4676,7 +4676,7 @@ When displaying XREF information, this goes to the previous reference."
 ;;;; Macroexpansion
 
 (define-minor-mode dime-macroexpansion-minor-mode
-    "Dime mode for macroexpansion"
+    "DIME mode for macroexpansion"
     nil
   " Macroexpand"
   '(("g" . dime-macroexpand-again)))
@@ -4906,7 +4906,7 @@ argument is given, with CL:MACROEXPAND."
 (defvar-local dime-debug-continuations nil
   "List of ids for pending continuation.")
 
-;;;;; Dime debug macros
+;;;;; DIME debug macros
 
 ;; some macros that we need to define before the first use
 
@@ -4932,12 +4932,12 @@ argument is given, with CL:MACROEXPAND."
     (modify-syntax-entry ?< "(" table)
     (modify-syntax-entry ?> ")" table)
     table)
-  "Syntax table for Dime debug mode.")
+  "Syntax table for DIME debug mode.")
 
 (define-derived-mode dime-debug-mode fundamental-mode "dime-debug"
   "Dylan debugger.
 
-In addition to ordinary Dime commands, the following are
+In addition to ordinary DIME commands, the following are
 available:\\<dime-debug-mode-map>
 
 Commands to examine the selected frame:
@@ -4979,7 +4979,7 @@ Full list of commands:
   (erase-buffer)
   (set-syntax-table dime-debug-mode-syntax-table)
   (dime-set-truncate-lines)
-  ;; Make original dime-connection "sticky" for Dime debug commands in this buffer
+  ;; Make original dime-connection "sticky" for DIME debug commands in this buffer
   (setq dime-buffer-connection (dime-connection)))
 
 (set-keymap-parent dime-debug-mode-map dime-parent-map)
@@ -5032,7 +5032,7 @@ Full list of commands:
              (dime-debug-invoke-restart ,number)))
     (define-key dime-debug-mode-map (number-to-string number) fname)))
 
-;;;;; Dime debug buffer creation & update
+;;;;; DIME debug buffer creation & update
 
 (defun dime-debug-buffers (&optional connection)
   "Return a list of all dime-debug buffers (belonging to CONNECTION.)"
@@ -5075,7 +5075,7 @@ The buffer is chosen more or less randomly."
     accu))
 
 (defun dime-debug-setup (thread level condition restarts frames conts)
-  "Setup a new Dime debug buffer.
+  "Setup a new DIME debug buffer.
 CONDITION is a string describing the condition to debug.
 RESTARTS is a list of strings (NAME DESCRIPTION) for each available restart.
 FRAMES is a list (NUMBER DESCRIPTION &optional PLIST) describing the initial
@@ -5147,7 +5147,7 @@ If LEVEL isn't the same as in the buffer reinitialize the buffer."
       (when (not dime-debug-level)
         (dime-popup-buffer-quit t)))))
 
-;;;;;; Dime debug buffer insertion
+;;;;;; DIME debug buffer insertion
 
 (defun dime-debug-insert-condition (condition)
   "Insert the text for CONDITION.
@@ -5276,7 +5276,7 @@ Called on the `point-entered' text-property hook."
         (dime-debug-insert-frames frames more)
         (goto-char pos)))))
 
-;;;;;; Dime debug examining text props
+;;;;;; DIME debug examining text props
 
 (defun dime-debug-restart-at-point ()
   (or (get-text-property (point) 'restart)
@@ -5329,7 +5329,7 @@ Called on the `point-entered' text-property hook."
   (interactive)
   (goto-char dime-debug-backtrace-start-marker))
 
-;;;;;; Dime debug recenter & redisplay
+;;;;;; DIME debug recenter & redisplay
 
 ;; FIXME: these functions need factorization
 
@@ -5495,7 +5495,7 @@ See `dime-output-target-to-marker'."
     ;; that keep the markers. --mkoeppe
     (pop-to-buffer buffer)))
 
-;;;;; Dime debug commands
+;;;;; DIME debug commands
 
 (defun dime-debug-default-action ()
   "Invoke the action at point."
@@ -5540,7 +5540,7 @@ See `dime-output-target-to-marker'."
         (dime-debug-insert-frames (dime-eval `(swank:backtrace ,(1+ last) nil))
                             nil)))))
 
-;;;;;; Dime debug show source
+;;;;;; DIME debug show source
 
 (defun dime-debug-show-source ()
   "Highlight the frame at point's expression in a source code buffer."
@@ -5575,7 +5575,7 @@ See `dime-output-target-to-marker'."
                       (line-end-position)
                       timeout))
 
-;;;;;; Dime debug toggle details
+;;;;;; DIME debug toggle details
 
 (defun dime-debug-toggle-details (&optional on)
   "Toggle display of details for the current frame.
@@ -5658,7 +5658,7 @@ VAR should be a plist with the keys :name, :id, and :value."
                       (lambda (result)
                         (dime-show-description result nil)))))
 
-;;;;;; Dime debug eval and inspect
+;;;;;; DIME debug eval and inspect
 
 (defun dime-debug-eval-in-frame (string)
   "Prompt for an expression and evaluate it in the selected frame."
@@ -5698,7 +5698,7 @@ VAR should be a plist with the keys :name, :id, and :value."
   (dime-eval-async '(swank:inspect-current-condition)
                     'dime-open-inspector))
 
-;;;;;; Dime debug movement
+;;;;;; DIME debug movement
 
 (defun dime-debug-down ()
   "Select next frame."
@@ -5729,7 +5729,7 @@ VAR should be a plist with the keys :name, :id, and :value."
   (interactive)
   (dime-debug-sugar-move 'dime-debug-down))
 
-;;;;;; Dime debug restarts
+;;;;;; DIME debug restarts
 
 (defun dime-debug-quit ()
   "Quit to toplevel."
@@ -5888,7 +5888,7 @@ was called originally."
   (dime-eval-async `(swank:toggle-break-on-signals)
     (lambda (msg) (message "%s" msg))))
 
-;;;;;; Dime debug recompilation commands
+;;;;;; DIME debug recompilation commands
 
 (defun dime-debug-recompile-frame-source (&optional raw-prefix-arg)
   (interactive "P")
@@ -6028,7 +6028,7 @@ was called originally."
 
 (define-derived-mode dime-thread-control-mode fundamental-mode
   "Threads"
-  "Dime Thread Control Panel Mode.
+  "DIME Thread Control Panel Mode.
 
 \\{dime-thread-control-mode-map}
 \\{dime-popup-buffer-mode-map}"
@@ -6080,8 +6080,8 @@ was called originally."
 ;;;;; Connection listing
 
 (define-derived-mode dime-connection-list-mode fundamental-mode
-  "Dime-Connections"
-  "Dime Connection List Mode.
+  "DIME-Connections"
+  "DIME Connection List Mode.
 
 \\{dime-connection-list-mode-map}
 \\{dime-popup-buffer-mode-map}"
@@ -6207,7 +6207,7 @@ was called originally."
   (dime-eval-async `(swank:init-inspector ,string) 'dime-open-inspector))
 
 (define-derived-mode dime-inspector-mode fundamental-mode
-  "Dime-Inspector"
+  "DIME-Inspector"
   "
 \\{dime-inspector-mode-map}
 \\{dime-popup-buffer-mode-map}"
@@ -6674,7 +6674,7 @@ switch-to-buffer."
   (dime-recently-visited-buffer 'emacs-dylan-mode))
 
 (define-dime-selector-method ?c
-  "Dime connections buffer."
+  "DIME connections buffer."
   (dime-list-connections)
   dime-connections-buffer-name)
 
@@ -6686,7 +6686,7 @@ switch-to-buffer."
           "*"))
 
 (define-dime-selector-method ?t
-  "Dime threads buffer."
+  "DIME threads buffer."
   (dime-list-threads)
   dime-threads-buffer-name)
 
@@ -6785,7 +6785,7 @@ Only considers buffers that are not already visible."
 
 (defvar dime-easy-menu
   (let ((C '(dime-connected-p)))
-    `("Dime"
+    `("DIME"
       [ "Edit Definition..."       dime-edit-definition ,C ]
       [ "Return From Definition"   dime-pop-find-definition-stack ,C ]
       [ "Complete Symbol"          dime-complete-symbol ,C ]
@@ -6850,32 +6850,32 @@ Only considers buffers that are not already visible."
 
 (defvar dime-debug-easy-menu
   (let ((C '(dime-connected-p)))
-    `("Dime debug"
-      [ "Next Frame" dime-debug-down t ]
-      [ "Previous Frame" dime-debug-up t ]
-      [ "Toggle Frame Details" dime-debug-toggle-details t ]
-      [ "Next Frame (Details)" dime-debug-details-down t ]
-      [ "Previous Frame (Details)" dime-debug-details-up t ]
+    `("DIME debug"
+      [ "Next Frame"                dime-debug-down t ]
+      [ "Previous Frame"            dime-debug-up t ]
+      [ "Toggle Frame Details"      dime-debug-toggle-details t ]
+      [ "Next Frame (Details)"      dime-debug-details-down t ]
+      [ "Previous Frame (Details)"  dime-debug-details-up t ]
       "--"
-      [ "Eval Expression..." dime-interactive-eval ,C ]
-      [ "Eval in Frame..." dime-debug-eval-in-frame ,C ]
-      [ "Eval in Frame (pretty print)..." dime-debug-pprint-eval-in-frame ,C ]
-      [ "Inspect In Frame..." dime-debug-inspect-in-frame ,C ]
-      [ "Inspect Condition Object" dime-debug-inspect-condition ,C ]
+      [ "Eval Expression..."        dime-interactive-eval ,C ]
+      [ "Eval in Frame..."          dime-debug-eval-in-frame ,C ]
+      [ "Eval in Frame (pprint)..." dime-debug-pprint-eval-in-frame ,C ]
+      [ "Inspect In Frame..."       dime-debug-inspect-in-frame ,C ]
+      [ "Inspect Condition Object"  dime-debug-inspect-condition ,C ]
       "--"
-      [ "Restart Frame" dime-debug-restart-frame ,C ]
-      [ "Return from Frame..." dime-debug-return-from-frame ,C ]
+      [ "Restart Frame"             dime-debug-restart-frame ,C ]
+      [ "Return from Frame..."      dime-debug-return-from-frame ,C ]
       ("Invoke Restart"
-       [ "Continue" dime-debug-continue ,C ]
-       [ "Abort"    dime-debug-abort ,C ]
-       [ "Step"      dime-debug-step ,C ]
-       [ "Step next" dime-debug-next ,C ]
-       [ "Step out"  dime-debug-out ,C ])
+       [ "Continue"                 dime-debug-continue ,C ]
+       [ "Abort"                    dime-debug-abort ,C ]
+       [ "Step"                     dime-debug-step ,C ]
+       [ "Step next"                dime-debug-next ,C ]
+       [ "Step out"                 dime-debug-out ,C ])
       "--"
-      [ "Quit (throw)" dime-debug-quit ,C ]
+      [ "Quit (throw)"              dime-debug-quit ,C ]
       [ "Break With Default Debugger" dime-debug-break-with-default-debugger ,C ])))
 
-(easy-menu-define menubar-dime dime-mode-map "Dime" dime-easy-menu)
+(easy-menu-define menubar-dime dime-mode-map "DIME" dime-easy-menu)
 
 (defun dime-add-easy-menu ()
   (easy-menu-add dime-easy-menu 'dime-mode-map))
@@ -6884,7 +6884,7 @@ Only considers buffers that are not already visible."
 
 (defun dime-debug-add-easy-menu ()
   (easy-menu-define menubar-dime-debug
-    dime-debug-mode-map "Dime debug" dime-debug-easy-menu)
+    dime-debug-mode-map "DIME debug" dime-debug-easy-menu)
   (easy-menu-add dime-debug-easy-menu 'dime-debug-mode-map))
 
 (add-hook 'dime-debug-mode-hook 'dime-debug-add-easy-menu)
@@ -6907,7 +6907,7 @@ Only considers buffers that are not already visible."
      :map dime-mode-map
      :bindings (dime-indent-and-complete-symbol
                 dime-fuzzy-complete-symbol))
-    (:title "Within Dime debug buffers"
+    (:title "Within DIME debug buffers"
      :map dime-debug-mode-map
      :bindings ((dime-debug-default-action "Do 'whatever' with thing at point")
                 (dime-debug-toggle-details "Toggle frame details visualization")
@@ -6937,7 +6937,7 @@ Only considers buffers that are not already visible."
   (setq buffer-read-only nil)
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
-  (insert "Dime: Dylan interaction mode for Emacs (minor-mode).\n\n")
+  (insert "DIME: Dylan interaction mode for Emacs (minor-mode).\n\n")
   (dolist (mode dime-cheat-sheet-table)
     (let ((title (cl-getf mode :title))
           (mode-map (cl-getf mode :map))
