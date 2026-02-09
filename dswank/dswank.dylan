@@ -119,7 +119,7 @@ end;
 define swank-function compile-file-for-emacs (filename, #rest foo)
   let project = find-project-for-file(filename)
                   | error("no project found for %=", filename);
-  run-compiler-command(concatenate("build ", ep/project-name(project)));
+  run-compiler-command(concatenate("build -nolink ", ep/project-name(project)));
   let notes = compiler-notes-for-emacs();
   //result is output-pathname, notes, success/failure of compilation
   list("pathname", notes, "T")
