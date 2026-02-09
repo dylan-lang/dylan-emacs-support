@@ -722,7 +722,7 @@ It should be used for \"background\" messages such as argument lists."
   (let ((completion-ignore-case t))
     (completing-read prompt (dime-bogus-completion-alist
                              (dime-eval
-                              `(swank:list-all-package-names t)))
+                              `(swank:list-all-project-names)))
                      nil t initial-value)))
 
 ;; Interface
@@ -1807,22 +1807,25 @@ This is automatically synchronized from Dylan.")
   "Initialize CONNECTION with INFO received from Dylan."
   (let ((dime-dispatching-connection connection)
         (dime-current-thread t))
-    (cl-destructuring-bind (&key pid style lisp-implementation machine
-                              features _project version modules
-                              &allow-other-keys) info
+    (cl-destructuring-bind (&key pid style dylan-implementation machine
+                                 features version modules
+                                 &allow-other-keys)
+        info
       (dime-check-version version connection)
       (setf (dime-dylan-version) version)
       (setf (dime-pid) pid
             (dime-communication-style) style
             (dime-dylan-features) features
             (dime-dylan-modules) modules)
-      (cl-destructuring-bind (&key type name version program) lisp-implementation
+      (cl-destructuring-bind (&key type name version program)
+          dylan-implementation
         (setf (dime-dylan-implementation-type) type
               (dime-dylan-implementation-version) version
               (dime-dylan-implementation-name) name
               (dime-dylan-implementation-program) program
               (dime-connection-name) (dime-generate-connection-name name)))
-      (cl-destructuring-bind (&key instance _type _version) machine
+      (cl-destructuring-bind (&key instance _type _version)
+          machine
         (setf (dime-machine-instance) instance)))
     (let ((args (when-let ((p (dime-inferior-process)))
                   (dime-inferior-dylan-args p))))

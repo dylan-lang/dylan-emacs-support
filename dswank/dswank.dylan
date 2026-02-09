@@ -66,12 +66,10 @@ end macro;
 define swank-function connection-info ()
   list(#":pid", 23,             // TODO
        #":style", #":fd-handler",
-       #":lisp-implementation", list(#":type", "dylan",
-                                     #":name", release-info/release-product-name(),
-                                     #":version", release-info/release-version()),
-       #":version", "2011-02-13", // TODO
-       #":package", #(#":name", "opendylan",
-                      #":prompt", "opendylan"))
+       #":dylan-implementation", list(#":type", "dylan",
+                                      #":name", release-info/release-product-name(),
+                                      #":version", release-info/release-version()),
+       #":version", "2011-02-13") // TODO
 end;
 
 define swank-function create-repl (x)
@@ -82,20 +80,17 @@ define swank-function quit-lisp ()
   exit-application(0);
 end;
 
-define swank-function list-all-package-names (t)
-  // `t` is always #t.  Get rid of it?
+define swank-function list-all-project-names ()
   let libraries = #();
   local
     method collect-project
         (dir :: <pathname>, filename :: <string>, type :: <file-type>)
-      if (type == #"file")
-        if (last(filename) ~== '~')
-          libraries := pair(filename, libraries);
-        end;
+      if (type == #"file" & last(filename) ~== '~')
+        libraries := pair(filename, libraries);
       end;
     end method;
-  let regs = registry-projects/find-registries(as(<string>,
-                                                  build-system/target-platform-name()));
+  let regs = registry-projects/find-registries
+               (as(<string>, build-system/target-platform-name()));
   let reg-paths = map(registry-projects/registry-location, regs);
   for (reg-path in reg-paths)
     if (file-exists?(reg-path))
