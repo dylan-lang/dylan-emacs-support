@@ -96,7 +96,8 @@ Emacs Lisp package."))
 
 CONTRIBS is a list of contrib packages to load."
   (when (member 'dylan-mode dime-dylan-modes)
-    (add-hook 'dylan-mode-hook 'dime-dylan-mode-hook))
+    (add-hook 'dylan-mode-hook 'dime-dylan-mode-hook)
+    (add-hook 'dylan-mode-hook 'dime-dylan-bind-keys))
   (setq dime-setup-contribs contribs)
   (dime-setup-contribs))
 
@@ -7284,13 +7285,10 @@ more than one space."
       (backward-sexp 1)
       (thing-at-point 'dime-symbol))))
 
-(defun dime-dylan-init ()
-  (add-hook 'dylan-mode-hook 'dime-dylan-bind-keys))
-
 (defun dime-dylan-bind-keys ()
-  (define-key dime-mode-map (kbd "SPC") 'dime-dylan-arglist-magic)
-  (local-set-key (kbd ",") 'dime-dylan-arglist-magic)
-  (local-set-key (kbd "(") 'dime-dylan-arglist-magic))
+  (keymap-set dime-mode-map "SPC" 'dime-dylan-arglist-magic)
+  (keymap-local-set "(" 'dime-dylan-arglist-magic)
+  (keymap-local-set "," 'dime-dylan-arglist-magic))
 
 (provide 'dime)
 (run-hooks 'dime-load-hook)
