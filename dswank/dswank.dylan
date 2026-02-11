@@ -246,8 +246,8 @@ define function find-object-in-project
     else
       let library = ep/project-library(project);
       check-library(project, library)
-        | ep/do-project-used-libraries(method (proj, lib)
-                                         let (obj, mod, lib) = check-library(proj, lib);
+        | ep/do-project-used-libraries(method (lib)
+                                         let (obj, mod, lib) = check-library(project, lib);
                                          if (obj)
                                            return(obj, mod, lib);
                                          end;
@@ -430,13 +430,17 @@ define swank-function operator-arglist (dylan-name, module-name)
   // TODO(cgay): module-name is unused.
   let project = current-repl-project();
   let (object, module) = find-object(dylan-name);
-  if (object)
-    concatenate(dylan-name, " ",
-                ep/print-function-parameters(project, object, module),
-                " => ",
-                ep/print-function-values(project, object, module))
-  else
-    #"nil"
+  select (object by instance?)
+    ep/<function-object> =>
+      concatenate(dylan-name, " ",
+                  ep/print-function-parameters(project, object, module),
+                  " => ",
+                  ep/print-function-values(project, object, module));
+    ep/<macro-object> =>
+      // Can we do better here?  Should we at hard-code the DRM macro signatures?
+      concatenate(dylan-name, " [macro]");
+    otherwise =>
+      #"nil"
   end
 end;
 
