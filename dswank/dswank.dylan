@@ -431,7 +431,8 @@ define swank-function operator-arglist (dylan-name, module-name)
   let project = current-repl-project();
   let (object, module) = find-object(dylan-name);
   if (object)
-    concatenate(ep/print-function-parameters(project, object, module),
+    concatenate(dylan-name, " ",
+                ep/print-function-parameters(project, object, module),
                 " => ",
                 ep/print-function-values(project, object, module))
   else
