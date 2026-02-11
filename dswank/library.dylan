@@ -7,6 +7,8 @@ Warranty:  Distributed WITHOUT WARRANTY OF ANY KIND
 
 define library dswank
   use build-system;
+  use collections,
+    import: { plists };
   use commands;
   use common-dylan;
   use dfmc-back-end-implementations; // Is this used for effect?
@@ -44,6 +46,8 @@ define module dswank
   use format;
   use lisp-reader;
   use locators;
+  use plists,
+    import: { get-property };
   use registry-projects,
     prefix: "registry-projects/";
   use release-info,

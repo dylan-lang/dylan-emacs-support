@@ -466,6 +466,7 @@ define function write-to-emacs (stream, s-expression)
   format(stream, "%s%s", len, s-expression);
 end function;
 
+// Add --debug to the dswank command in `dime-dylan-implementations` to turn this on.
 define variable *debug-swank?* = #f;
 
 // Send debug output to the REPL. Of course it can also be found in the *dime-events*
@@ -484,22 +485,18 @@ define thread variable *dswank-stream* = #f;
 define function main (args)
   *debug-swank?* := member?("--debug", args, test: \=);
   start-sockets();
-  let tmpfile = #f;
   let port = 4005;
+  let port-pos = position(args, "--port", test: \=);
+  if (port-pos)
+    port := string-to-integer(args[port-pos + 1]);
+  end;
+  let tmpfile = #f;
   unless (member?("--listen", args, test: \=))
     let line = read-line(*standard-input*);
     let sexp = read-lisp(make(<string-stream>,
                               direction: #"input", contents: line));
-    tmpfile := block (ret)
-                 for (call in sexp.tail)
-                   if (call.head == #"funcall")
-                     if (call.tail.head.tail.head = "swank:start-server")
-                       ret(call[2])
-                     end;
-                   end;
-                 end;
-                 error("error parsing swank startup command");
-               end;
+    tmpfile := get-property(sexp, #":port-file")
+                 | error("error parsing swank startup command");
   end unless;
   local method open ()
           block ()

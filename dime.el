@@ -1258,14 +1258,7 @@ See `dime-start'."
                   (concat dime-path dime-backend)))
         (encoding (dime-coding-system-cl-name coding-system)))
     ;; Return a single form to avoid problems with buffered input.
-    (format "%S\n\n"
-            `(progn
-               (load ,(dime-to-dylan-filename (expand-file-name loader))
-                     :verbose t)
-               (funcall (read-from-string "swank-loader:init"))
-               (funcall (read-from-string "swank:start-server")
-                        ,(dime-to-dylan-filename port-filename)
-                        :coding-system ,encoding)))))
+    (format "%S\n\n" `(:port-file ,(dime-to-dylan-filename port-filename)))))
 
 (defun dime-swank-port-file ()
   "Filename where the SWANK server writes its TCP port number."
