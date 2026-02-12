@@ -21,5 +21,6 @@ The `dime` package (Dylan Interactor Mode for Emacs), an IDE derived from
 
 ## Using DIME
 
-DIME documentation is currently included as part of the Open Dylan project's [Getting
-Started Guide](https://opendylan.org/getting-started-cli/dylan-mode-for-emacs.html).
+See the `dylan-emacs-support <https://package.opendylan.org/dylan-emacs-support>`_
+package documentation, or browse the reStructuredText source files `here
+<https://github.com/dylan-lang/dylan-emacs-support/blob/master/doc/source>`_.
