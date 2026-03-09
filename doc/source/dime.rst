@@ -1,6 +1,25 @@
 DIME - Dylan Interactor Mode for Emacs
 ======================================
 
+.. warning:: DIME is alpha quality!  While it provides extremely useful functionality
+             such as jump to definition, cross references, argument lists, and more, it
+             can currently be somewhat unfriendly to use.  Specifically:
+
+             * Always do a full build of your project **before** starting DIME to ensure
+               that the compiler database exists.  For example, ``deft build -a`` in your
+               project workspace.  After that, it should be enough to use compile-buffer
+               (``C-c C-k``) to recompile.
+
+             * Many commands are either unimplemented or will signal errors.  This
+               shouldn't cause problems, but you will see error messages in the Emacs
+               message line.  Just stick with the known working commands:
+
+               * Argument lists (``Space``, ``,``, ``(``)
+               * ``dime-edit-definition`` (``M-.``)
+               * ``dime-who-calls`` (``C-c C-w C-c``)
+               * ``next-error`` (``C-x ```)
+               * ``dime-describe-symbol`` (``C-c C-d C-d``)
+
 DIME and its back-end, "dswank", create a link between the Dylan compiler and Emacs
 so that editor commands can leverage everything the compiler knows about your source
 code.  It allows you to view cross references, locate definitions, view argument lists,
@@ -10,11 +29,11 @@ introduction to using DIME.
 The first thing you need in order to use DIME is the Emacs Lisp code for ``dylan-mode``,
 which can be downloaded from https://github.com/dylan-lang/dylan-emacs-support.
 
-..note:: You can download the ``dylan-emacs-support`` repository and build ``dswank``
-         yourself to get the bleeding edge version, but the most recent stable version is
-         distributed with Open Dylan so ``dswank`` should be available in your ``PATH``
-         already and :file:`dime.el` and related files are available in the Open Dylan
-         distribution in the :file:`sources/app` directory.
+.. note:: You can download the ``dylan-emacs-support`` repository and build ``dswank``
+          yourself to get the bleeding edge version, but the most recent stable version
+          is distributed with Open Dylan so ``dswank`` should be available in your
+          ``PATH`` already and :file:`dime.el` and related files are available in the
+          Open Dylan distribution in the :file:`sources/app` directory.
 
 Next set up your Emacs init file.  Adjust the pathnames to match your Open Dylan
 installation location or the directory where you put the `dylan-emacs-support
@@ -26,8 +45,8 @@ installation location or the directory where you put the `dylan-emacs-support
    (require 'dime)
    (dime-setup '(dime-repl dime-note-tree))
    (setq dime-dylan-implementations
-         '((opendylan ("/opt/opendylan/bin/dswank")
-                      :env ("OPEN_DYLAN_USER_REGISTRIES=/path/to/your/registry"
+         '((opendylan ("/opt/opendylan-2026.1/bin/dswank")
+                      :env ("OPEN_DYLAN_USER_REGISTRIES=/opt/opendylan-2026.1/sources/registry"
                             "OPEN_DYLAN_USER_ROOT=/path/to/your/_build")
                       )))
 
